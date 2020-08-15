@@ -1,21 +1,6 @@
 from math import modf, floor
 import numpy as np
 
-from pysis.exceptions import ProcessError
-
-from skimage.feature import register_translation
-
-from skimage import transform as tf
-from plio.io.io_gdal import GeoDataset
-
-from matplotlib import pyplot as plt
-
-from autocnet.matcher.naive_template import pattern_match, pattern_match_autoreg
-from autocnet.matcher import ciratefi
-from autocnet.io.db.model import Measures, Points, Images, JsonEncoder
-from autocnet import spatial
-from autocnet.utils.utils import bytescale
-
 
 class Roi():
     """
@@ -104,51 +89,6 @@ class Roi():
             bottom_y = raster_size[1]
 
         return list(map(int, [left_x, right_x, top_y, bottom_y]))
-
-    def geotransform(self, other):
-        """
-
-        """
-        other_size = other.raster_size
-
-        # specifically not putting this in a try/except, this should never fail
-        mlat, mlon = spatial.pixel_to_latlon(self.geodataset.file_name, sample=self.x, line=self.y)
-        centery, centerx = spatial.latlon_to_pixel(other.file_name, lon=mlon, lat=mlat)
-
-        startx, stopx, starty, stopy = self.image_extent
-        base_corners = [(startx, starty),
-                        (startx, stopy),
-                        (stopx, stopy),
-                        (stopx, starty)]
-
-        dst_corners = []
-        for x,y in base_corners:
-            try:
-                lat, lon = spatial.pixel_to_latlon(self.geodataset.file_name, sample=x, line=y)
-                line, sample = spatial.latlon_to_pixel(other.file_name, lon=lon, lat=lat)
-                dst_corners.append((line, sample))
-            except ProcessError as e:
-                if 'Requested position does not project in camera model' in e.stderr:
-                    print(f'Skip geom_match; Region of interest corner located at ({lon}, {lat}) does not project to image {other.base_name}')
-                    return None, None
-
-
-        base_gcps = np.array([*base_corners])
-        base_gcps[:,0] -= startx
-        base_gcps[:,1] -= starty
-
-        dst_gcps = np.array([*dst_corners])
-        startx = dst_gcps[:,0].min()
-        starty = dst_gcps[:,1].min()
-        stopx = dst_gcps[:,-1].max()
-        stopy = dst_gcps[:,1].max()
-        dst_gcps[:,0] -= startx
-        dst_gcps[:,1] -= starty
-
-        affine = tf.estimate_transform('affine', np.array([*base_gcps]), np.array([*dst_gcps]))
-        otherRoi = Roi(other, centerx, centery, int(max(dst_gcps[:,0])//2), int(max(dst_gcps[:,1])//2))
-        return otherRoi, affine
-
 
     def clip(self, dtype=None):
         pixels = self.image_extent

@@ -3,9 +3,7 @@ import warnings
 from cv2 import ORB_create, FastFeatureDetector_create
 import numpy as np
 import pandas as pd
-
 from autocnet.utils.utils import bytescale
-from autocnet.transformation import roi
 
 try:
     import cyvlfeat as vl
@@ -90,8 +88,7 @@ def extract_features(array, extractor_method='sift', extractor_parameters={}):
 
     return keypoints, descriptors
 
-
-def extract_most_interesting(image, size=5, n=1, extractor_method='orb', extractor_parameters={'nfeatures': 15, 'edgeThreshold': 2}):
+def extract_most_interesting(image, extractor_method='orb', extractor_parameters={'nfeatures':10}):
     """
     Given an image, extract the most interesting feature. Interesting is defined
     as the feature descriptor that has the maximum variance. By default, this func
@@ -101,9 +98,6 @@ def extract_most_interesting(image, size=5, n=1, extractor_method='orb', extract
     ----------
     image : ndarray
             of DN values
-
-    n : int
-        Number of keypoints to return in increasing score value (1 mean return one keypoint with highest score)
 
     extractor_method : str
                        Any valid, autocnet extractor. Default (orb)
@@ -117,65 +111,10 @@ def extract_most_interesting(image, size=5, n=1, extractor_method='orb', extract
        The keypoints row with the higest variance. The row has 'x' and 'y' columns to
        get the location.
     """
-    score_func = lambda r: np.var(roi.Roi(image, r.x, r.y, size, size).clip())
-
     kps, desc = extract_features(image,
-                                  extractor_method=extractor_method,
-                                  extractor_parameters=extractor_parameters)
+                                 extractor_method=extractor_method,
+                                 extractor_parameters=extractor_parameters)
 
-    kps['score'] = kps.apply(score_func, axis=1)
-    kps = kps.sort_values(by=['score'], ascending=False).iloc[0:n]
-
-    return kps
-
-
-def find_common_feature(roi1, roi2, thresh=5, n=10, extractor_parameters={'nfeatures': 15, 'edgeThreshold': 1, 'scaleFactor':1.2}):
-    """
-    Find a single feature that is similar enough between the two images. Essentially, feature extraction and
-    basic matching between two regions of interst that are projected on eachother.
-
-    Parameters
-    ----------
-
-    roi1 : np.array
-           array object of image 1 used as the base
-    roi2 : np.array
-           array object of image 2, projected to match roi1
-    thresh : float
-             distance threshold, point pairs below this threshold are rejected.
-    n : int
-        nuber of candidate points to attempt to extract
-    geom : bool
-           If true, runs roi2 through the projection step. Otherwise, uses roi1 as is. Default is True
-
-    Returns
-    -------
-
-    : pd.Series
-      Single DF row containing the passsing point and associated metadata
-
-    """
-    p1 = extract_most_interesting(roi1, n=n, extractor_method='orb', extractor_parameters=extractor_parameters)
-    p2 = extract_most_interesting(roi2, n=n, extractor_method='orb', extractor_parameters=extractor_parameters)
-
-    if n == 1:
-        dist = np.linalg.norm([p1.x-p2.x, p1.y-p2.y])
-        return p1 if dist < thresh else None
-
-    # sometimes, the extractor fails to exract enough points from either one image or the other,
-    # so throw out the extra features to make them parrallel
-    n_matches = min(len(p1), len(p2))
-
-    # Drop index, enabling parallel subtraction
-    p1 = p1.iloc[:n_matches].reset_index(drop=True)
-    p2 = p2.iloc[:n_matches].reset_index(drop=True)
-
-    dist = np.linalg.norm(list(zip(p1.x-p2.x, p1.y-p2.y)), axis=1)
-    p1['dist'] = dist
-
-    # return the lower dist in the thresh
-    p1 = p1.sort_values(by=['dist'], ascending=True).iloc[0]
-    if p1['dist'] < thresh:
-        return p1
-
-
+    # Naively assume that the maximum variance is the most unique feature
+    vari = np.var(desc, axis=1)
+    return kps.iloc[np.argmax(vari)]
