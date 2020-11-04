@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>autocnet.matcher.cross_instrument_matcher &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../None"></script>
+    <script type="text/javascript" src="../../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" >
+    <link rel="search" title="Search" href="../../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../../index.html" >
+    <link rel="up" title="Module code" href="../../index.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../../index.html" accesskey="U">Module code</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <h1>Source code for autocnet.matcher.cross_instrument_matcher</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">MultiPoint</span>
+<span class="kn">from</span> <span class="nn">plio.io.io_gdal</span> <span class="kn">import</span> <span class="n">GeoDataset</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="kn">import</span> <span class="nn">ctypes</span>
+<span class="kn">import</span> <span class="nn">enum</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">os.path</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">from</span> <span class="nn">ctypes.util</span> <span class="kn">import</span> <span class="n">find_library</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">scipy</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="p">(</span><span class="n">Boolean</span><span class="p">,</span> <span class="n">Column</span><span class="p">,</span> <span class="n">Float</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span>
+                        <span class="n">LargeBinary</span><span class="p">,</span> <span class="n">String</span><span class="p">,</span> <span class="n">UniqueConstraint</span><span class="p">,</span> <span class="n">create_engine</span><span class="p">,</span>
+                        <span class="n">event</span><span class="p">,</span> <span class="n">orm</span><span class="p">,</span> <span class="n">pool</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.ext.declarative</span> <span class="kn">import</span> <span class="n">declarative_base</span>
+
+<span class="kn">import</span> <span class="nn">geopandas</span> <span class="k">as</span> <span class="nn">gpd</span>
+<span class="kn">import</span> <span class="nn">plio</span>
+<span class="kn">import</span> <span class="nn">pvl</span>
+<span class="kn">import</span> <span class="nn">pyproj</span>
+<span class="kn">import</span> <span class="nn">pysis</span>
+<span class="kn">import</span> <span class="nn">cv2</span>
+
+<span class="kn">from</span> <span class="nn">gdal</span> <span class="kn">import</span> <span class="n">ogr</span>
+
+<span class="kn">import</span> <span class="nn">geoalchemy2</span>
+<span class="kn">from</span> <span class="nn">geoalchemy2</span> <span class="kn">import</span> <span class="n">Geometry</span><span class="p">,</span> <span class="n">WKTElement</span>
+<span class="kn">from</span> <span class="nn">geoalchemy2.shape</span> <span class="kn">import</span> <span class="n">to_shape</span>
+<span class="kn">from</span> <span class="nn">geoalchemy2</span> <span class="kn">import</span> <span class="n">functions</span>
+
+<span class="kn">from</span> <span class="nn">knoten</span> <span class="kn">import</span> <span class="n">csm</span>
+
+<span class="kn">from</span> <span class="nn">plio.io.io_controlnetwork</span> <span class="kn">import</span> <span class="n">from_isis</span><span class="p">,</span> <span class="n">to_isis</span>
+
+<span class="kn">from</span> <span class="nn">shapely</span> <span class="kn">import</span> <span class="n">wkt</span>
+<span class="kn">from</span> <span class="nn">shapely.geometry.multipolygon</span> <span class="kn">import</span> <span class="n">MultiPolygon</span>
+<span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Point</span>
+
+<span class="kn">from</span> <span class="nn">plurmy</span> <span class="kn">import</span> <span class="n">Slurm</span>
+
+<span class="kn">from</span> <span class="nn">autocnet.io.db.model</span> <span class="kn">import</span> <span class="n">Images</span><span class="p">,</span> <span class="n">Points</span><span class="p">,</span> <span class="n">Measures</span><span class="p">,</span> <span class="n">JsonEncoder</span>
+<span class="kn">from</span> <span class="nn">autocnet.cg.cg</span> <span class="kn">import</span> <span class="n">distribute_points_in_geom</span><span class="p">,</span> <span class="n">xy_in_polygon</span>
+<span class="kn">from</span> <span class="nn">autocnet.io.db.connection</span> <span class="kn">import</span> <span class="n">new_connection</span>
+<span class="kn">from</span> <span class="nn">autocnet.spatial</span> <span class="kn">import</span> <span class="n">isis</span>
+<span class="kn">from</span> <span class="nn">autocnet.transformation.spatial</span> <span class="kn">import</span> <span class="n">reproject</span><span class="p">,</span> <span class="n">oc2og</span>
+<span class="kn">from</span> <span class="nn">autocnet.matcher.cpu_extractor</span> <span class="kn">import</span> <span class="n">extract_most_interesting</span>
+<span class="kn">from</span> <span class="nn">autocnet.transformation</span> <span class="kn">import</span> <span class="n">roi</span>
+<span class="kn">from</span> <span class="nn">autocnet.matcher.subpixel</span> <span class="kn">import</span> <span class="n">geom_match</span>
+<span class="kn">from</span> <span class="nn">autocnet.utils.utils</span> <span class="kn">import</span> <span class="n">bytescale</span>
+
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<div class="viewcode-block" id="generate_ground_points"><a class="viewcode-back" href="../../../library/matcher/cross_instrument_matcher.html#autocnet.matcher.cross_instrument_matcher.generate_ground_points">[docs]</a><span class="k">def</span> <span class="nf">generate_ground_points</span><span class="p">(</span><span class="n">Session</span><span class="p">,</span> <span class="n">ground_mosaic</span><span class="p">,</span> <span class="n">nspts_func</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="mi">1</span><span class="p">),</span> <span class="n">ewpts_func</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="mi">4</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span><span class="mi">100</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ground_db_config : dict</span>
+<span class="sd">                       In the form: {&#39;username&#39;:&#39;somename&#39;,</span>
+<span class="sd">                                     &#39;password&#39;:&#39;somepassword&#39;,</span>
+<span class="sd">                                     &#39;host&#39;:&#39;somehost&#39;,</span>
+<span class="sd">                                     &#39;pgbouncer_port&#39;:6543,</span>
+<span class="sd">                                     &#39;name&#39;:&#39;somename&#39;}</span>
+<span class="sd">    nspts_func       : func</span>
+<span class="sd">                       describes distribution of points along the north-south</span>
+<span class="sd">                       edge of an overlap.</span>
+
+<span class="sd">    ewpts_func       : func</span>
+<span class="sd">                       describes distribution of points along the east-west</span>
+<span class="sd">                       edge of an overlap.</span>
+
+<span class="sd">    size             : tuple of int</span>
+<span class="sd">                       (size_x, size_y) maximum distances on either access point</span>
+<span class="sd">                       can move when attempting to find an interesting feature.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ground_mosaic</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">ground_mosaic</span> <span class="o">=</span> <span class="n">GeoDataset</span><span class="p">(</span><span class="n">ground_mosaic</span><span class="p">)</span>
+
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;This function is not well tested. No tests currently exist </span><span class="se">\</span>
+<span class="s1">    in the test suite for this version of the function.&#39;</span><span class="p">)</span>
+
+    <span class="n">session</span> <span class="o">=</span> <span class="n">Session</span><span class="p">()</span>
+    <span class="n">fp_poly</span> <span class="o">=</span> <span class="n">wkt</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">functions</span><span class="o">.</span><span class="n">ST_AsText</span><span class="p">(</span><span class="n">functions</span><span class="o">.</span><span class="n">ST_Union</span><span class="p">(</span><span class="n">Images</span><span class="o">.</span><span class="n">geom</span><span class="p">)))</span><span class="o">.</span><span class="n">one</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">session</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">distribute_points_in_geom</span><span class="p">(</span><span class="n">fp_poly</span><span class="p">,</span> <span class="n">nspts_func</span><span class="o">=</span><span class="n">nspts_func</span><span class="p">,</span> <span class="n">ewpts_func</span><span class="o">=</span><span class="n">ewpts_func</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;new&quot;</span><span class="p">,</span> <span class="n">Session</span><span class="o">=</span><span class="n">Session</span><span class="p">)</span>
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
+
+    <span class="n">old_coord_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">coord_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">newlines</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">newsamples</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># throw out points not intersecting the ground reference images</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;points to lay down: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">coords</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">coord</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">coords</span><span class="p">):</span>
+        <span class="c1"># res = ground_session.execute(formated_sql)</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">Point</span><span class="p">(</span><span class="o">*</span><span class="n">coord</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;point </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">),</span>
+ 
+        
+        <span class="n">linessamples</span> <span class="o">=</span> <span class="n">isis</span><span class="o">.</span><span class="n">point_info</span><span class="p">(</span><span class="n">ground_mosaic</span><span class="o">.</span><span class="n">file_name</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="s1">&#39;ground&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">linessamples</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;unable to find point in ground image&#39;</span><span class="p">)</span>
+            <span class="k">continue</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">linessamples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Line&#39;</span><span class="p">)</span>
+        <span class="n">sample</span> <span class="o">=</span> <span class="n">linessamples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Sample&#39;</span><span class="p">)</span>
+
+        <span class="n">oldpoint</span> <span class="o">=</span> <span class="n">isis</span><span class="o">.</span><span class="n">point_info</span><span class="p">(</span><span class="n">ground_mosaic</span><span class="o">.</span><span class="n">file_name</span><span class="p">,</span> <span class="n">sample</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="s1">&#39;image&#39;</span><span class="p">)</span>
+        <span class="n">op</span> <span class="o">=</span> <span class="n">Point</span><span class="p">(</span><span class="n">oldpoint</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;PositiveEast360Longitude&#39;</span><span class="p">),</span>
+                   <span class="n">oldpoint</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;PlanetocentricLatitude&#39;</span><span class="p">))</span>
+
+
+        <span class="n">image</span> <span class="o">=</span> <span class="n">roi</span><span class="o">.</span><span class="n">Roi</span><span class="p">(</span><span class="n">ground_mosaic</span><span class="p">,</span> <span class="n">sample</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">size_x</span><span class="o">=</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">size_y</span><span class="o">=</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">image_roi</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;uint64&quot;</span><span class="p">)</span>
+
+        <span class="n">interesting</span> <span class="o">=</span> <span class="n">extract_most_interesting</span><span class="p">(</span><span class="n">bytescale</span><span class="p">(</span><span class="n">image_roi</span><span class="p">),</span>  <span class="n">extractor_parameters</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;nfeatures&#39;</span><span class="p">:</span><span class="mi">30</span><span class="p">})</span>
+
+        <span class="c1"># kps are in the image space with upper left origin, so convert to</span>
+        <span class="c1"># center origin and then convert back into full image space</span>
+        <span class="n">left_x</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">top_y</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">image_extent</span>
+        <span class="n">newsample</span> <span class="o">=</span> <span class="n">left_x</span> <span class="o">+</span> <span class="n">interesting</span><span class="o">.</span><span class="n">x</span>
+        <span class="n">newline</span> <span class="o">=</span> <span class="n">top_y</span> <span class="o">+</span> <span class="n">interesting</span><span class="o">.</span><span class="n">y</span>
+
+        <span class="n">newpoint</span> <span class="o">=</span> <span class="n">isis</span><span class="o">.</span><span class="n">point_info</span><span class="p">(</span><span class="n">ground_mosaic</span><span class="o">.</span><span class="n">file_name</span><span class="p">,</span> <span class="n">newsample</span><span class="p">,</span> <span class="n">newline</span><span class="p">,</span> <span class="s1">&#39;image&#39;</span><span class="p">)</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">Point</span><span class="p">(</span><span class="n">newpoint</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;PositiveEast360Longitude&#39;</span><span class="p">),</span>
+                  <span class="n">newpoint</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;PlanetocentricLatitude&#39;</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">xy_in_polygon</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">fp_poly</span><span class="p">)):</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Interesting point not in mosaic area, ignore&#39;</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+        <span class="n">old_coord_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">op</span><span class="p">)</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+        <span class="n">samples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
+        <span class="n">coord_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="n">newlines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newline</span><span class="p">)</span>
+        <span class="n">newsamples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newsample</span><span class="p">)</span>
+
+
+    <span class="c1"># start building the cnet</span>
+    <span class="n">ground_cnet</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+    <span class="n">ground_cnet</span><span class="p">[</span><span class="s2">&quot;path&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">ground_mosaic</span><span class="o">.</span><span class="n">file_name</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">coord_list</span><span class="p">)</span>
+    <span class="n">ground_cnet</span><span class="p">[</span><span class="s2">&quot;pointid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">coord_list</span><span class="p">)))</span>
+    <span class="n">ground_cnet</span><span class="p">[</span><span class="s2">&quot;original point&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">old_coord_list</span>
+    <span class="n">ground_cnet</span><span class="p">[</span><span class="s2">&quot;point&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">coord_list</span>
+    <span class="n">ground_cnet</span><span class="p">[</span><span class="s1">&#39;original_line&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lines</span>
+    <span class="n">ground_cnet</span><span class="p">[</span><span class="s1">&#39;original_sample&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">samples</span>
+    <span class="n">ground_cnet</span><span class="p">[</span><span class="s1">&#39;line&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">newlines</span>
+    <span class="n">ground_cnet</span><span class="p">[</span><span class="s1">&#39;sample&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">newsamples</span>
+    <span class="n">ground_cnet</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">(</span><span class="n">ground_cnet</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="s1">&#39;point&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ground_cnet</span><span class="p">,</span> <span class="n">fp_poly</span><span class="p">,</span> <span class="n">coord_list</span></div>
+
+
+<div class="viewcode-block" id="propagate_point"><a class="viewcode-back" href="../../../library/matcher/cross_instrument_matcher.html#autocnet.matcher.cross_instrument_matcher.propagate_point">[docs]</a><span class="k">def</span> <span class="nf">propagate_point</span><span class="p">(</span><span class="n">Session</span><span class="p">,</span>
+                    <span class="n">config</span><span class="p">,</span>
+                    <span class="n">dem</span><span class="p">,</span>
+                    <span class="n">lon</span><span class="p">,</span>
+                    <span class="n">lat</span><span class="p">,</span>
+                    <span class="n">pointid</span><span class="p">,</span>
+                    <span class="n">paths</span><span class="p">,</span>
+                    <span class="n">lines</span><span class="p">,</span>
+                    <span class="n">samples</span><span class="p">,</span>
+                    <span class="n">size_x</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span>
+                    <span class="n">size_y</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span>
+                    <span class="n">template_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;image_size&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">39</span><span class="p">,</span> <span class="mi">39</span><span class="p">),</span> <span class="s1">&#39;template_size&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="mi">21</span><span class="p">)},</span>
+                    <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">cost</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">y</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Conditionally propagate a point into a stack of images. The point and all corresponding measures</span>
+<span class="sd">    are matched against database network (to which you are propagating), best result(s) is(are) kept.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Session   : sqlalchemy.sessionmaker</span>
+<span class="sd">                session maker associated with the database you want to propagate to</span>
+
+<span class="sd">    config    : dict</span>
+<span class="sd">                configuation file associated with database you want to propagate to</span>
+<span class="sd">                In the form: {&#39;username&#39;:&#39;somename&#39;,</span>
+<span class="sd">                              &#39;password&#39;:&#39;somepassword&#39;,</span>
+<span class="sd">                              &#39;host&#39;:&#39;somehost&#39;,</span>
+<span class="sd">                              &#39;pgbouncer_port&#39;:6543,</span>
+<span class="sd">                              &#39;name&#39;:&#39;somename&#39;}</span>
+
+<span class="sd">    dem       : plio.io.io_gdal.GeoDataset</span>
+<span class="sd">                digital elevation model of target body</span>
+
+<span class="sd">    lon       : np.float</span>
+<span class="sd">                longitude of point you want to project</span>
+
+<span class="sd">    lat       : np.float</span>
+<span class="sd">                planetocentric latitude of point you want to project</span>
+
+<span class="sd">    pointid   : int</span>
+<span class="sd">                clerical input used to trace point from generate_ground_points output</span>
+
+<span class="sd">    paths     : list of str</span>
+<span class="sd">                absolute paths pointing to the image(s) from which you want to try porpagating the point</span>
+
+<span class="sd">    lines     : list of np.float</span>
+<span class="sd">                apriori line(s) corresponding to point projected in &#39;paths&#39; image(s)</span>
+
+<span class="sd">    samples   : list of np.float</span>
+<span class="sd">                apriori sample(s) corresponding to point projected in &#39;paths&#39; image(s)</span>
+
+<span class="sd">    size_x    : int</span>
+<span class="sd">                half width of GeoDataset that is cut from full image and affinely transfromed in geom_match;</span>
+<span class="sd">                must be larger than 1/2 template_kwargs &#39;image_size&#39;</span>
+
+<span class="sd">    size_y    : int</span>
+<span class="sd">                half height of GeoDataset that is cut from full image and affinely transfromed in geom_match;</span>
+<span class="sd">                must be larger than 1/2 template_kwargs &#39;image_size&#39;</span>
+
+<span class="sd">    template_kwargs : dict</span>
+<span class="sd">                      kwargs passed through to control matcher.subpixel_template()</span>
+
+<span class="sd">    verbose   : boolean</span>
+<span class="sd">                If True, this will print out the results of each propagation, including prints of the</span>
+<span class="sd">                matcher areas and their correlation map.</span>
+
+<span class="sd">    cost      : anonymous function</span>
+<span class="sd">                determines to which image(s) the point should be propagated. x corresponds to a list</span>
+<span class="sd">                of all match correlation metrics, while y corresponds to each indiviudal element</span>
+<span class="sd">                of the x array.</span>
+<span class="sd">                Example:</span>
+<span class="sd">                cost = lambda x,y: y == np.max(x) will get you one result corresponding to the image that</span>
+<span class="sd">                has the maximum correlation with the source image</span>
+<span class="sd">                cost = lambda x,y: y &gt; 0.6 will propagate the point to all images whose correlation</span>
+<span class="sd">                result is greater than 0.6</span>
+
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    new_measures : pd.DataFrame</span>
+<span class="sd">                   Dataframe containing pointid, imageid, image serial number, line, sample, and ground location (both latlon</span>
+<span class="sd">                   and cartesian) of successfully propagated points</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">session</span> <span class="o">=</span> <span class="n">Session</span><span class="p">()</span>
+    <span class="n">engine</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">get_bind</span><span class="p">()</span>
+    <span class="n">string</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;select * from images where ST_Intersects(geom, ST_SetSRID(ST_Point(</span><span class="si">{</span><span class="n">lon</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">lat</span><span class="si">}</span><span class="s2">), </span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;spatial&#39;</span><span class="p">][</span><span class="s1">&#39;latitudinal_srid&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">))&quot;</span>
+    <span class="n">images</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">engine</span><span class="p">)</span>
+    <span class="n">session</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="n">image_measures</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">paths</span><span class="p">,</span> <span class="n">lines</span><span class="p">,</span> <span class="n">samples</span><span class="p">),</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;path&quot;</span><span class="p">,</span> <span class="s2">&quot;line&quot;</span><span class="p">,</span> <span class="s2">&quot;sample&quot;</span><span class="p">])</span>
+    <span class="n">measure</span> <span class="o">=</span> <span class="n">image_measures</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">p</span> <span class="o">=</span> <span class="n">Point</span><span class="p">(</span><span class="n">lon</span><span class="p">,</span> <span class="n">lat</span><span class="p">)</span>
+    <span class="n">new_measures</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># list of matching results in the format:</span>
+    <span class="c1"># [measure_index, x_offset, y_offset, offset_magnitude]</span>
+    <span class="n">match_results</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># lazily iterate for now</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">m</span> <span class="ow">in</span> <span class="n">image_measures</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="n">base_image</span> <span class="o">=</span> <span class="n">GeoDataset</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="s2">&quot;path&quot;</span><span class="p">])</span>
+        
+        <span class="n">sx</span><span class="p">,</span> <span class="n">sy</span> <span class="o">=</span> <span class="n">m</span><span class="p">[</span><span class="s2">&quot;sample&quot;</span><span class="p">],</span> <span class="n">m</span><span class="p">[</span><span class="s2">&quot;line&quot;</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">image</span> <span class="ow">in</span> <span class="n">images</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+            <span class="c1"># When grounding to THEMIS the df has a PATH to the QUAD</span>
+            <span class="n">dest_image</span> <span class="o">=</span> <span class="n">GeoDataset</span><span class="p">(</span><span class="n">image</span><span class="p">[</span><span class="s2">&quot;path&quot;</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">image</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">]):</span>
+                <span class="k">continue</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;prop point: base_image: </span><span class="si">{</span><span class="n">base_image</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;prop point: dest_image: </span><span class="si">{</span><span class="n">dest_image</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;prop point: (sx, sy): (</span><span class="si">{</span><span class="n">sx</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">sy</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">)</span>
+                <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span> <span class="n">dist</span><span class="p">,</span> <span class="n">metrics</span><span class="p">,</span> <span class="n">corrmap</span> <span class="o">=</span> <span class="n">geom_match</span><span class="p">(</span><span class="n">base_image</span><span class="p">,</span> <span class="n">dest_image</span><span class="p">,</span> <span class="n">sx</span><span class="p">,</span> <span class="n">sy</span><span class="p">,</span> \
+                        <span class="n">template_kwargs</span><span class="o">=</span><span class="n">template_kwargs</span><span class="p">,</span> \
+                        <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                <span class="n">match_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="n">match_results</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">k</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span>
+                                 <span class="n">metrics</span><span class="p">,</span> <span class="n">dist</span><span class="p">,</span> <span class="n">corrmap</span><span class="p">,</span> <span class="n">m</span><span class="p">[</span><span class="s2">&quot;path&quot;</span><span class="p">],</span> <span class="n">image</span><span class="p">[</span><span class="s2">&quot;path&quot;</span><span class="p">],</span>
+                                 <span class="n">image</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">],</span> <span class="n">image</span><span class="p">[</span><span class="s1">&#39;serial&#39;</span><span class="p">]])</span>
+
+    <span class="c1"># get best offsets</span>
+    <span class="n">match_results</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="n">res</span> <span class="k">for</span> <span class="n">res</span> <span class="ow">in</span> <span class="n">match_results</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="n">r</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">res</span><span class="p">)])</span>
+    <span class="k">if</span> <span class="n">match_results</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># no matches</span>
+        <span class="k">return</span> <span class="n">new_measures</span>
+
+    <span class="c1"># column index 3 is the metric returned by the geom matcher</span>
+    <span class="n">best_results</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="n">match</span> <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">match_results</span> <span class="k">if</span> <span class="n">cost</span><span class="p">(</span><span class="n">match_results</span><span class="p">[:,</span><span class="mi">3</span><span class="p">],</span> <span class="n">match</span><span class="p">[</span><span class="mi">3</span><span class="p">])])</span>
+    <span class="k">if</span> <span class="n">best_results</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># no matches satisfying cost</span>
+        <span class="k">return</span> <span class="n">new_measures</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;match_results final length: &quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">match_results</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;best_results length: &quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">best_results</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Full results: &quot;</span><span class="p">,</span> <span class="n">best_results</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Winning CORRs: &quot;</span><span class="p">,</span> <span class="n">best_results</span><span class="p">[:,</span><span class="mi">3</span><span class="p">],</span> <span class="s2">&quot;Themis Pixel shifts: &quot;</span><span class="p">,</span> <span class="n">best_results</span><span class="p">[:,</span><span class="mi">4</span><span class="p">])</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Themis Images: &quot;</span><span class="p">,</span> <span class="n">best_results</span><span class="p">[:,</span><span class="mi">6</span><span class="p">],</span> <span class="s2">&quot;CTX images:&quot;</span><span class="p">,</span> <span class="n">best_results</span><span class="p">[:,</span><span class="mi">7</span><span class="p">])</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Themis Sample: &quot;</span><span class="p">,</span> <span class="n">sx</span><span class="p">,</span> <span class="s2">&quot;CTX Samples: &quot;</span><span class="p">,</span> <span class="n">best_results</span><span class="p">[:,</span><span class="mi">1</span><span class="p">])</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Themis Line: &quot;</span><span class="p">,</span> <span class="n">sy</span><span class="p">,</span> <span class="s2">&quot;CTX Lines: &quot;</span><span class="p">,</span> <span class="n">best_results</span><span class="p">[:,</span><span class="mi">2</span><span class="p">])</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="c1"># if the single best results metric (returned by geom_matcher) is None</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">best_results</span><span class="p">[:,</span><span class="mi">3</span><span class="p">])</span><span class="o">==</span><span class="mi">1</span> <span class="ow">and</span> <span class="n">best_results</span><span class="p">[:,</span><span class="mi">3</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">new_measures</span>
+
+    <span class="n">px</span><span class="p">,</span> <span class="n">py</span> <span class="o">=</span> <span class="n">dem</span><span class="o">.</span><span class="n">latlon_to_pixel</span><span class="p">(</span><span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">)</span>
+    <span class="n">height</span> <span class="o">=</span> <span class="n">dem</span><span class="o">.</span><span class="n">read_array</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">[</span><span class="n">px</span><span class="p">,</span> <span class="n">py</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">semi_major</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;spatial&#39;</span><span class="p">][</span><span class="s1">&#39;semimajor_rad&#39;</span><span class="p">]</span>
+    <span class="n">semi_minor</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;spatial&#39;</span><span class="p">][</span><span class="s1">&#39;semiminor_rad&#39;</span><span class="p">]</span>
+    <span class="c1"># The CSM conversion makes the LLA/ECEF conversion explicit</span>
+    <span class="c1"># reprojection takes ographic lat</span>
+    <span class="n">lon_og</span><span class="p">,</span> <span class="n">lat_og</span> <span class="o">=</span> <span class="n">oc2og</span><span class="p">(</span><span class="n">lon</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">semi_major</span><span class="p">,</span> <span class="n">semi_minor</span><span class="p">)</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">reproject</span><span class="p">([</span><span class="n">lon_og</span><span class="p">,</span> <span class="n">lat_og</span><span class="p">,</span> <span class="n">height</span><span class="p">],</span>
+                         <span class="n">semi_major</span><span class="p">,</span> <span class="n">semi_minor</span><span class="p">,</span>
+                         <span class="s1">&#39;latlon&#39;</span><span class="p">,</span> <span class="s1">&#39;geocent&#39;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">best_results</span><span class="p">:</span>
+        <span class="n">sample</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+        <span class="n">new_measures</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s1">&#39;pointid&#39;</span> <span class="p">:</span> <span class="n">pointid</span><span class="p">,</span>
+            <span class="s1">&#39;imageid&#39;</span> <span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="mi">8</span><span class="p">],</span>
+            <span class="s1">&#39;serial&#39;</span> <span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="mi">9</span><span class="p">],</span>
+            <span class="s1">&#39;path&#39;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="mi">7</span><span class="p">],</span>
+            <span class="s1">&#39;line&#39;</span> <span class="p">:</span> <span class="n">line</span><span class="p">,</span>
+            <span class="s1">&#39;sample&#39;</span> <span class="p">:</span> <span class="n">sample</span><span class="p">,</span>
+            <span class="s1">&#39;point&#39;</span> <span class="p">:</span> <span class="n">p</span><span class="p">,</span>
+            <span class="s1">&#39;point_ecef&#39;</span> <span class="p">:</span> <span class="n">Point</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
+            <span class="p">})</span>
+
+    <span class="k">return</span> <span class="n">new_measures</span></div>
+
+<div class="viewcode-block" id="propagate_control_network"><a class="viewcode-back" href="../../../library/matcher/cross_instrument_matcher.html#autocnet.matcher.cross_instrument_matcher.propagate_control_network">[docs]</a><span class="k">def</span> <span class="nf">propagate_control_network</span><span class="p">(</span><span class="n">Session</span><span class="p">,</span>
+        <span class="n">config</span><span class="p">,</span>
+        <span class="n">dem</span><span class="p">,</span>
+        <span class="n">base_cnet</span><span class="p">,</span>
+        <span class="n">size_x</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span>
+        <span class="n">size_y</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span>
+        <span class="n">template_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;image_size&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">39</span><span class="p">,</span><span class="mi">39</span><span class="p">),</span> <span class="s1">&#39;template_size&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">21</span><span class="p">,</span><span class="mi">21</span><span class="p">)},</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">cost</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">:</span> <span class="n">y</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Loops over a base control network&#39;s measure information (line, sample, image path) and uses image matching</span>
+<span class="sd">    algorithms (autocnet.matcher.subpixel.geom_match) to find the corresponding line(s)/sample(s) in database images.</span>
+
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Session   : sqlalchemy.sessionmaker</span>
+<span class="sd">                session maker associated with the database containing the images you want to propagate to</span>
+
+<span class="sd">    config    : dict</span>
+<span class="sd">                configuation file associated with database containing the images you want to propagate to</span>
+<span class="sd">                In the form: {&#39;username&#39;:&#39;somename&#39;,</span>
+<span class="sd">                              &#39;password&#39;:&#39;somepassword&#39;,</span>
+<span class="sd">                              &#39;host&#39;:&#39;somehost&#39;,</span>
+<span class="sd">                              &#39;pgbouncer_port&#39;:6543,</span>
+<span class="sd">                              &#39;name&#39;:&#39;somename&#39;}</span>
+
+<span class="sd">    dem       : plio.io.io_gdal.GeoDataset</span>
+<span class="sd">                Digital elevation model of target body</span>
+
+<span class="sd">    base_cnet : pd.DataFrame</span>
+<span class="sd">                Dataframe representing the points you want to propagate. Must contain &#39;line&#39;, &#39;sample&#39; location of</span>
+<span class="sd">                the measure and the &#39;path&#39; to the corresponding image</span>
+
+<span class="sd">    verbose   : boolean</span>
+<span class="sd">                Increase the level of print outs/plots recieved during propagation</span>
+
+<span class="sd">    cost      : anonymous function</span>
+<span class="sd">                determines to which image(s) the point should be propagated. x corresponds to a list</span>
+<span class="sd">                of all match correlation metrics, while y corresponds to each indiviudal element</span>
+<span class="sd">                of the x array.</span>
+<span class="sd">                Example:</span>
+<span class="sd">                cost = lambda x,y: y == np.max(x) will get you one result corresponding to the image that</span>
+<span class="sd">                has the maximum correlation with the source image</span>
+<span class="sd">                cost = lambda x,y: y &gt; 0.6 will propegate the point to all images whose correlation</span>
+<span class="sd">                result is greater than 0.6</span>
+
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ground   : pd.DataFrame</span>
+<span class="sd">               Dataframe containing pointid, imageid, image serial number, line, sample, and ground location (both latlon</span>
+<span class="sd">               and cartesian) of successfully propagated points</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;This function is not well tested. No tests currently exist </span><span class="se">\</span>
+<span class="s1">    in the test suite for this version of the function.&#39;</span><span class="p">)</span>
+
+    <span class="n">groups</span> <span class="o">=</span> <span class="n">base_cnet</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;pointid&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">groups</span>
+
+    <span class="c1"># append CNET info into structured Python list</span>
+    <span class="n">constrained_net</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># easily parrallelized on the cpoint level, dummy serial for now</span>
+    <span class="k">for</span> <span class="n">cpoint</span><span class="p">,</span> <span class="n">indices</span> <span class="ow">in</span> <span class="n">groups</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">measures</span> <span class="o">=</span> <span class="n">base_cnet</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span>
+        <span class="n">measure</span> <span class="o">=</span> <span class="n">measures</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">p</span> <span class="o">=</span> <span class="n">measure</span><span class="o">.</span><span class="n">point</span>
+
+        <span class="c1"># get image in the destination that overlap</span>
+        <span class="n">lon</span><span class="p">,</span> <span class="n">lat</span> <span class="o">=</span> <span class="n">measures</span><span class="p">[</span><span class="s2">&quot;point&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">xy</span>
+        <span class="n">gp_measures</span> <span class="o">=</span> <span class="n">propagate_point</span><span class="p">(</span><span class="n">Session</span><span class="p">,</span>
+                                      <span class="n">config</span><span class="p">,</span>
+                                      <span class="n">dem</span><span class="p">,</span>
+                                      <span class="n">lon</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                      <span class="n">lat</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                      <span class="n">cpoint</span><span class="p">,</span>
+                                      <span class="n">measures</span><span class="p">[</span><span class="s2">&quot;path&quot;</span><span class="p">],</span>
+                                      <span class="n">measures</span><span class="p">[</span><span class="s2">&quot;line&quot;</span><span class="p">],</span>
+                                      <span class="n">measures</span><span class="p">[</span><span class="s2">&quot;sample&quot;</span><span class="p">],</span>
+                                      <span class="n">size_x</span><span class="p">,</span>
+                                      <span class="n">size_y</span><span class="p">,</span>
+                                      <span class="n">template_kwargs</span><span class="p">,</span>
+                                      <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+                                      <span class="n">cost</span><span class="o">=</span><span class="n">cost</span><span class="p">)</span>
+
+        <span class="c1"># do not append if propagate_point is unable to find result</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">gp_measures</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">constrained_net</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">gp_measures</span><span class="p">)</span>
+        
+    <span class="n">ground</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">constrained_net</span><span class="p">)</span><span class="o">.</span><span class="n">set_geometry</span><span class="p">(</span><span class="s1">&#39;point&#39;</span><span class="p">)</span>
+    <span class="n">groundpoints</span> <span class="o">=</span> <span class="n">ground</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;pointid&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">groups</span>
+
+    <span class="n">points</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># conditionally upload a new point to DB or updated existing point with new measures</span>
+    <span class="n">lat_srid</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;spatial&#39;</span><span class="p">][</span><span class="s1">&#39;latitudinal_srid&#39;</span><span class="p">]</span>
+    <span class="n">session</span> <span class="o">=</span> <span class="n">Session</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">p</span><span class="p">,</span><span class="n">indices</span> <span class="ow">in</span> <span class="n">groundpoints</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">point</span> <span class="o">=</span> <span class="n">ground</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># if point already exists in DB</span>
+        <span class="n">lon</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">x</span>
+        <span class="n">lat</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">point</span><span class="o">.</span><span class="n">y</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Points</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">functions</span><span class="o">.</span><span class="n">ST_Intersects</span><span class="p">(</span><span class="n">Points</span><span class="o">.</span><span class="n">geom</span><span class="p">,</span> <span class="n">functions</span><span class="o">.</span><span class="n">ST_Buffer</span><span class="p">(</span><span class="n">functions</span><span class="o">.</span><span class="n">ST_SetSRID</span><span class="p">(</span><span class="n">functions</span><span class="o">.</span><span class="n">ST_Point</span><span class="p">(</span><span class="n">lon</span><span class="p">,</span><span class="n">lat</span><span class="p">),</span> <span class="n">lat_srid</span><span class="p">),</span> <span class="mf">10e-10</span><span class="p">)))</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;There is more than one point at lon: </span><span class="si">{</span><span class="n">lon</span><span class="si">}</span><span class="s2">, lat: </span><span class="si">{</span><span class="n">lat</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">:</span>
+                <span class="n">row</span> <span class="o">=</span> <span class="n">ground</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">pid</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">id</span>
+                <span class="n">meas</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Measures</span><span class="o">.</span><span class="n">serial</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Measures</span><span class="o">.</span><span class="n">pointid</span> <span class="o">==</span> <span class="n">pid</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+                <span class="n">serialnumbers</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">meas</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;serial&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">serialnumbers</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
+                <span class="n">points</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Measures</span><span class="p">(</span><span class="n">pointid</span> <span class="o">=</span> <span class="n">pid</span><span class="p">,</span>
+                                       <span class="n">line</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;line&#39;</span><span class="p">]),</span>
+                                       <span class="n">sample</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;sample&#39;</span><span class="p">]),</span>
+                                       <span class="n">aprioriline</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;line&#39;</span><span class="p">]),</span>
+                                       <span class="n">apriorisample</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;sample&#39;</span><span class="p">]),</span>
+                                       <span class="n">imageid</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;imageid&#39;</span><span class="p">]),</span>
+                                       <span class="n">serial</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;serial&#39;</span><span class="p">],</span>
+                                       <span class="n">measuretype</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">Points</span><span class="p">()</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">pointtype</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">apriori</span> <span class="o">=</span> <span class="n">point</span><span class="p">[</span><span class="s1">&#39;point_ecef&#39;</span><span class="p">]</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">adjusted</span> <span class="o">=</span> <span class="n">point</span><span class="p">[</span><span class="s1">&#39;point_ecef&#39;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">:</span>
+                <span class="n">row</span> <span class="o">=</span> <span class="n">ground</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">p</span><span class="o">.</span><span class="n">measures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Measures</span><span class="p">(</span><span class="n">line</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;line&#39;</span><span class="p">]),</span>
+                                           <span class="n">sample</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;sample&#39;</span><span class="p">]),</span>
+                                           <span class="n">aprioriline</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;line&#39;</span><span class="p">]),</span>
+                                           <span class="n">apriorisample</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;sample&#39;</span><span class="p">]),</span>
+                                           <span class="n">imageid</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;imageid&#39;</span><span class="p">]),</span>
+                                           <span class="n">serial</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;serial&#39;</span><span class="p">],</span>
+                                           <span class="n">measuretype</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span>
+            <span class="n">points</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+
+    <span class="n">session</span><span class="o">.</span><span class="n">add_all</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+    <span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+    <span class="n">session</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">ground</span></div>
+
+
+</pre></div>
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

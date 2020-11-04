@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>io.keypoints — Keypoint Serialization &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../None"></script>
+    <script type="text/javascript" src="../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" >
+    <link rel="search" title="Search" href="../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../index.html" >
+    <link rel="up" title="io — File Input/Output" href="index.html" >
+    <link rel="next" title="io.network — Network Serialization" href="network.html" >
+    <link rel="prev" title="io — File Input/Output" href="index.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../index.html" >Library Reference</a></li>
+          <li class="active"><a href="index.html" accesskey="U"><code class="xref py py-mod docutils literal notranslate"><span class="pre">io</span></code> — File Input/Output</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+      <li class="active">
+        <a href="network.html" title="io.network — Network Serialization"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="index.html" title="io — File Input/Output"
+           accesskey="P">previous</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">io</span></code> — File Input/Output</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="network.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">io.network</span></code> — Network Serialization</a></p>
+  <h3>This Page</h3>
+  <div>
+    <a href="../../_sources/library/io/keypoints.rst.txt"
+       rel="nofollow">Show Source</a>
+  </div>
+<div class="this-page-menu">
+  <a href="/scipy/docs/scipy-docs/library/io/keypoints.rst.rst">Edit page</a>
+</div>
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <div class="section" id="io-keypoints-keypoint-serialization">
+<h1><code class="xref py py-mod docutils literal notranslate"><span class="pre">io.keypoints</span></code> — Keypoint Serialization<a class="headerlink" href="#io-keypoints-keypoint-serialization" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="xref py py-mod docutils literal notranslate"><span class="pre">io.keypoints</span></code> module provides methods for serializing
+keypoints objects.</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 0.1.0.</span></p>
+</div>
+<span class="target" id="module-autocnet.io.keypoints"></span><dl class="py function">
+<dt id="autocnet.io.keypoints.create_output_path">
+<code class="sig-prename descclassname">autocnet.io.keypoints.</code><code class="sig-name descname">create_output_path</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em>, <em class="sig-param"><span class="n">outdir</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/io/keypoints.html#create_output_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.io.keypoints.create_output_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a filename for keypoints and descriptors, create an output
+directory with _kps.h5 appended.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>str</em>) – The filename or full path</p></li>
+<li><p><strong>outdir</strong> (<em>str</em>) – An optional output path</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>outh5</strong> – Path of the output h5 file</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.io.keypoints.from_hdf">
+<code class="sig-prename descclassname">autocnet.io.keypoints.</code><code class="sig-name descname">from_hdf</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">in_path</span></em>, <em class="sig-param"><span class="n">index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">keypoints</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">descriptors</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/io/keypoints.html#from_hdf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.io.keypoints.from_hdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>For a given node, load the keypoints and descriptors from a hdf5 file. The
+keypoints and descriptors kwargs support returning only keypoints or descriptors.
+The index kwarg supports returning a subset of the data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>in_path</strong> (<em>str</em>) – handle to the file</p></li>
+<li><p><strong>key</strong> (<em>str</em>) – An optional path into the HDF5.  For example key=’image_name’, will
+search /image_name/descriptors for the descriptors.</p></li>
+<li><p><strong>index</strong> (<em>iterable</em>) – an h5py accepted indexer to pull only a subset of the keypoints
+off disk. Default is None to pull all keypoints.</p></li>
+<li><p><strong>keypoints</strong> (<em>bool</em>) – if True (default) return the keypoints</p></li>
+<li><p><strong>descriptors</strong> (<em>bool</em>) – if True (default) return the descriptors</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>keypoints</strong> (<em>DataFrame</em>) – A pandas dataframe of keypoints.</p></li>
+<li><p><strong>descriptors</strong> (<em>ndarray</em>) – A numpy array of descriptors</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.io.keypoints.from_npy">
+<code class="sig-prename descclassname">autocnet.io.keypoints.</code><code class="sig-name descname">from_npy</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">in_path</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/io/keypoints.html#from_npy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.io.keypoints.from_npy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load keypoints and descriptors from a .npz file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>in_path</strong> (<em>str</em>) – PATH to the npz file</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>keypoints</strong> (<em>DataFrame</em>) – of keypoints</p></li>
+<li><p><strong>descriptors</strong> (<em>ndarray</em>) – of feature descriptors</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.io.keypoints.to_hdf">
+<code class="sig-prename descclassname">autocnet.io.keypoints.</code><code class="sig-name descname">to_hdf</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">out_path</span></em>, <em class="sig-param"><span class="n">keypoints</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">descriptors</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">key</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/io/keypoints.html#to_hdf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.io.keypoints.to_hdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save keypoints and descriptors to HDF at a given out_path at either
+the root or at some arbitrary path given by a key.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>keypoints</strong> (<em>DataFrame</em>) – Pandas dataframe of keypoints</p></li>
+<li><p><strong>descriptors</strong> (<em>ndarray</em>) – of feature descriptors</p></li>
+<li><p><strong>out_path</strong> (<em>str</em>) – to the HDF5 file</p></li>
+<li><p><strong>key</strong> (<em>str</em>) – path within the HDF5 file.  If given, the keypoints and descriptors
+are save at &lt;key&gt;/keypoints and &lt;key&gt;/descriptors respectively.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.io.keypoints.to_npy">
+<code class="sig-prename descclassname">autocnet.io.keypoints.</code><code class="sig-name descname">to_npy</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">keypoints</span></em>, <em class="sig-param"><span class="n">descriptors</span></em>, <em class="sig-param"><span class="n">out_path</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/io/keypoints.html#to_npy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.io.keypoints.to_npy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save keypoints and descriptors to a .npz file at some out_path</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>keypoints</strong> (<em>DataFrame</em>) – of keypoints</p></li>
+<li><p><strong>descriptors</strong> (<em>ndarray</em>) – of feature descriptors</p></li>
+<li><p><strong>out_path</strong> (<em>str</em>) – PATH and filename to save the features</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>matcher.cpu_outlier_detector — Finding outliers in both the keypoints and the matches &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../None"></script>
+    <script type="text/javascript" src="../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" >
+    <link rel="search" title="Search" href="../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../index.html" >
+    <link rel="up" title="matcher — Graph Based Data Representaton" href="index.html" >
+    <link rel="next" title="matcher.cpu_ring_matcher — CPU Based Ring Matching" href="cpu_ring_matcher.html" >
+    <link rel="prev" title="matcher.cpu_matcher — CPU Based n-Keypoint Matcher" href="cpu_matcher.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../index.html" >Library Reference</a></li>
+          <li class="active"><a href="index.html" accesskey="U"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher</span></code> — Graph Based Data Representaton</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+      <li class="active">
+        <a href="cpu_ring_matcher.html" title="matcher.cpu_ring_matcher — CPU Based Ring Matching"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="cpu_matcher.html" title="matcher.cpu_matcher — CPU Based n-Keypoint Matcher"
+           accesskey="P">previous</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="cpu_matcher.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.cpu_matcher</span></code> — CPU Based n-Keypoint Matcher</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="cpu_ring_matcher.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.cpu_ring_matcher</span></code> — CPU Based Ring Matching</a></p>
+  <h3>This Page</h3>
+  <div>
+    <a href="../../_sources/library/matcher/cpu_outlier_detector.rst.txt"
+       rel="nofollow">Show Source</a>
+  </div>
+<div class="this-page-menu">
+  <a href="/scipy/docs/scipy-docs/library/matcher/cpu_outlier_detector.rst.rst">Edit page</a>
+</div>
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <div class="section" id="matcher-cpu-outlier-detector-finding-outliers-in-both-the-keypoints-and-the-matches">
+<h1><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.cpu_outlier_detector</span></code> — Finding outliers in both the keypoints and the matches<a class="headerlink" href="#matcher-cpu-outlier-detector-finding-outliers-in-both-the-keypoints-and-the-matches" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.cpu_outlier_detector</span></code> module</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 0.1.0.</span></p>
+</div>
+<span class="target" id="module-autocnet.matcher.cpu_outlier_detector"></span><dl class="py function">
+<dt id="autocnet.matcher.cpu_outlier_detector.distance_ratio">
+<code class="sig-prename descclassname">autocnet.matcher.cpu_outlier_detector.</code><code class="sig-name descname">distance_ratio</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">edge</span></em>, <em class="sig-param"><span class="n">matches</span></em>, <em class="sig-param"><span class="n">ratio</span><span class="o">=</span><span class="default_value">0.8</span></em>, <em class="sig-param"><span class="n">single</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/cpu_outlier_detector.html#distance_ratio"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.cpu_outlier_detector.distance_ratio" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute and return a mask for a matches dataframe
+using Lowe’s ratio test.  If keypoints have a single
+Lowe (2004) <a class="reference internal" href="../../references.html#lowe2004" id="id1"><span>[Lowe2004]</span></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ratio</strong> (<em>float</em>) – the ratio between the first and second-best match distances
+for each keypoint to use as a bound for marking the first keypoint
+as “good”. Default: 0.8</p></li>
+<li><p><strong>single</strong> (<em>bool</em>) – If True, points with only a single entry are included (True)
+in the result mask, else False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>mask</strong> – A Pandas DataFrame mask for the matches with those failing the
+ratio test set to False.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pd.dataframe</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.matcher.cpu_outlier_detector.mirroring_test">
+<code class="sig-prename descclassname">autocnet.matcher.cpu_outlier_detector.</code><code class="sig-name descname">mirroring_test</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">matches</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/cpu_outlier_detector.html#mirroring_test"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.cpu_outlier_detector.mirroring_test" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute and return a mask for the matches dataframe on each edge of the graph which
+will keep only entries in which there is both a source -&gt; destination match and a destination -&gt;
+source match.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>matches</strong> (<em>dataframe</em>) – the matches dataframe stored along the edge of the graph
+containing matched points with columns containing:
+matched image name, query index, train index, and
+descriptor distance</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>duplicates</strong> – Intended to mask the matches dataframe. Rows are True if the associated keypoint passes
+the mirroring test and false otherwise. That is, if 1-&gt;2, 2-&gt;1, both rows will be True,
+otherwise, they will be false. Keypoints with only one match will be False. Removes
+duplicate rows.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dataseries</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.matcher.cpu_outlier_detector.self_neighbors">
+<code class="sig-prename descclassname">autocnet.matcher.cpu_outlier_detector.</code><code class="sig-name descname">self_neighbors</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">matches</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/cpu_outlier_detector.html#self_neighbors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.cpu_outlier_detector.self_neighbors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a pandas data series intended to be used as a mask. Each row
+is True if it is not matched to a point in the same image (good) and
+False if it is (bad.)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>matches</strong> (<em>dataframe</em>) – the matches dataframe stored along the edge of the graph
+containing matched points with columns containing:
+matched image name, query index, train index, and
+descriptor distance</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Intended to mask the matches dataframe. True means the row is not matched to a point in the same image
+and false the row is.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dataseries</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.matcher.cpu_outlier_detector.spatial_suppression">
+<code class="sig-prename descclassname">autocnet.matcher.cpu_outlier_detector.</code><code class="sig-name descname">spatial_suppression</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">bounds</span></em>, <em class="sig-param"><span class="n">xkey</span><span class="o">=</span><span class="default_value">'x'</span></em>, <em class="sig-param"><span class="n">ykey</span><span class="o">=</span><span class="default_value">'y'</span></em>, <em class="sig-param"><span class="n">k</span><span class="o">=</span><span class="default_value">60</span></em>, <em class="sig-param"><span class="n">error_k</span><span class="o">=</span><span class="default_value">0.05</span></em>, <em class="sig-param"><span class="n">nsteps</span><span class="o">=</span><span class="default_value">250</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/cpu_outlier_detector.html#spatial_suppression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.cpu_outlier_detector.spatial_suppression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply the spatial suppression algorithm over an arbitrary domain for all of the spatial
+data in the provided data frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>object</em>) – Pandas data frame with coordinates</p></li>
+<li><p><strong>bounds</strong> (<em>list</em>) – In the form xmin, ymin, xmax, ymax</p></li>
+<li><p><strong>xkey</strong> (<em>str</em>) – The column name for the x coordinates</p></li>
+<li><p><strong>ykey</strong> (<em>str</em>) – The column name for the y coordinates</p></li>
+<li><p><strong>k</strong> (<em>int</em>) – The desired number of points after suppression</p></li>
+<li><p><strong>error_k</strong> (<em>float</em>) – The percentage of allowable error in the domain [0,1]</p></li>
+<li><p><strong>nsteps</strong> (<em>int</em>) – The granularity of the search. This controls the number of
+buckets in the x and y dimension. More granular search adds processing
+time, but can result in a more accurate solution.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>mask</strong> (<em>nd.array</em>) – A boolean mask of the valid points</p></li>
+<li><p><strong>len(result)</strong> (<em>int</em>) – The numer of valud points</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

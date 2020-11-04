@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>autocnet.camera.camera &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../None"></script>
+    <script type="text/javascript" src="../../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" >
+    <link rel="search" title="Search" href="../../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../../index.html" >
+    <link rel="up" title="Module code" href="../../index.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../../index.html" accesskey="U">Module code</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <h1>Source code for autocnet.camera.camera</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">autocnet.camera.utils</span> <span class="kn">import</span> <span class="n">crossform</span>
+<span class="kn">from</span> <span class="nn">cv2</span> <span class="kn">import</span> <span class="n">triangulatePoints</span>
+
+
+<div class="viewcode-block" id="compute_epipoles"><a class="viewcode-back" href="../../../library/camera/camera.html#autocnet.camera.camera.compute_epipoles">[docs]</a><span class="k">def</span> <span class="nf">compute_epipoles</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the epipole and epipolar prime</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    f : ndarray</span>
+<span class="sd">        (3,3) fundamental matrix or autocnet Fundamental Matrix object</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    e : ndarray</span>
+<span class="sd">        (3,1) epipole</span>
+
+<span class="sd">    e1 : ndarray</span>
+<span class="sd">         (3,3) epipolar prime matrix</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">u</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">u</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">e1</span> <span class="o">=</span> <span class="n">crossform</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">e</span><span class="p">,</span> <span class="n">e1</span></div>
+
+<div class="viewcode-block" id="idealized_camera"><a class="viewcode-back" href="../../../library/camera/camera.html#autocnet.camera.camera.idealized_camera">[docs]</a><span class="k">def</span> <span class="nf">idealized_camera</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create an idealized camera transformation matrix</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">     : ndarray</span>
+<span class="sd">       (3,4) with diagonal 1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="n">i</span><span class="p">[:,</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">return</span> <span class="n">i</span></div>
+
+<div class="viewcode-block" id="camera_from_f"><a class="viewcode-back" href="../../../library/camera/camera.html#autocnet.camera.camera.camera_from_f">[docs]</a><span class="k">def</span> <span class="nf">camera_from_f</span><span class="p">(</span><span class="n">F</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Estimate a camera matrix using a fundamental matrix.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    f : ndarray</span>
+<span class="sd">        (3,3) fundamental matrix or autocnet Fundamental Matrix object</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    p1 : ndarray</span>
+<span class="sd">         Estimated camera matrix</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">e</span><span class="p">,</span> <span class="n">e1</span> <span class="o">=</span> <span class="n">compute_epipoles</span><span class="p">(</span><span class="n">F</span><span class="p">)</span>
+    <span class="n">p1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+    <span class="n">p1</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">e1</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">F</span><span class="p">)</span>
+    <span class="n">p1</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">e</span>
+
+    <span class="k">return</span> <span class="n">p1</span></div>
+
+
+<div class="viewcode-block" id="triangulate"><a class="viewcode-back" href="../../../library/camera/camera.html#autocnet.camera.camera.triangulate">[docs]</a><span class="k">def</span> <span class="nf">triangulate</span><span class="p">(</span><span class="n">pt</span><span class="p">,</span> <span class="n">pt1</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">p1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given two sets of homogeneous coordinates and two camera matrices,</span>
+<span class="sd">    triangulate the 3D coordinates.  The image correspondences are</span>
+<span class="sd">    assumed to be implicitly ordered.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    [Hartley2003]_</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pt : ndarray</span>
+<span class="sd">         (n, 3) array of homogeneous correspondences</span>
+
+<span class="sd">    pt1 : ndarray</span>
+<span class="sd">          (n, 3) array of homogeneous correspondences</span>
+
+<span class="sd">    p : ndarray</span>
+<span class="sd">        (3, 4) camera matrix</span>
+
+<span class="sd">    p1 : ndarray</span>
+<span class="sd">         (3, 4) camera matrix</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    coords : ndarray</span>
+<span class="sd">             (4, n) projection matrix</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span>
+    <span class="n">pt1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">pt1</span><span class="p">)</span>
+
+    <span class="c1"># Transpose for the openCV call if needed</span>
+    <span class="k">if</span> <span class="n">pt</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">pt</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">T</span>
+    <span class="k">if</span> <span class="n">pt1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">pt1</span> <span class="o">=</span> <span class="n">pt1</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="n">X</span> <span class="o">=</span> <span class="n">triangulatePoints</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">pt</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">pt1</span><span class="p">[:</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">X</span> <span class="o">/=</span> <span class="n">X</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="c1"># Homogenize</span>
+    <span class="k">return</span> <span class="n">X</span></div>
+
+<div class="viewcode-block" id="projection_error"><a class="viewcode-back" href="../../../library/camera/camera.html#autocnet.camera.camera.projection_error">[docs]</a><span class="k">def</span> <span class="nf">projection_error</span><span class="p">(</span><span class="n">p1</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">pt</span><span class="p">,</span> <span class="n">pt1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Based on Hartley and Zisserman p.285 this function triangulates</span>
+<span class="sd">    image correspondences and computes the reprojection error</span>
+<span class="sd">    by back-projecting the points into the image.</span>
+
+<span class="sd">    This is the classic cost function (minimization problem) into</span>
+<span class="sd">    the gold standard method for fundamental matrix estimation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    p1 : ndarray</span>
+<span class="sd">         (3,4) camera matrix</span>
+
+<span class="sd">    p : ndarray</span>
+<span class="sd">        (3,4) idealized camera matrix in the form np.eye(3,4)</span>
+
+<span class="sd">    pt : dataframe or ndarray</span>
+<span class="sd">         of homogeneous coordinates in the form (x_{i}, y_{i}, 1)</span>
+
+<span class="sd">    pt1 : dataframe or ndarray</span>
+<span class="sd">          of homogeneous coordinates in the form (x_{i}, y_{i}, 1)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    reproj_error : ndarray</span>
+<span class="sd">                   (n, 1) vector of reprojection errors</span>
+
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># SciPy least squares solver needs a vector, so reshape back to a 3x4 c</span>
+    <span class="c1"># camera matrix at each iteration</span>
+
+    <span class="k">if</span> <span class="n">p1</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">):</span>
+        <span class="n">p1</span> <span class="o">=</span> <span class="n">p1</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+
+    <span class="c1"># Triangulate the correspondences</span>
+    <span class="n">xhat</span> <span class="o">=</span> <span class="n">triangulate</span><span class="p">(</span><span class="n">pt</span><span class="p">,</span> <span class="n">pt1</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">p1</span><span class="p">)</span>
+    <span class="n">xhat1</span> <span class="o">=</span> <span class="n">xhat</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">/</span> <span class="n">xhat</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">xhat2</span> <span class="o">=</span> <span class="n">p1</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">xhat</span><span class="p">)</span>
+    <span class="n">xhat2</span> <span class="o">/=</span> <span class="n">xhat2</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+    <span class="c1"># Compute error</span>
+    <span class="n">cost</span> <span class="o">=</span> <span class="p">(</span><span class="n">pt</span> <span class="o">-</span> <span class="n">xhat1</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">pt1</span> <span class="o">-</span> <span class="n">xhat2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">cost</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">cost</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">cost</span></div>
+</pre></div>
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>autocnet.io.db.controlnetwork &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../../None"></script>
+    <script type="text/javascript" src="../../../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" >
+    <link rel="search" title="Search" href="../../../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../../../index.html" >
+    <link rel="up" title="Module code" href="../../../index.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../../../index.html" accesskey="U">Module code</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <h1>Source code for autocnet.io.db.controlnetwork</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">shapely.wkb</span> <span class="k">as</span> <span class="nn">swkb</span>
+<span class="kn">from</span> <span class="nn">plio.io</span> <span class="kn">import</span> <span class="n">io_controlnetwork</span> <span class="k">as</span> <span class="n">cnet</span>
+<span class="kn">from</span> <span class="nn">autocnet.io.db.model</span> <span class="kn">import</span> <span class="n">Measures</span>
+
+
+<div class="viewcode-block" id="db_to_df"><a class="viewcode-back" href="../../../../library/io/db/controlnetwork.html#autocnet.io.db.controlnetwork.db_to_df">[docs]</a><span class="k">def</span> <span class="nf">db_to_df</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="n">sql</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">SELECT measures.&quot;pointid&quot;,</span>
+<span class="s2">        points.&quot;pointType&quot;,</span>
+<span class="s2">        points.&quot;apriori&quot;,</span>
+<span class="s2">        points.&quot;adjusted&quot;,</span>
+<span class="s2">        points.&quot;pointIgnore&quot;,</span>
+<span class="s2">        measures.&quot;id&quot;,</span>
+<span class="s2">        measures.&quot;serialnumber&quot;,</span>
+<span class="s2">        measures.&quot;sample&quot;,</span>
+<span class="s2">        measures.&quot;line&quot;,</span>
+<span class="s2">        measures.&quot;measureType&quot;,</span>
+<span class="s2">        measures.&quot;imageid&quot;,</span>
+<span class="s2">        measures.&quot;measureIgnore&quot;,</span>
+<span class="s2">        measures.&quot;measureJigsawRejected&quot;,</span>
+<span class="s2">        measures.&quot;aprioriline&quot;,</span>
+<span class="s2">        measures.&quot;apriorisample&quot;</span>
+<span class="s2">FROM measures</span>
+<span class="s2">INNER JOIN points ON measures.&quot;pointid&quot; = points.&quot;id&quot;</span>
+<span class="s2">WHERE</span>
+<span class="s2">    points.&quot;pointIgnore&quot; = False AND</span>
+<span class="s2">    measures.&quot;measureIgnore&quot; = FALSE AND</span>
+<span class="s2">    measures.&quot;measureJigsawRejected&quot; = FALSE AND</span>
+<span class="s2">    measures.&quot;imageid&quot; NOT IN</span>
+<span class="s2">        (SELECT measures.&quot;imageid&quot;</span>
+<span class="s2">        FROM measures</span>
+<span class="s2">        INNER JOIN points ON measures.&quot;pointid&quot; = points.&quot;id&quot;</span>
+<span class="s2">        WHERE measures.&quot;measureIgnore&quot; = False and measures.&quot;measureJigsawRejected&quot; = False AND points.&quot;pointIgnore&quot; = False</span>
+<span class="s2">        GROUP BY measures.&quot;imageid&quot;</span>
+<span class="s2">        HAVING COUNT(DISTINCT measures.&quot;pointid&quot;)  &lt; 3)</span>
+<span class="s2">ORDER BY measures.&quot;pointid&quot;, measures.&quot;id&quot;;</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Given a set of points/measures in an autocnet database, generate an ISIS</span>
+<span class="sd">        compliant control network.</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path : str</span>
+<span class="sd">               The full path to the output network.</span>
+<span class="sd">        flistpath : str</span>
+<span class="sd">                    (Optional) the path to the output filelist. By default</span>
+<span class="sd">                    the outout filelist path is genrated programatically</span>
+<span class="sd">                    as the provided path with the extension replaced with .lis.</span>
+<span class="sd">                    For example, out.net would have an associated out.lis file.</span>
+<span class="sd">        sql : str</span>
+<span class="sd">              The sql query to execute in the database.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="n">engine</span><span class="p">)</span>
+
+        <span class="c1"># measures.id DB column was read in to ensure the proper ordering of DF</span>
+        <span class="c1"># so the correct measure is written as reference</span>
+        <span class="k">del</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;pointid&#39;</span><span class="p">:</span> <span class="s1">&#39;id&#39;</span><span class="p">,</span>
+                             <span class="s1">&#39;pointType&#39;</span><span class="p">:</span> <span class="s1">&#39;pointtype&#39;</span><span class="p">,</span>
+                             <span class="s1">&#39;measureType&#39;</span><span class="p">:</span> <span class="s1">&#39;measuretype&#39;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1">#create columns in the dataframe; zeros ensure plio (/protobuf) will</span>
+        <span class="c1">#ignore unless populated with alternate values</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;aprioriX&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;aprioriY&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;aprioriZ&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;adjustedX&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;adjustedY&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;adjustedZ&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;aprioriCovar&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))]</span>
+
+        <span class="c1">#only populate the new columns for ground points. Otherwise, isis will</span>
+        <span class="c1">#recalculate the control point lat/lon from control measures which where</span>
+        <span class="c1">#&quot;massaged&quot; by the phase and template matcher.</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;pointtype&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">or</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;pointtype&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;apriori&#39;</span><span class="p">]:</span>
+                    <span class="n">apriori_geom</span> <span class="o">=</span> <span class="n">swkb</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;apriori&#39;</span><span class="p">],</span> <span class="nb">hex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="n">row</span><span class="p">[</span><span class="s1">&#39;aprioriX&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">apriori_geom</span><span class="o">.</span><span class="n">x</span>
+                    <span class="n">row</span><span class="p">[</span><span class="s1">&#39;aprioriY&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">apriori_geom</span><span class="o">.</span><span class="n">y</span>
+                    <span class="n">row</span><span class="p">[</span><span class="s1">&#39;aprioriZ&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">apriori_geom</span><span class="o">.</span><span class="n">z</span>
+                <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;adjusted&#39;</span><span class="p">]:</span>
+                    <span class="n">adjusted_geom</span> <span class="o">=</span> <span class="n">swkb</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;adjusted&#39;</span><span class="p">],</span> <span class="nb">hex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="n">row</span><span class="p">[</span><span class="s1">&#39;adjustedX&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">adjusted_geom</span><span class="o">.</span><span class="n">x</span>
+                    <span class="n">row</span><span class="p">[</span><span class="s1">&#39;adjustedY&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">adjusted_geom</span><span class="o">.</span><span class="n">y</span>
+                    <span class="n">row</span><span class="p">[</span><span class="s1">&#39;adjustedZ&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">adjusted_geom</span><span class="o">.</span><span class="n">z</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">row</span>
+
+        <span class="k">return</span> <span class="n">df</span></div>
+
+
+<div class="viewcode-block" id="update_measure_from_jigsaw"><a class="viewcode-back" href="../../../../library/io/db/controlnetwork.html#autocnet.io.db.controlnetwork.update_measure_from_jigsaw">[docs]</a><span class="k">def</span> <span class="nf">update_measure_from_jigsaw</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">ncg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Updates the database (associated with ncg) with a single measure&#39;s</span>
+<span class="sd">    jigsaw line and sample residuals.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    point   : obj</span>
+<span class="sd">              point identifying object as defined by autocnet.io.db.model.Points</span>
+
+<span class="sd">    path    : str</span>
+<span class="sd">              absolute path and network name of control network used to update the measure/database.</span>
+
+<span class="sd">    ncg     : obj</span>
+<span class="sd">              the network candidate graph associated with the measure/database</span>
+<span class="sd">              being updated.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ncg</span><span class="o">.</span><span class="n">Session</span><span class="p">:</span>
+        <span class="ne">BrokenPipeError</span><span class="p">(</span><span class="s1">&#39;This function requires a database session from a NetworkCandidateGraph.&#39;</span><span class="p">)</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">cnet</span><span class="o">.</span><span class="n">from_isis</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">data_to_update</span> <span class="o">=</span> <span class="n">data</span><span class="p">[[</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="s1">&#39;serialnumber&#39;</span><span class="p">,</span> <span class="s1">&#39;measureJigsawRejected&#39;</span><span class="p">,</span> <span class="s1">&#39;sampleResidual&#39;</span><span class="p">,</span> <span class="s1">&#39;lineResidual&#39;</span><span class="p">,</span> <span class="s1">&#39;samplesigma&#39;</span><span class="p">,</span> <span class="s1">&#39;linesigma&#39;</span><span class="p">,</span> <span class="s1">&#39;adjustedCovar&#39;</span><span class="p">,</span> <span class="s1">&#39;apriorisample&#39;</span><span class="p">,</span> <span class="s1">&#39;aprioriline&#39;</span><span class="p">]]</span>
+    <span class="n">data_to_update</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span><span class="s1">&#39;adjustedCovar&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_to_update</span><span class="p">[</span><span class="s1">&#39;adjustedCovar&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">row</span> <span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">row</span><span class="p">))</span>
+    <span class="n">data_to_update</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_to_update</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">row</span> <span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="p">))</span>
+
+    <span class="n">res</span> <span class="o">=</span> <span class="n">data_to_update</span><span class="p">[(</span><span class="n">data_to_update</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">point</span><span class="o">.</span><span class="n">id</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="n">res</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Point </span><span class="si">{</span><span class="n">point</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s1"> does not exist in input network.&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="c1"># update</span>
+    <span class="n">resultlog</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">with</span> <span class="n">ncg</span><span class="o">.</span><span class="n">session_scope</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">res</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+            <span class="n">row</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">currentlog</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;measure&#39;</span><span class="p">:</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;serialnumber&quot;</span><span class="p">],</span>
+                          <span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="s1">&#39;&#39;</span><span class="p">}</span>
+
+            <span class="n">residual</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">([</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;sampleResidual&quot;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;lineResidual&quot;</span><span class="p">]])</span>
+            <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Measures</span><span class="p">)</span><span class="o">.</span>\
+                    <span class="nb">filter</span><span class="p">(</span><span class="n">Measures</span><span class="o">.</span><span class="n">pointid</span><span class="o">==</span><span class="n">point</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">Measures</span><span class="o">.</span><span class="n">serial</span><span class="o">==</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;serialnumber&quot;</span><span class="p">])</span><span class="o">.</span>\
+                    <span class="n">update</span><span class="p">({</span><span class="s2">&quot;jigreject&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;measureJigsawRejected&quot;</span><span class="p">],</span>
+                        <span class="s2">&quot;sampler&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;sampleResidual&quot;</span><span class="p">],</span>
+                        <span class="s2">&quot;liner&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;lineResidual&quot;</span><span class="p">],</span>
+                        <span class="s2">&quot;residual&quot;</span><span class="p">:</span> <span class="n">residual</span><span class="p">,</span>
+                        <span class="s2">&quot;samplesigma&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;samplesigma&quot;</span><span class="p">],</span>
+                        <span class="s2">&quot;linesigma&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;linesigma&quot;</span><span class="p">],</span>
+                        <span class="s2">&quot;apriorisample&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;apriorisample&quot;</span><span class="p">],</span>
+                        <span class="s2">&quot;aprioriline&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;aprioriline&quot;</span><span class="p">]})</span>
+            <span class="n">currentlog</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;success&#39;</span>
+            <span class="n">resultlog</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">currentlog</span><span class="p">)</span>
+
+        <span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">resultlog</span></div>
+
+
+<span class="c1"># This is not a permanent placement for this function</span>
+<span class="c1"># TO DO: create a new module for parsing/cleaning points from a controlnetwork</span>
+<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">zscore</span>
+<span class="kn">from</span> <span class="nn">plio.io.io_gdal</span> <span class="kn">import</span> <span class="n">GeoDataset</span>
+<span class="kn">from</span> <span class="nn">autocnet.io.db.model</span> <span class="kn">import</span> <span class="n">Images</span>
+<span class="kn">import</span> <span class="nn">pvl</span>
+<span class="k">def</span> <span class="nf">null_measure_ignore</span><span class="p">(</span><span class="n">point</span><span class="p">,</span> <span class="n">size_x</span><span class="p">,</span> <span class="n">size_y</span><span class="p">,</span> <span class="n">valid_tol</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">ncg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ncg</span><span class="o">.</span><span class="n">Session</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">BrokenPipeError</span><span class="p">(</span><span class="s1">&#39;This func requires a database session from a NetworkCandidateGraph.&#39;</span><span class="p">)</span>
+
+    <span class="n">isis2np_types</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;UnsignedByte&quot;</span> <span class="p">:</span> <span class="s2">&quot;uint8&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;SignedWord&quot;</span> <span class="p">:</span> <span class="s2">&quot;int16&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Real&quot;</span> <span class="p">:</span> <span class="s2">&quot;float64&quot;</span><span class="p">}</span>
+
+    <span class="n">resultlog</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">with</span> <span class="n">ncg</span><span class="o">.</span><span class="n">session_scope</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+        <span class="n">pid</span> <span class="o">=</span> <span class="n">point</span><span class="o">.</span><span class="n">id</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;point id: &#39;</span><span class="p">,</span> <span class="n">pid</span><span class="p">)</span>
+        <span class="n">measures</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Measures</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Measures</span><span class="o">.</span><span class="n">pointid</span><span class="o">==</span><span class="n">pid</span><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">Measures</span><span class="o">.</span><span class="n">id</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;number of measures: &#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">measures</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">measure</span> <span class="ow">in</span> <span class="n">measures</span><span class="p">:</span>
+            <span class="n">currentlog</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;measureid&#39;</span><span class="p">:</span> <span class="n">measure</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                          <span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="s1">&#39;No change&#39;</span><span class="p">}</span>
+            <span class="n">m_imageid</span> <span class="o">=</span> <span class="n">measure</span><span class="o">.</span><span class="n">imageid</span>
+            <span class="n">m_image</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Images</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Images</span><span class="o">.</span><span class="n">id</span><span class="o">==</span><span class="n">m_imageid</span><span class="p">)</span><span class="o">.</span><span class="n">one</span><span class="p">()</span>
+            <span class="n">cube</span> <span class="o">=</span> <span class="n">GeoDataset</span><span class="p">(</span><span class="n">m_image</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+
+            <span class="n">center_x</span> <span class="o">=</span> <span class="n">measure</span><span class="o">.</span><span class="n">sample</span>
+            <span class="n">center_y</span> <span class="o">=</span> <span class="n">measure</span><span class="o">.</span><span class="n">line</span>
+
+            <span class="n">start_x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">center_x</span> <span class="o">-</span> <span class="n">size_x</span><span class="p">)</span>
+            <span class="n">start_y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">center_y</span> <span class="o">-</span> <span class="n">size_y</span><span class="p">)</span>
+            <span class="n">stop_x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">center_x</span> <span class="o">+</span> <span class="n">size_x</span><span class="p">)</span>
+            <span class="n">stop_y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">center_y</span> <span class="o">+</span> <span class="n">size_y</span><span class="p">)</span>
+
+            <span class="n">pixels</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="p">[</span><span class="n">start_x</span><span class="p">,</span> <span class="n">start_y</span><span class="p">,</span> <span class="n">stop_x</span><span class="o">-</span><span class="n">start_x</span><span class="p">,</span> <span class="n">stop_y</span><span class="o">-</span><span class="n">start_y</span><span class="p">]))</span>
+            <span class="n">dtype</span> <span class="o">=</span> <span class="n">isis2np_types</span><span class="p">[</span><span class="n">pvl</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">cube</span><span class="o">.</span><span class="n">file_name</span><span class="p">)[</span><span class="s2">&quot;IsisCube&quot;</span><span class="p">][</span><span class="s2">&quot;Core&quot;</span><span class="p">][</span><span class="s2">&quot;Pixels&quot;</span><span class="p">][</span><span class="s2">&quot;Type&quot;</span><span class="p">]]</span>
+            <span class="n">arr</span> <span class="o">=</span> <span class="n">cube</span><span class="o">.</span><span class="n">read_array</span><span class="p">(</span><span class="n">pixels</span><span class="o">=</span><span class="n">pixels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+
+            <span class="n">z</span> <span class="o">=</span> <span class="n">zscore</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">nn</span><span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">z</span><span class="p">)))</span>
+            <span class="n">percent_valid</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">nn</span><span class="o">/</span><span class="n">z</span><span class="o">.</span><span class="n">size</span><span class="p">)</span><span class="o">*</span><span class="mi">100</span>
+            <span class="k">if</span> <span class="n">percent_valid</span> <span class="o">&lt;</span> <span class="n">valid_tol</span><span class="p">:</span>
+                <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Measures</span><span class="p">)</span><span class="o">.</span>\
+                        <span class="nb">filter</span><span class="p">(</span><span class="n">Measures</span><span class="o">.</span><span class="n">pointid</span><span class="o">==</span><span class="n">pid</span><span class="p">,</span> <span class="n">Measures</span><span class="o">.</span><span class="n">id</span><span class="o">==</span><span class="n">measure</span><span class="o">.</span><span class="n">id</span><span class="p">)</span><span class="o">.</span>\
+                        <span class="n">update</span><span class="p">({</span><span class="s1">&#39;ignore&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+                <span class="n">currentlog</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Ignored&#39;</span>
+
+            <span class="n">resultlog</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">currentlog</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">resultlog</span>
+
+</pre></div>
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

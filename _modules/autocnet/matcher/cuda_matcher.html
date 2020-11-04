@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>autocnet.matcher.cuda_matcher &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../None"></script>
+    <script type="text/javascript" src="../../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" >
+    <link rel="search" title="Search" href="../../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../../index.html" >
+    <link rel="up" title="Module code" href="../../index.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../../index.html" accesskey="U">Module code</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <h1>Source code for autocnet.matcher.cuda_matcher</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">cudasift</span> <span class="k">as</span> <span class="nn">cs</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="n">cs</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<div class="viewcode-block" id="match"><a class="viewcode-back" href="../../../library/matcher/cuda_matcher.html#autocnet.matcher.cuda_matcher.match">[docs]</a><span class="k">def</span> <span class="nf">match</span><span class="p">(</span><span class="n">edge</span><span class="p">,</span> <span class="n">aidx</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bidx</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply a composite CUDA matcher and ratio check.  If this method is used,</span>
+<span class="sd">    no additional ratio check is necessary and no symmetry check is required.</span>
+<span class="sd">    The ratio check is embedded on the cuda side and returned as an</span>
+<span class="sd">    ambiguity value.  In testing symmetry is not required as it is expensive</span>
+<span class="sd">    without significant gain in accuracy when using this implementation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">source_kps</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">get_keypoints</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">aidx</span><span class="p">)</span>
+    <span class="n">source_des</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">descriptors</span><span class="p">[</span><span class="n">aidx</span><span class="p">]</span>
+    <span class="n">source_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span><span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">source_kps</span><span class="o">.</span><span class="n">index</span><span class="p">)}</span>
+
+    <span class="n">destin_kps</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">destination</span><span class="o">.</span><span class="n">get_keypoints</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">bidx</span><span class="p">)</span>
+    <span class="n">destin_des</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">destination</span><span class="o">.</span><span class="n">descriptors</span><span class="p">[</span><span class="n">bidx</span><span class="p">]</span>
+    <span class="n">destin_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span><span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">destin_kps</span><span class="o">.</span><span class="n">index</span><span class="p">)}</span>
+
+    <span class="n">s_siftdata</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">PySiftData</span><span class="o">.</span><span class="n">from_data_frame</span><span class="p">(</span><span class="n">source_kps</span><span class="p">,</span> <span class="n">source_des</span><span class="p">)</span>
+    <span class="n">d_siftdata</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">PySiftData</span><span class="o">.</span><span class="n">from_data_frame</span><span class="p">(</span><span class="n">destin_kps</span><span class="p">,</span> <span class="n">destin_des</span><span class="p">)</span>
+
+
+    <span class="n">cs</span><span class="o">.</span><span class="n">PyMatchSiftData</span><span class="p">(</span><span class="n">s_siftdata</span><span class="p">,</span> <span class="n">d_siftdata</span><span class="p">)</span>
+    <span class="n">matches</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">s_siftdata</span><span class="o">.</span><span class="n">to_data_frame</span><span class="p">()</span>
+    <span class="c1"># Matches are reindexed 0-n, but need to be remapped to the source_kps,</span>
+    <span class="c1">#  destin_kps indices.  This is the mismatch)</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">))</span>
+    <span class="n">source</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">source</span><span class="p">[</span><span class="s1">&#39;node_id&#39;</span><span class="p">]</span>
+    <span class="n">destination</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">))</span>
+    <span class="n">destination</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">destination</span><span class="p">[</span><span class="s1">&#39;node_id&#39;</span><span class="p">]</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">source</span><span class="p">),</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">matches</span><span class="o">.</span><span class="n">index</span><span class="p">),</span>
+            <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">destination</span><span class="p">),</span> <span class="n">matches</span><span class="o">.</span><span class="n">match</span><span class="p">,</span>
+            <span class="n">matches</span><span class="o">.</span><span class="n">score</span><span class="p">,</span> <span class="n">matches</span><span class="o">.</span><span class="n">ambiguity</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;source_image&#39;</span><span class="p">,</span> <span class="s1">&#39;source_idx&#39;</span><span class="p">,</span> <span class="s1">&#39;destination_image&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;destination_idx&#39;</span><span class="p">,</span> <span class="s1">&#39;score&#39;</span><span class="p">,</span> <span class="s1">&#39;ambiguity&#39;</span><span class="p">]</span>
+
+
+    <span class="n">df</span><span class="o">.</span><span class="n">source_idx</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">source_idx</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">source_map</span><span class="p">)</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">destination_idx</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">destination_idx</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">destin_map</span><span class="p">)</span>
+    <span class="c1"># Set the matches and set the &#39;ratio&#39; (ambiguity) mask</span>
+    <span class="n">edge</span><span class="o">.</span><span class="n">matches</span> <span class="o">=</span> <span class="n">df</span></div>
+</pre></div>
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

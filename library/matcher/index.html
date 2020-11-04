@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>matcher — Graph Based Data Representaton &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../None"></script>
+    <script type="text/javascript" src="../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" >
+    <link rel="search" title="Search" href="../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../index.html" >
+    <link rel="up" title="Library Reference" href="../index.html" >
+    <link rel="next" title="matcher.cpu_decompose — CPU Based Recursive Image Decomposition" href="cpu_decompose.html" >
+    <link rel="prev" title="io.db.wrappers — Database Wrappers to Data Structures" href="../io/db/wrappers.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../index.html" accesskey="U">Library Reference</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+      <li class="active">
+        <a href="cpu_decompose.html" title="matcher.cpu_decompose — CPU Based Recursive Image Decomposition"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="../io/db/wrappers.html" title="io.db.wrappers — Database Wrappers to Data Structures"
+           accesskey="P">previous</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher</span></code> — Graph Based Data Representaton</a><ul>
+<li><a class="reference internal" href="#cpu-based-feature-extraction-and-matching">CPU Based Feature Extraction and Matching</a></li>
+<li><a class="reference internal" href="#cuda-based-feature-extraction-and-matching">CUDA Based Feature Extraction and Matching</a></li>
+<li><a class="reference internal" href="#subpixel-refinement">Subpixel Refinement</a></li>
+<li><a class="reference internal" href="#high-level-matchiing-examples">High-Level Matchiing Examples</a></li>
+<li><a class="reference internal" href="#spatial-suppression-function-examples">Spatial Suppression Function Examples</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../io/db/wrappers.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">io.db.wrappers</span></code> — Database Wrappers to Data Structures</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="cpu_decompose.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.cpu_decompose</span></code> — CPU Based Recursive Image Decomposition</a></p>
+  <h3>This Page</h3>
+  <div>
+    <a href="../../_sources/library/matcher/index.rst.txt"
+       rel="nofollow">Show Source</a>
+  </div>
+<div class="this-page-menu">
+  <a href="/scipy/docs/scipy-docs/library/matcher/index.rst.rst">Edit page</a>
+</div>
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <div class="section" id="matcher-graph-based-data-representaton">
+<h1><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher</span></code> — Graph Based Data Representaton<a class="headerlink" href="#matcher-graph-based-data-representaton" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="cpu-based-feature-extraction-and-matching">
+<h2>CPU Based Feature Extraction and Matching<a class="headerlink" href="#cpu-based-feature-extraction-and-matching" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="cpu_decompose.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.cpu_decompose</span></code> — CPU Based Recursive Image Decomposition</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cpu_extractor.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.cpu_extractor</span></code> — Extracting Features from Images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cpu_matcher.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.cpu_matcher</span></code> — CPU Based n-Keypoint Matcher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cpu_outlier_detector.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.cpu_outlier_detector</span></code> — Finding outliers in both the keypoints and the matches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cpu_ring_matcher.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.cpu_ring_matcher</span></code> — CPU Based Ring Matching</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="cuda-based-feature-extraction-and-matching">
+<h2>CUDA Based Feature Extraction and Matching<a class="headerlink" href="#cuda-based-feature-extraction-and-matching" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="cuda_extractor.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.cuda_extractor</span></code> — GPU Based n-Feature Extractor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cuda_decompose.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.cuda_decompose</span></code> — GPU Based Recursive Image Decomposition</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cuda_matcher.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.cuda_matcher</span></code> — GPU Based n-Keypoint Matcher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cuda_outlier_detector.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.cuda_outlier_detector</span></code> — Finding outliers in both the keypoints and the matches</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="subpixel-refinement">
+<h2>Subpixel Refinement<a class="headerlink" href="#subpixel-refinement" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="subpixel.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.subpixel</span></code> — Performing subpixel registration between images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ciratefi.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.ciratefi</span></code> — RST-BC Invariant template match algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="naive_template.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.naive_template</span></code> — Simple template matching</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="high-level-matchiing-examples">
+<h2>High-Level Matchiing Examples<a class="headerlink" href="#high-level-matchiing-examples" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="cross_instrument_matcher.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.cross_instrument_matcher</span></code> — Multi-imstrument Matching Methods</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="spatial-suppression-function-examples">
+<h2>Spatial Suppression Function Examples<a class="headerlink" href="#spatial-suppression-function-examples" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="suppression_funcs.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.suppression_funcs</span></code> — Pre-Generated Generic Suppression Functions</a></li>
+</ul>
+</div>
+</div></blockquote>
+</div>
+</div>
+
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

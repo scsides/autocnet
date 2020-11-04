@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>autocnet.matcher.subpixel &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../None"></script>
+    <script type="text/javascript" src="../../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" >
+    <link rel="search" title="Search" href="../../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../../index.html" >
+    <link rel="up" title="Module code" href="../../index.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../../index.html" accesskey="U">Module code</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <h1>Source code for autocnet.matcher.subpixel</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">modf</span><span class="p">,</span> <span class="n">floor</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">from</span> <span class="nn">skimage.feature</span> <span class="kn">import</span> <span class="n">register_translation</span>
+<span class="kn">from</span> <span class="nn">skimage</span> <span class="kn">import</span> <span class="n">transform</span> <span class="k">as</span> <span class="n">tf</span>
+
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+
+<span class="kn">from</span> <span class="nn">plio.io.io_gdal</span> <span class="kn">import</span> <span class="n">GeoDataset</span>
+<span class="kn">from</span> <span class="nn">pysis.exceptions</span> <span class="kn">import</span> <span class="n">ProcessError</span>
+
+<span class="kn">from</span> <span class="nn">autocnet.matcher.naive_template</span> <span class="kn">import</span> <span class="n">pattern_match</span><span class="p">,</span> <span class="n">pattern_match_autoreg</span>
+<span class="kn">from</span> <span class="nn">autocnet.matcher</span> <span class="kn">import</span> <span class="n">ciratefi</span>
+<span class="kn">from</span> <span class="nn">autocnet.io.db.model</span> <span class="kn">import</span> <span class="n">Measures</span><span class="p">,</span> <span class="n">Points</span><span class="p">,</span> <span class="n">Images</span><span class="p">,</span> <span class="n">JsonEncoder</span>
+<span class="kn">from</span> <span class="nn">autocnet.graph.node</span> <span class="kn">import</span> <span class="n">NetworkNode</span>
+<span class="kn">from</span> <span class="nn">autocnet.transformation</span> <span class="kn">import</span> <span class="n">roi</span>
+<span class="kn">from</span> <span class="nn">autocnet</span> <span class="kn">import</span> <span class="n">spatial</span>
+<span class="kn">from</span> <span class="nn">autocnet.utils.utils</span> <span class="kn">import</span> <span class="n">bytescale</span>
+
+<span class="kn">import</span> <span class="nn">geopandas</span> <span class="k">as</span> <span class="nn">gpd</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">import</span> <span class="nn">pvl</span>
+
+<span class="n">isis2np_types</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;UnsignedByte&quot;</span> <span class="p">:</span> <span class="s2">&quot;uint8&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;SignedWord&quot;</span> <span class="p">:</span> <span class="s2">&quot;int16&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Real&quot;</span> <span class="p">:</span> <span class="s2">&quot;float64&quot;</span>
+<span class="p">}</span>
+
+<span class="c1"># TODO: look into KeyPoint.size and perhaps use to determine an appropriately-sized search/template.</span>
+<span class="k">def</span> <span class="nf">_prep_subpixel</span><span class="p">(</span><span class="n">nmatches</span><span class="p">,</span> <span class="n">nstrengths</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Setup the data strutures to return for subpixel matching.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    nmatches : int</span>
+<span class="sd">                The number of pixels to be subpixel matches</span>
+
+<span class="sd">    nstrengths : int</span>
+<span class="sd">                    The number of &#39;strength&#39; values to be returned</span>
+<span class="sd">                    by the subpixel matching method.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    shifts_x : ndarray</span>
+<span class="sd">               (nmatches, 1) to store the x_shift parameter</span>
+
+<span class="sd">    shifts_y : ndarray</span>
+<span class="sd">               (nmatches, 1) to store the y_shift parameter</span>
+
+<span class="sd">    strengths : ndarray</span>
+<span class="sd">                (nmatches, nstrengths) to store the strengths for each point</span>
+
+<span class="sd">    new_x : ndarray</span>
+<span class="sd">            (nmatches, 1) to store the updated x coordinates</span>
+
+<span class="sd">    new_y : ndarray</span>
+<span class="sd">            (nmatches, 1) to store the updated y coordinates</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Setup to store output to append to dataframes</span>
+    <span class="n">shifts_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nmatches</span><span class="p">)</span>
+    <span class="n">shifts_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nmatches</span><span class="p">)</span>
+    <span class="n">strengths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nmatches</span><span class="p">,</span> <span class="n">nstrengths</span><span class="p">))</span>
+
+    <span class="n">new_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">nmatches</span><span class="p">)</span>
+    <span class="n">new_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">nmatches</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">shifts_x</span><span class="p">,</span> <span class="n">shifts_y</span><span class="p">,</span> <span class="n">strengths</span><span class="p">,</span> <span class="n">new_x</span><span class="p">,</span> <span class="n">new_y</span>
+
+<div class="viewcode-block" id="check_image_size"><a class="viewcode-back" href="../../../library/matcher/subpixel.html#autocnet.matcher.subpixel.check_image_size">[docs]</a><span class="k">def</span> <span class="nf">check_image_size</span><span class="p">(</span><span class="n">imagesize</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given an x,y tuple, ensure that the values</span>
+<span class="sd">    are odd. Used by the subpixel template to also ensure</span>
+<span class="sd">    that the template size is the one requested and not 2x</span>
+<span class="sd">    the template size.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    imagesize : tuple</span>
+<span class="sd">                in the form (size_x, size_y)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">imagesize</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">imagesize</span> <span class="o">=</span> <span class="p">(</span><span class="n">imagesize</span><span class="p">,</span> <span class="n">imagesize</span><span class="p">)</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="n">imagesize</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">imagesize</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">x</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">x</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">y</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">y</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">floor</span><span class="p">(</span><span class="n">x</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">floor</span><span class="p">(</span><span class="n">y</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span></div>
+
+<div class="viewcode-block" id="clip_roi"><a class="viewcode-back" href="../../../library/matcher/subpixel.html#autocnet.matcher.subpixel.clip_roi">[docs]</a><span class="k">def</span> <span class="nf">clip_roi</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">center_x</span><span class="p">,</span> <span class="n">center_y</span><span class="p">,</span> <span class="n">size_x</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">size_y</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;uint64&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given an input image, clip a square region of interest</span>
+<span class="sd">    centered on some pixel at some size.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    img : ndarray or object</span>
+<span class="sd">          The input image to be clipped or an object</span>
+<span class="sd">          with a read_array method that takes a pixels</span>
+<span class="sd">          argument in the form [xstart, ystart, xstop, ystop]</span>
+
+<span class="sd">    center_x : Numeric</span>
+<span class="sd">               The x coordinate to the center of the roi</span>
+
+<span class="sd">    center_y : Numeric</span>
+<span class="sd">               The y coordinate to the center of the roi</span>
+
+<span class="sd">    img_size : int</span>
+<span class="sd">               1/2 of the total image size. This value is the</span>
+<span class="sd">               number of pixels grabbed from each side of the center</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    clipped_img : ndarray</span>
+<span class="sd">                  The clipped image</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">raster_size</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">raster_size</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="c1"># x,y form</span>
+        <span class="n">raster_size</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">axr</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">modf</span><span class="p">(</span><span class="n">center_x</span><span class="p">)</span>
+    <span class="n">ayr</span><span class="p">,</span> <span class="n">ay</span> <span class="o">=</span> <span class="n">modf</span><span class="p">(</span><span class="n">center_y</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">ax</span> <span class="o">+</span> <span class="n">size_x</span> <span class="o">&gt;</span> <span class="n">raster_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="n">size_x</span> <span class="o">=</span> <span class="n">floor</span><span class="p">(</span><span class="n">raster_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">center_x</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ax</span> <span class="o">-</span> <span class="n">size_x</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">size_x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ay</span> <span class="o">+</span> <span class="n">size_y</span> <span class="o">&gt;</span> <span class="n">raster_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="n">size_y</span> <span class="o">=</span><span class="n">floor</span><span class="p">(</span><span class="n">raster_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">center_y</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ay</span> <span class="o">-</span> <span class="n">size_y</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">size_y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ay</span><span class="p">)</span>
+
+    <span class="c1"># Read from the upper left origin</span>
+    <span class="n">pixels</span> <span class="o">=</span> <span class="p">[</span><span class="n">ax</span><span class="o">-</span><span class="n">size_x</span><span class="p">,</span> <span class="n">ay</span><span class="o">-</span><span class="n">size_y</span><span class="p">,</span> <span class="n">size_x</span><span class="o">*</span><span class="mi">2</span><span class="p">,</span> <span class="n">size_y</span><span class="o">*</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">pixels</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">pixels</span><span class="p">))</span>  <span class="c1">#</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">subarray</span> <span class="o">=</span> <span class="n">img</span><span class="p">[</span><span class="n">pixels</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span><span class="n">pixels</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">pixels</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">pixels</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">pixels</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">pixels</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">subarray</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">read_array</span><span class="p">(</span><span class="n">pixels</span><span class="o">=</span><span class="n">pixels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+    <span class="k">return</span> <span class="n">subarray</span><span class="p">,</span> <span class="n">axr</span><span class="p">,</span> <span class="n">ayr</span></div>
+
+<div class="viewcode-block" id="subpixel_phase"><a class="viewcode-back" href="../../../library/matcher/subpixel.html#autocnet.matcher.subpixel.subpixel_phase">[docs]</a><span class="k">def</span> <span class="nf">subpixel_phase</span><span class="p">(</span><span class="n">sx</span><span class="p">,</span> <span class="n">sy</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span>
+                   <span class="n">s_img</span><span class="p">,</span> <span class="n">d_img</span><span class="p">,</span>
+                   <span class="n">image_size</span><span class="o">=</span><span class="p">(</span><span class="mi">51</span><span class="p">,</span> <span class="mi">51</span><span class="p">),</span>
+                   <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply the spectral domain matcher to a search and template image. To</span>
+<span class="sd">    shift the images, the x_shift and y_shift, need to be subtracted from</span>
+<span class="sd">    the center of the search image. It may also be necessary to apply the</span>
+<span class="sd">    fractional pixel adjustment as well (if for example the center of the</span>
+<span class="sd">    search is not an integer); this function do not manage shifting.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    template : ndarray</span>
+<span class="sd">               The template used to search</span>
+
+<span class="sd">    search : ndarray</span>
+<span class="sd">             The search image</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    x_offset : float</span>
+<span class="sd">               Shift in the x-dimension</span>
+
+<span class="sd">    y_offset : float</span>
+<span class="sd">               Shift in the y-dimension</span>
+
+<span class="sd">    strength : tuple</span>
+<span class="sd">               With the RMSE error and absolute difference in phase</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">image_size</span> <span class="o">=</span> <span class="n">check_image_size</span><span class="p">(</span><span class="n">image_size</span><span class="p">)</span>
+
+    <span class="n">s_roi</span> <span class="o">=</span> <span class="n">roi</span><span class="o">.</span><span class="n">Roi</span><span class="p">(</span><span class="n">s_img</span><span class="p">,</span> <span class="n">sx</span><span class="p">,</span> <span class="n">sy</span><span class="p">,</span> <span class="n">size_x</span><span class="o">=</span><span class="n">image_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">size_y</span><span class="o">=</span><span class="n">image_size</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">d_roi</span> <span class="o">=</span> <span class="n">roi</span><span class="o">.</span><span class="n">Roi</span><span class="p">(</span><span class="n">d_img</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">size_x</span><span class="o">=</span><span class="n">image_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">size_y</span><span class="o">=</span><span class="n">image_size</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="n">s_image</span> <span class="o">=</span> <span class="n">s_roi</span><span class="o">.</span><span class="n">clip</span><span class="p">()</span>
+    <span class="n">d_template</span> <span class="o">=</span> <span class="n">d_roi</span><span class="o">.</span><span class="n">clip</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">s_image</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">d_template</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+
+        <span class="n">s_size</span> <span class="o">=</span> <span class="n">s_image</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">d_size</span> <span class="o">=</span> <span class="n">d_template</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">updated_size_x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">s_size</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">d_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="n">updated_size_y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">s_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">d_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+
+        <span class="c1"># Have to subtract 1 from even entries or else the round up that</span>
+        <span class="c1"># occurs when the size is split over the midpoint causes the</span>
+        <span class="c1"># size to be too large by 1.</span>
+        <span class="k">if</span> <span class="n">updated_size_x</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">updated_size_x</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">updated_size_y</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">updated_size_y</span> <span class="o">-=</span> <span class="mi">1</span>
+
+        <span class="c1"># Since the image is smaller than the requested size, set the size to</span>
+        <span class="c1"># the current maximum image size and reduce from there on potential</span>
+        <span class="c1"># future iterations.</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="n">check_image_size</span><span class="p">((</span><span class="n">updated_size_x</span><span class="p">,</span> <span class="n">updated_size_y</span><span class="p">))</span>
+        <span class="n">s_roi</span> <span class="o">=</span> <span class="n">roi</span><span class="o">.</span><span class="n">Roi</span><span class="p">(</span><span class="n">s_img</span><span class="p">,</span> <span class="n">sx</span><span class="p">,</span> <span class="n">sy</span><span class="p">,</span>
+                        <span class="n">size_x</span><span class="o">=</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">size_y</span><span class="o">=</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">d_roi</span> <span class="o">=</span> <span class="n">roi</span><span class="o">.</span><span class="n">Roi</span><span class="p">(</span><span class="n">d_img</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span>
+                        <span class="n">size_x</span><span class="o">=</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">size_y</span><span class="o">=</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">s_image</span> <span class="o">=</span> <span class="n">s_roi</span><span class="o">.</span><span class="n">clip</span><span class="p">()</span>
+        <span class="n">d_template</span> <span class="o">=</span> <span class="n">d_roi</span><span class="o">.</span><span class="n">clip</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">s_image</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">d_template</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="p">(</span><span class="n">shift_y</span><span class="p">,</span> <span class="n">shift_x</span><span class="p">),</span> <span class="n">error</span><span class="p">,</span> <span class="n">diffphase</span> <span class="o">=</span> <span class="n">register_translation</span><span class="p">(</span><span class="n">s_image</span><span class="p">,</span> <span class="n">d_template</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">d_roi</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">shift_x</span>
+    <span class="n">dy</span> <span class="o">=</span> <span class="n">d_roi</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">shift_y</span>
+
+    <span class="k">return</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="n">diffphase</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="subpixel_transformed_template"><a class="viewcode-back" href="../../../library/matcher/subpixel.html#autocnet.matcher.subpixel.subpixel_transformed_template">[docs]</a><span class="k">def</span> <span class="nf">subpixel_transformed_template</span><span class="p">(</span><span class="n">sx</span><span class="p">,</span> <span class="n">sy</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span>
+                                  <span class="n">s_img</span><span class="p">,</span> <span class="n">d_img</span><span class="p">,</span>
+                                  <span class="n">transform</span><span class="p">,</span>
+                                  <span class="n">image_size</span><span class="o">=</span><span class="p">(</span><span class="mi">251</span><span class="p">,</span> <span class="mi">251</span><span class="p">),</span>
+                                  <span class="n">template_size</span><span class="o">=</span><span class="p">(</span><span class="mi">51</span><span class="p">,</span> <span class="mi">51</span><span class="p">),</span>
+                                  <span class="n">template_buffer</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                                  <span class="n">func</span><span class="o">=</span><span class="n">pattern_match</span><span class="p">,</span>
+                                  <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                  <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Uses a pattern-matcher on subsets of two images determined from the passed-in keypoints and optional sizes to</span>
+<span class="sd">    compute an x and y offset from the search keypoint to the template keypoint and an associated strength.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sx : Numeric</span>
+<span class="sd">         Source X coordinate</span>
+
+<span class="sd">    sy : Numeric</span>
+<span class="sd">         Source y coordinate</span>
+
+<span class="sd">    dx : Numeric</span>
+<span class="sd">         The desintation x coordinate</span>
+
+<span class="sd">    dy : Numeric</span>
+<span class="sd">         The destination y coordinate</span>
+
+<span class="sd">    s_img : GeoDataset</span>
+<span class="sd">            The source image GeoDataset</span>
+
+<span class="sd">    d_img : GeoDataset</span>
+<span class="sd">            The destination image GeoDataset</span>
+
+<span class="sd">    transform : object</span>
+<span class="sd">                A skiage transform object that has scale. The transform object is</span>
+<span class="sd">                used to project the template into the image.</span>
+
+<span class="sd">    image_size : tuple</span>
+<span class="sd">                 (xsize, ysize) of the image that is searched within (this should be larger</span>
+<span class="sd">                 than the template size)</span>
+
+<span class="sd">    template_size : tuple</span>
+<span class="sd">                    (xsize, ysize) of the template to iterate over the image in order</span>
+<span class="sd">                    to identify the area(s) of highest correlation.</span>
+
+<span class="sd">    template_buffer : int</span>
+<span class="sd">                      The inverse buffer applied to the transformed template image. When</span>
+<span class="sd">                      the warp is applied to project from the template into the image, some</span>
+<span class="sd">                      amount of no data exists around the edges. This variable is used to clip</span>
+<span class="sd">                      some number of pixels off the edges of the template. The higher the rotation</span>
+<span class="sd">                      the higher this value should be.</span>
+
+<span class="sd">    func : callable</span>
+<span class="sd">           The function used to pattern match</span>
+
+<span class="sd">    verbose : bool</span>
+<span class="sd">              If true, generate plots of the matches</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    x_shift : float</span>
+<span class="sd">               Shift in the x-dimension</span>
+
+<span class="sd">    y_shift : float</span>
+<span class="sd">               Shift in the y-dimension</span>
+
+<span class="sd">    strength : float</span>
+<span class="sd">               Strength of the correspondence in the range [-1, 1]</span>
+
+<span class="sd">    corrmap : ndarray</span>
+<span class="sd">              An n,m array of correlation coefficients</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    autocnet.matcher.naive_template.pattern_match : for the kwargs that can be passed to the matcher</span>
+<span class="sd">    autocnet.matcher.naive_template.pattern_match_autoreg : for the jwargs that can be passed to the autoreg style matcher</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">image_size</span> <span class="o">=</span> <span class="n">check_image_size</span><span class="p">(</span><span class="n">image_size</span><span class="p">)</span>
+    <span class="n">template_size</span> <span class="o">=</span> <span class="n">check_image_size</span><span class="p">(</span><span class="n">template_size</span><span class="p">)</span>
+
+    <span class="n">template_size_x</span> <span class="o">=</span> <span class="n">template_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">transform</span><span class="o">.</span><span class="n">scale</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">template_size_y</span> <span class="o">=</span> <span class="n">template_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">transform</span><span class="o">.</span><span class="n">scale</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">s_roi</span> <span class="o">=</span> <span class="n">roi</span><span class="o">.</span><span class="n">Roi</span><span class="p">(</span><span class="n">s_img</span><span class="p">,</span> <span class="n">sx</span><span class="p">,</span> <span class="n">sy</span><span class="p">,</span> <span class="n">size_x</span><span class="o">=</span><span class="n">image_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">size_y</span><span class="o">=</span><span class="n">image_size</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">d_roi</span> <span class="o">=</span> <span class="n">roi</span><span class="o">.</span><span class="n">Roi</span><span class="p">(</span><span class="n">d_img</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">size_x</span><span class="o">=</span><span class="n">template_size_x</span><span class="p">,</span> <span class="n">size_y</span><span class="o">=</span><span class="n">template_size_y</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">s_roi</span><span class="o">.</span><span class="n">is_valid</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">d_roi</span><span class="o">.</span><span class="n">is_valid</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="mi">4</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">s_image_dtype</span> <span class="o">=</span> <span class="n">isis2np_types</span><span class="p">[</span><span class="n">pvl</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">s_img</span><span class="o">.</span><span class="n">file_name</span><span class="p">)[</span><span class="s2">&quot;IsisCube&quot;</span><span class="p">][</span><span class="s2">&quot;Core&quot;</span><span class="p">][</span><span class="s2">&quot;Pixels&quot;</span><span class="p">][</span><span class="s2">&quot;Type&quot;</span><span class="p">]]</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">s_image_dtype</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">d_template_dtype</span> <span class="o">=</span> <span class="n">isis2np_types</span><span class="p">[</span><span class="n">pvl</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">d_img</span><span class="o">.</span><span class="n">file_name</span><span class="p">)[</span><span class="s2">&quot;IsisCube&quot;</span><span class="p">][</span><span class="s2">&quot;Core&quot;</span><span class="p">][</span><span class="s2">&quot;Pixels&quot;</span><span class="p">][</span><span class="s2">&quot;Type&quot;</span><span class="p">]]</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">d_template_dtype</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">s_image</span> <span class="o">=</span> <span class="n">bytescale</span><span class="p">(</span><span class="n">s_roi</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">s_image_dtype</span><span class="p">))</span>
+    <span class="n">d_template</span> <span class="o">=</span> <span class="n">bytescale</span><span class="p">(</span><span class="n">d_roi</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">d_template_dtype</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+        <span class="c1"># Plot of the original image and template</span>
+        <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">s_image</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;Greys&#39;</span><span class="p">)</span>
+        <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Destination&#39;</span><span class="p">)</span>
+        <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">d_template</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;Greys&#39;</span><span class="p">)</span>
+        <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Original Source&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Build the transformation chance</span>
+    <span class="n">shift_x</span><span class="p">,</span> <span class="n">shift_y</span> <span class="o">=</span> <span class="n">d_roi</span><span class="o">.</span><span class="n">center</span>
+
+    <span class="n">tf_rotate</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">AffineTransform</span><span class="p">(</span><span class="n">rotation</span><span class="o">=</span><span class="n">transform</span><span class="o">.</span><span class="n">rotation</span><span class="p">,</span> <span class="n">shear</span><span class="o">=</span><span class="n">transform</span><span class="o">.</span><span class="n">shear</span><span class="p">)</span>
+    <span class="n">tf_shift</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">SimilarityTransform</span><span class="p">(</span><span class="n">translation</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="n">shift_x</span><span class="p">,</span> <span class="o">-</span><span class="n">shift_y</span><span class="p">])</span>
+    <span class="n">tf_shift_inv</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">SimilarityTransform</span><span class="p">(</span><span class="n">translation</span><span class="o">=</span><span class="p">[</span><span class="n">shift_x</span><span class="p">,</span> <span class="n">shift_y</span><span class="p">])</span>
+
+    <span class="c1"># Define the full chain and the inverse</span>
+    <span class="n">trans</span> <span class="o">=</span> <span class="p">(</span><span class="n">tf_shift</span> <span class="o">+</span> <span class="p">(</span><span class="n">tf_rotate</span> <span class="o">+</span> <span class="n">tf_shift_inv</span><span class="p">))</span>
+    <span class="n">itrans</span> <span class="o">=</span> <span class="n">trans</span><span class="o">.</span><span class="n">inverse</span>
+
+    <span class="c1"># Now apply the affine transformation</span>
+    <span class="n">transformed_roi</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">warp</span><span class="p">(</span><span class="n">d_template</span><span class="p">,</span>
+                                <span class="n">itrans</span><span class="p">,</span>
+                                <span class="n">order</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+    <span class="c1"># Scale the source arr to the destination array size</span>
+    <span class="n">scale_y</span><span class="p">,</span> <span class="n">scale_x</span> <span class="o">=</span> <span class="n">transform</span><span class="o">.</span><span class="n">scale</span>
+    <span class="n">template_shape_y</span><span class="p">,</span> <span class="n">template_shape_x</span> <span class="o">=</span> <span class="n">d_template</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">scaled_roi</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">transformed_roi</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">template_shape_x</span><span class="o">/</span><span class="n">scale_x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">template_shape_y</span><span class="o">/</span><span class="n">scale_x</span><span class="p">)))</span>
+
+    <span class="c1"># Clip the transformed template to avoid no data around around the edges</span>
+    <span class="n">buffered_template</span> <span class="o">=</span> <span class="n">scaled_roi</span><span class="p">[</span><span class="n">template_buffer</span><span class="p">:</span><span class="o">-</span><span class="n">template_buffer</span><span class="p">,</span><span class="n">template_buffer</span><span class="p">:</span><span class="o">-</span><span class="n">template_buffer</span><span class="p">]</span>
+
+    <span class="c1"># Apply the matcher on the transformed array</span>
+    <span class="n">shift_x</span><span class="p">,</span> <span class="n">shift_y</span><span class="p">,</span> <span class="n">metrics</span><span class="p">,</span> <span class="n">corrmap</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">bytescale</span><span class="p">(</span><span class="n">buffered_template</span><span class="p">),</span> <span class="n">s_image</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="c1"># Hard check here to see if we are on the absolute edge of the template</span>
+    <span class="n">max_coord</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unravel_index</span><span class="p">(</span><span class="n">corrmap</span><span class="o">.</span><span class="n">argmax</span><span class="p">(),</span> <span class="n">corrmap</span><span class="o">.</span><span class="n">shape</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="mi">0</span> <span class="ow">in</span> <span class="n">max_coord</span> <span class="ow">or</span> <span class="n">corrmap</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span> <span class="o">==</span> <span class="n">max_coord</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">or</span> <span class="n">corrmap</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span> <span class="o">==</span> <span class="n">max_coord</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Maximum correlation is at the edge of the template. Results are ambiguous.&#39;</span><span class="p">,</span> <span class="ne">UserWarning</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="mi">4</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">transformed_roi</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;Greys&#39;</span><span class="p">)</span>
+        <span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Affine Transformed Source&#39;</span><span class="p">)</span>
+        <span class="n">axs</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">buffered_template</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;Greys&#39;</span><span class="p">)</span>
+        <span class="n">axs</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Scaled and Buffered Source&#39;</span><span class="p">)</span>
+        <span class="n">axs</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">corrmap</span><span class="p">)</span>
+        <span class="n">axs</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Correlation&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="c1"># Project the center into the affine space</span>
+    <span class="n">projected_center</span> <span class="o">=</span> <span class="n">itrans</span><span class="p">(</span><span class="n">d_roi</span><span class="o">.</span><span class="n">center</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># Shifts need to be scaled back into full resolution, affine space</span>
+    <span class="n">shift_x</span> <span class="o">*=</span> <span class="n">scale_x</span>
+    <span class="n">shift_y</span> <span class="o">*=</span> <span class="n">scale_y</span>
+
+    <span class="c1"># Apply the shifts (computed using the warped image) to the affine space center</span>
+    <span class="n">new_projected_x</span> <span class="o">=</span> <span class="n">projected_center</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">shift_x</span>
+    <span class="n">new_projected_y</span> <span class="o">=</span> <span class="n">projected_center</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">shift_y</span>
+
+    <span class="c1"># Project the updated location back into image space</span>
+    <span class="n">new_unprojected_x</span><span class="p">,</span> <span class="n">new_unprojected_y</span> <span class="o">=</span> <span class="n">trans</span><span class="p">([</span><span class="n">new_projected_x</span><span class="p">,</span> <span class="n">new_projected_y</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># Apply the shift</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">d_roi</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="p">(</span><span class="n">d_roi</span><span class="o">.</span><span class="n">center</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">new_unprojected_x</span><span class="p">)</span>
+    <span class="n">dy</span> <span class="o">=</span> <span class="n">d_roi</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="p">(</span><span class="n">d_roi</span><span class="o">.</span><span class="n">center</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">new_unprojected_y</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">metrics</span><span class="p">,</span> <span class="n">corrmap</span></div>
+
+<div class="viewcode-block" id="subpixel_template"><a class="viewcode-back" href="../../../library/matcher/subpixel.html#autocnet.matcher.subpixel.subpixel_template">[docs]</a><span class="k">def</span> <span class="nf">subpixel_template</span><span class="p">(</span><span class="n">sx</span><span class="p">,</span> <span class="n">sy</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span>
+                      <span class="n">s_img</span><span class="p">,</span> <span class="n">d_img</span><span class="p">,</span>
+                      <span class="n">image_size</span><span class="o">=</span><span class="p">(</span><span class="mi">251</span><span class="p">,</span> <span class="mi">251</span><span class="p">),</span>
+                      <span class="n">template_size</span><span class="o">=</span><span class="p">(</span><span class="mi">51</span><span class="p">,</span><span class="mi">51</span><span class="p">),</span>
+                      <span class="n">func</span><span class="o">=</span><span class="n">pattern_match</span><span class="p">,</span>
+                      <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                      <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Uses a pattern-matcher on subsets of two images determined from the passed-in keypoints and optional sizes to</span>
+<span class="sd">    compute an x and y offset from the search keypoint to the template keypoint and an associated strength.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sx : Numeric</span>
+<span class="sd">         Source X coordinate</span>
+
+<span class="sd">    sy : Numeric</span>
+<span class="sd">         Source y coordinate</span>
+
+<span class="sd">    dx : Numeric</span>
+<span class="sd">         The desintation x coordinate</span>
+
+<span class="sd">    dy : Numeric</span>
+<span class="sd">         The destination y coordinate</span>
+
+<span class="sd">    s_img : GeoDataset</span>
+<span class="sd">            The source image GeoDataset</span>
+
+<span class="sd">    d_img : GeoDataset</span>
+<span class="sd">            The destination image GeoDataset</span>
+
+<span class="sd">    image_size : tuple</span>
+<span class="sd">                 (xsize, ysize) of the image that is searched within (this should be larger</span>
+<span class="sd">                 than the template size)</span>
+
+<span class="sd">    template_size : tuple</span>
+<span class="sd">                    (xsize, ysize) of the template to iterate over the image in order</span>
+<span class="sd">                    to identify the area(s) of highest correlation.</span>
+
+<span class="sd">    func : callable</span>
+<span class="sd">           The function used to pattern match</span>
+
+<span class="sd">    verbose : bool</span>
+<span class="sd">              If true, generate plots of the matches</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    x_shift : float</span>
+<span class="sd">               Shift in the x-dimension</span>
+
+<span class="sd">    y_shift : float</span>
+<span class="sd">               Shift in the y-dimension</span>
+
+<span class="sd">    strength : float</span>
+<span class="sd">               Strength of the correspondence in the range [-1, 1]</span>
+
+<span class="sd">    corrmap : ndarray</span>
+<span class="sd">              An n,m array of correlation coefficients</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    autocnet.matcher.naive_template.pattern_match : for the kwargs that can be passed to the matcher</span>
+<span class="sd">    autocnet.matcher.naive_template.pattern_match_autoreg : for the jwargs that can be passed to the autoreg style matcher</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">image_size</span> <span class="o">=</span> <span class="n">check_image_size</span><span class="p">(</span><span class="n">image_size</span><span class="p">)</span>
+    <span class="n">template_size</span> <span class="o">=</span> <span class="n">check_image_size</span><span class="p">(</span><span class="n">template_size</span><span class="p">)</span>
+
+    <span class="n">template_size_x</span> <span class="o">=</span> <span class="n">template_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">template_size_y</span> <span class="o">=</span> <span class="n">template_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">s_roi</span> <span class="o">=</span> <span class="n">roi</span><span class="o">.</span><span class="n">Roi</span><span class="p">(</span><span class="n">s_img</span><span class="p">,</span> <span class="n">sx</span><span class="p">,</span> <span class="n">sy</span><span class="p">,</span> <span class="n">size_x</span><span class="o">=</span><span class="n">image_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">size_y</span><span class="o">=</span><span class="n">image_size</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">d_roi</span> <span class="o">=</span> <span class="n">roi</span><span class="o">.</span><span class="n">Roi</span><span class="p">(</span><span class="n">d_img</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">size_x</span><span class="o">=</span><span class="n">template_size_x</span><span class="p">,</span> <span class="n">size_y</span><span class="o">=</span><span class="n">template_size_y</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">s_roi</span><span class="o">.</span><span class="n">is_valid</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">d_roi</span><span class="o">.</span><span class="n">is_valid</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="mi">4</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">s_image_dtype</span> <span class="o">=</span> <span class="n">isis2np_types</span><span class="p">[</span><span class="n">pvl</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">s_img</span><span class="o">.</span><span class="n">file_name</span><span class="p">)[</span><span class="s2">&quot;IsisCube&quot;</span><span class="p">][</span><span class="s2">&quot;Core&quot;</span><span class="p">][</span><span class="s2">&quot;Pixels&quot;</span><span class="p">][</span><span class="s2">&quot;Type&quot;</span><span class="p">]]</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">s_image_dtype</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">d_template_dtype</span> <span class="o">=</span> <span class="n">isis2np_types</span><span class="p">[</span><span class="n">pvl</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">d_img</span><span class="o">.</span><span class="n">file_name</span><span class="p">)[</span><span class="s2">&quot;IsisCube&quot;</span><span class="p">][</span><span class="s2">&quot;Core&quot;</span><span class="p">][</span><span class="s2">&quot;Pixels&quot;</span><span class="p">][</span><span class="s2">&quot;Type&quot;</span><span class="p">]]</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">d_template_dtype</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">s_image</span> <span class="o">=</span> <span class="n">bytescale</span><span class="p">(</span><span class="n">s_roi</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">s_image_dtype</span><span class="p">))</span>
+    <span class="n">d_template</span> <span class="o">=</span> <span class="n">bytescale</span><span class="p">(</span><span class="n">d_roi</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">d_template_dtype</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">s_image</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">d_template</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="c1"># Apply the matcher function</span>
+    <span class="n">shift_x</span><span class="p">,</span> <span class="n">shift_y</span><span class="p">,</span> <span class="n">metrics</span><span class="p">,</span> <span class="n">corrmap</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">d_template</span><span class="p">,</span> <span class="n">s_image</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+        <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">s_image</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;Greys&#39;</span><span class="p">)</span>
+        <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">d_template</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;Greys&#39;</span><span class="p">)</span>
+        <span class="n">axs</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">corrmap</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="c1"># Hard check here to see if we are on the absolute edge of the template</span>
+    <span class="n">max_coord</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unravel_index</span><span class="p">(</span><span class="n">corrmap</span><span class="o">.</span><span class="n">argmax</span><span class="p">(),</span> <span class="n">corrmap</span><span class="o">.</span><span class="n">shape</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="mi">0</span> <span class="ow">in</span> <span class="n">max_coord</span> <span class="ow">or</span> <span class="n">corrmap</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span> <span class="o">==</span> <span class="n">max_coord</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">or</span> <span class="n">corrmap</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span> <span class="o">==</span> <span class="n">max_coord</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Maximum correlation is at the edge of the template. Results are ambiguous.&#39;</span><span class="p">,</span> <span class="ne">UserWarning</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="mi">4</span>
+
+    <span class="c1"># Apply the shift to the center of the ROI object</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">d_roi</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">shift_x</span>
+    <span class="n">dy</span> <span class="o">=</span> <span class="n">d_roi</span><span class="o">.</span><span class="n">y</span> <span class="o">-</span> <span class="n">shift_y</span>
+
+    <span class="k">return</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">metrics</span><span class="p">,</span> <span class="n">corrmap</span></div>
+
+<div class="viewcode-block" id="subpixel_ciratefi"><a class="viewcode-back" href="../../../library/matcher/subpixel.html#autocnet.matcher.subpixel.subpixel_ciratefi">[docs]</a><span class="k">def</span> <span class="nf">subpixel_ciratefi</span><span class="p">(</span><span class="n">sx</span><span class="p">,</span> <span class="n">sy</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">s_img</span><span class="p">,</span> <span class="n">d_img</span><span class="p">,</span> <span class="n">search_size</span><span class="o">=</span><span class="mi">251</span><span class="p">,</span> <span class="n">template_size</span><span class="o">=</span><span class="mi">51</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Uses a pattern-matcher on subsets of two images determined from the passed-in keypoints and optional sizes to</span>
+<span class="sd">    compute an x and y offset from the search keypoint to the template keypoint and an associated strength.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sx : numeric</span>
+<span class="sd">         The x position of the center of the template to be matched to</span>
+<span class="sd">    sy : numeric</span>
+<span class="sd">         The y position of the center of the template to be matched to</span>
+<span class="sd">    dx : numeric</span>
+<span class="sd">         The x position of the center of the search to be matched from</span>
+<span class="sd">    dy : numeric</span>
+<span class="sd">         The y position of the center of the search to be matched to</span>
+<span class="sd">    s_img : object</span>
+<span class="sd">            A plio geodata object from which the template is extracted</span>
+<span class="sd">    d_img : object</span>
+<span class="sd">            A plio geodata object from which the search is extracted</span>
+<span class="sd">    search_size : int</span>
+<span class="sd">                  An odd integer for the size of the search image</span>
+<span class="sd">    template_size : int</span>
+<span class="sd">                    A odd integer for the size of the template that is iterated</span>
+<span class="sd">                    over the search images</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    x_offset : float</span>
+<span class="sd">               Shift in the x-dimension</span>
+
+<span class="sd">    y_offset : float</span>
+<span class="sd">               Shift in the y-dimension</span>
+
+<span class="sd">    strength : float</span>
+<span class="sd">               Strength of the correspondence in the range [-1, 1]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">t_roi</span> <span class="o">=</span> <span class="n">roi</span><span class="o">.</span><span class="n">Roi</span><span class="p">(</span><span class="n">d_img</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span>
+                              <span class="n">size_x</span><span class="o">=</span><span class="n">template_size</span><span class="p">,</span> <span class="n">size_y</span><span class="o">=</span><span class="n">template_size</span><span class="p">)</span>
+    <span class="n">s_roi</span> <span class="o">=</span> <span class="n">roi</span><span class="o">.</span><span class="n">Roi</span><span class="p">(</span><span class="n">s_img</span><span class="p">,</span> <span class="n">sx</span><span class="p">,</span> <span class="n">sy</span><span class="p">,</span>
+                                <span class="n">size_x</span><span class="o">=</span><span class="n">search_size</span><span class="p">,</span> <span class="n">size_y</span><span class="o">=</span><span class="n">search_size</span><span class="p">)</span>
+    <span class="n">template</span> <span class="o">=</span> <span class="n">t_roi</span><span class="o">.</span><span class="n">clip</span><span class="p">()</span>
+    <span class="n">search</span> <span class="o">=</span> <span class="n">s_roi</span><span class="o">.</span><span class="n">clip</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">template</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">search</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="n">x_offset</span><span class="p">,</span> <span class="n">y_offset</span><span class="p">,</span> <span class="n">strength</span> <span class="o">=</span> <span class="n">ciratefi</span><span class="o">.</span><span class="n">ciratefi</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">search</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">dx</span> <span class="o">+=</span> <span class="p">(</span><span class="n">x_offset</span> <span class="o">+</span> <span class="n">t_roi</span><span class="o">.</span><span class="n">axr</span><span class="p">)</span>
+    <span class="n">dy</span> <span class="o">+=</span> <span class="p">(</span><span class="n">y_offset</span> <span class="o">+</span> <span class="n">t_roi</span><span class="o">.</span><span class="n">ayr</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">strength</span></div>
+
+<div class="viewcode-block" id="iterative_phase"><a class="viewcode-back" href="../../../library/matcher/subpixel.html#autocnet.matcher.subpixel.iterative_phase">[docs]</a><span class="k">def</span> <span class="nf">iterative_phase</span><span class="p">(</span><span class="n">sx</span><span class="p">,</span> <span class="n">sy</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">s_img</span><span class="p">,</span> <span class="n">d_img</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">51</span><span class="p">,</span> <span class="mi">51</span><span class="p">),</span> <span class="n">reduction</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">convergence_threshold</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">max_dist</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Iteratively apply a subpixel phase matcher to source (s_img) and destination (d_img)</span>
+<span class="sd">    images. The size parameter is used to set the initial search space. The algorithm</span>
+<span class="sd">    is recursively applied to reduce the total search space by reduction until the convergence criteria</span>
+<span class="sd">    are met. Convergence is defined as the point at which the computed shifts (x_shift,y_shift) are</span>
+<span class="sd">    less than the convergence_threshold. In instances where the size is reducted to 1 pixel the</span>
+<span class="sd">    algorithm terminates and returns None.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sx : numeric</span>
+<span class="sd">         The x position of the center of the template to be matched to</span>
+<span class="sd">    sy : numeric</span>
+<span class="sd">         The y position of the center of the template to be matched to</span>
+<span class="sd">    dx : numeric</span>
+<span class="sd">         The x position of the center of the search to be matched from</span>
+<span class="sd">    dy : numeric</span>
+<span class="sd">         The y position of the center of the search to be matched to</span>
+<span class="sd">    s_img : object</span>
+<span class="sd">            A plio geodata object from which the template is extracted</span>
+<span class="sd">    d_img : object</span>
+<span class="sd">            A plio geodata object from which the search is extracted</span>
+<span class="sd">    size : tuple</span>
+<span class="sd">           Size of the template in the form (x,y)</span>
+<span class="sd">    reduction : int</span>
+<span class="sd">                With each recursive call to this func, the size is reduced by this amount</span>
+<span class="sd">    convergence_threshold : float</span>
+<span class="sd">                            The value under which the result can shift in the x and y directions to force a break</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dx : float</span>
+<span class="sd">         The new x value for the match in the destination (d) image</span>
+<span class="sd">    dy : float</span>
+<span class="sd">         The new y value for the match in the destination (d) image</span>
+<span class="sd">    metrics : tuple</span>
+<span class="sd">              A tuple of metrics. In the case of the phase matcher this are difference</span>
+<span class="sd">              and RMSE in the phase dimension.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    subpixel_phase : the function that applies a single iteration of the phase matcher</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># get initial destination location</span>
+    <span class="n">dsample</span> <span class="o">=</span> <span class="n">dx</span>
+    <span class="n">dline</span> <span class="o">=</span> <span class="n">dy</span>
+
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">shifted_dx</span><span class="p">,</span> <span class="n">shifted_dy</span><span class="p">,</span> <span class="n">metrics</span> <span class="o">=</span> <span class="n">subpixel_phase</span><span class="p">(</span><span class="n">sx</span><span class="p">,</span> <span class="n">sy</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">s_img</span><span class="p">,</span> <span class="n">d_img</span><span class="p">,</span> <span class="n">image_size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c1"># Compute the amount of move the matcher introduced</span>
+        <span class="n">delta_dx</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">shifted_dx</span> <span class="o">-</span> <span class="n">dx</span><span class="p">)</span>
+        <span class="n">delta_dy</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">shifted_dy</span> <span class="o">-</span> <span class="n">dy</span><span class="p">)</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="n">shifted_dx</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="n">shifted_dy</span>
+
+        <span class="c1"># Break if the solution has converged</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="p">(</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">reduction</span><span class="p">,</span> <span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">reduction</span><span class="p">)</span>
+        <span class="n">dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">([</span><span class="n">dsample</span><span class="o">-</span><span class="n">dx</span><span class="p">,</span> <span class="n">dline</span><span class="o">-</span><span class="n">dy</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="nb">min</span><span class="p">(</span><span class="n">size</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">delta_dx</span> <span class="o">&lt;=</span> <span class="n">convergence_threshold</span> <span class="ow">and</span>\
+           <span class="n">delta_dy</span><span class="o">&lt;=</span> <span class="n">convergence_threshold</span> <span class="ow">and</span>\
+           <span class="nb">abs</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">max_dist</span><span class="p">:</span>
+           <span class="k">break</span>
+    <span class="k">return</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">metrics</span></div>
+
+<div class="viewcode-block" id="estimate_affine_transformation"><a class="viewcode-back" href="../../../library/matcher/subpixel.html#autocnet.matcher.subpixel.estimate_affine_transformation">[docs]</a><span class="k">def</span> <span class="nf">estimate_affine_transformation</span><span class="p">(</span><span class="n">destination_coordinates</span><span class="p">,</span> <span class="n">source_coordinates</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a set of destination control points compute the affine transformation</span>
+<span class="sd">    required to project the source control points into the destination.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    destination_coordinates : array-like</span>
+<span class="sd">                              An n,2 data structure containing the destination control points</span>
+
+<span class="sd">    source_coordinates : array-like</span>
+<span class="sd">                         An n,2 data structure containing the source control points</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">     : object</span>
+<span class="sd">       An skimage affine transform object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">destination_coordinates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">destination_coordinates</span><span class="p">)</span>
+    <span class="n">source_coordinates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">source_coordinates</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">estimate_transform</span><span class="p">(</span><span class="s1">&#39;affine&#39;</span><span class="p">,</span> <span class="n">destination_coordinates</span><span class="p">,</span> <span class="n">source_coordinates</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="geom_match"><a class="viewcode-back" href="../../../library/matcher/subpixel.html#autocnet.matcher.subpixel.geom_match">[docs]</a><span class="k">def</span> <span class="nf">geom_match</span><span class="p">(</span><span class="n">destination_cube</span><span class="p">,</span>
+               <span class="n">source_cube</span><span class="p">,</span>
+               <span class="n">bcenter_x</span><span class="p">,</span>
+               <span class="n">bcenter_y</span><span class="p">,</span>
+               <span class="n">template_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;image_size&quot;</span><span class="p">:(</span><span class="mi">59</span><span class="p">,</span><span class="mi">59</span><span class="p">),</span> <span class="s2">&quot;template_size&quot;</span><span class="p">:(</span><span class="mi">31</span><span class="p">,</span><span class="mi">31</span><span class="p">)},</span>
+               <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Propagates a source measure into destination images and then perfroms subpixel registration.</span>
+<span class="sd">    Measure creation is done by projecting the (lon, lat) associated with the source measure into the</span>
+<span class="sd">    destination image. The created measure is then matched to the source measure using a quick projection</span>
+<span class="sd">    of the destination image into source image space (using an affine transformation) and a naive</span>
+<span class="sd">    template match with optional phase template match.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    destination_cube:  plio.io.io_gdal.GeoDataset</span>
+<span class="sd">                       The image to be matched to</span>
+
+<span class="sd">    source_cube: plio.io.io_gdal.GeoDataset</span>
+<span class="sd">                 The image that is transformed and matched into the destination_cube</span>
+
+<span class="sd">    bcenter_x:  int</span>
+<span class="sd">                sample location of source measure in base_cube</span>
+
+<span class="sd">    bcenter_y:  int</span>
+<span class="sd">                line location of source measure in base_cube</span>
+
+<span class="sd">    size_x:     int</span>
+<span class="sd">                half-height of the subimage used in the affine transformation</span>
+
+<span class="sd">    size_y:     int</span>
+<span class="sd">                half-width of the subimage used in affine transformation</span>
+
+<span class="sd">    template_kwargs: dict</span>
+<span class="sd">                     contains keywords necessary for autocnet.matcher.subpixel.subpixel_template</span>
+
+<span class="sd">    verbose:    boolean</span>
+<span class="sd">                indicates level of print out desired. If True, two subplots are output; the first subplot contains</span>
+<span class="sd">                the source subimage and projected destination subimage, the second subplot contains the registered</span>
+<span class="sd">                measure&#39;s location in the base subimage and the unprojected destination subimage with the corresponding</span>
+<span class="sd">                template metric correlation map.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    sample: int</span>
+<span class="sd">            sample of new measure in destination image space</span>
+
+<span class="sd">    line:   int</span>
+<span class="sd">            line of new measures in destination image space</span>
+
+<span class="sd">    dist:   np.float or tuple of np.float</span>
+<span class="sd">            distance matching algorithm moved measure</span>
+<span class="sd">            if template matcher only (default): returns dist_template</span>
+<span class="sd">            if template and phase matcher:      returns (dist_template, dist_phase)</span>
+
+<span class="sd">    metric: np.float or tuple of np.float</span>
+<span class="sd">            matching metric output by the matcher</span>
+<span class="sd">            if template matcher only (default): returns maxcorr</span>
+<span class="sd">            if template and phase matcher:      returns (maxcorr, perror, pdiff)</span>
+
+<span class="sd">    temp_corrmap: np.ndarray</span>
+<span class="sd">                  correlation map of the naive template matcher</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    autocnet.matcher.subpixel.subpixel_template: for list of kwargs that can be passed to the matcher</span>
+<span class="sd">    autocnet.matcher.subpixel.subpixel_phase: for list of kwargs that can be passed to the matcher</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source_cube</span><span class="p">,</span> <span class="n">GeoDataset</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;source cube must be a geodataset obj&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">destination_cube</span><span class="p">,</span> <span class="n">GeoDataset</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;destination cube must be a geodataset obj&quot;</span><span class="p">)</span>
+
+    <span class="n">destination_size_x</span> <span class="o">=</span> <span class="n">template_kwargs</span><span class="p">[</span><span class="s1">&#39;image_size&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">destination_size_y</span> <span class="o">=</span> <span class="n">template_kwargs</span><span class="p">[</span><span class="s1">&#39;image_size&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">destination_startx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">bcenter_x</span> <span class="o">-</span> <span class="n">destination_size_x</span><span class="p">)</span>
+    <span class="n">destination_starty</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">bcenter_y</span> <span class="o">-</span> <span class="n">destination_size_y</span><span class="p">)</span>
+    <span class="n">destination_stopx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">bcenter_x</span> <span class="o">+</span> <span class="n">destination_size_x</span><span class="p">)</span>
+    <span class="n">destination_stopy</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">bcenter_y</span> <span class="o">+</span> <span class="n">destination_size_y</span><span class="p">)</span>
+
+    <span class="n">image_size</span> <span class="o">=</span> <span class="n">source_cube</span><span class="o">.</span><span class="n">raster_size</span>
+    <span class="n">match_size</span> <span class="o">=</span> <span class="n">destination_cube</span><span class="o">.</span><span class="n">raster_size</span>
+
+    <span class="c1"># for now, require the entire window resides inside both cubes.</span>
+    <span class="k">if</span> <span class="n">destination_stopx</span> <span class="o">&gt;</span> <span class="n">match_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Window: </span><span class="si">{</span><span class="n">destination_stopx</span><span class="si">}</span><span class="s2"> &gt; </span><span class="si">{</span><span class="n">match_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">, center: </span><span class="si">{</span><span class="n">bcenter_x</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">bcenter_y</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">destination_startx</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Window: </span><span class="si">{</span><span class="n">destination_startx</span><span class="si">}</span><span class="s2"> &lt; 0, center: </span><span class="si">{</span><span class="n">bcenter_x</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">bcenter_y</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">destination_stopy</span> <span class="o">&gt;</span> <span class="n">match_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Window: </span><span class="si">{</span><span class="n">destination_stopy</span><span class="si">}</span><span class="s2"> &gt; </span><span class="si">{</span><span class="n">match_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">, center: </span><span class="si">{</span><span class="n">bcenter_x</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">bcenter_y</span><span class="si">}</span><span class="s2"> &quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">destination_starty</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Window: </span><span class="si">{</span><span class="n">destination_starty</span><span class="si">}</span><span class="s2"> &lt; 0, center: </span><span class="si">{</span><span class="n">bcenter_x</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">bcenter_y</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">destination_corners</span> <span class="o">=</span> <span class="p">[(</span><span class="n">destination_startx</span><span class="p">,</span><span class="n">destination_starty</span><span class="p">),</span>
+                    <span class="p">(</span><span class="n">destination_startx</span><span class="p">,</span><span class="n">destination_stopy</span><span class="p">),</span>
+                    <span class="p">(</span><span class="n">destination_stopx</span><span class="p">,</span><span class="n">destination_stopy</span><span class="p">),</span>
+                    <span class="p">(</span><span class="n">destination_stopx</span><span class="p">,</span><span class="n">destination_starty</span><span class="p">)]</span>
+
+    <span class="c1"># specifically not putting this in a try/except, this should never fail</span>
+    <span class="c1"># 07/28 - putting it in a try/except because of how we ground points</span>
+    <span class="c1"># Transform from the destination center to the source_cube center</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">mlat</span><span class="p">,</span> <span class="n">mlon</span> <span class="o">=</span> <span class="n">spatial</span><span class="o">.</span><span class="n">isis</span><span class="o">.</span><span class="n">image_to_ground</span><span class="p">(</span><span class="n">destination_cube</span><span class="o">.</span><span class="n">file_name</span><span class="p">,</span> <span class="n">bcenter_x</span><span class="p">,</span> <span class="n">bcenter_y</span><span class="p">)</span>
+        <span class="n">center_y</span><span class="p">,</span> <span class="n">center_x</span> <span class="o">=</span> <span class="n">spatial</span><span class="o">.</span><span class="n">isis</span><span class="o">.</span><span class="n">ground_to_image</span><span class="p">(</span><span class="n">source_cube</span><span class="o">.</span><span class="n">file_name</span><span class="p">,</span> <span class="n">mlon</span><span class="p">,</span> <span class="n">mlat</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">ProcessError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;Requested position does not project in camera model&#39;</span> <span class="ow">in</span> <span class="n">e</span><span class="o">.</span><span class="n">stderr</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Skip geom_match; Region of interest center located at (</span><span class="si">{</span><span class="n">mlon</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">mlat</span><span class="si">}</span><span class="s1">) does not project to image </span><span class="si">{</span><span class="n">source_cube</span><span class="o">.</span><span class="n">base_name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;This should only appear when propagating ground points&#39;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="c1"># Compute the mapping between the destination corners and the source_cube corners in</span>
+    <span class="c1"># order to estimate an affine transformation</span>
+    <span class="n">source_corners</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="ow">in</span> <span class="n">destination_corners</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span> <span class="o">=</span> <span class="n">spatial</span><span class="o">.</span><span class="n">isis</span><span class="o">.</span><span class="n">image_to_ground</span><span class="p">(</span><span class="n">destination_cube</span><span class="o">.</span><span class="n">file_name</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+            <span class="n">source_corners</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">spatial</span><span class="o">.</span><span class="n">isis</span><span class="o">.</span><span class="n">ground_to_image</span><span class="p">(</span><span class="n">source_cube</span><span class="o">.</span><span class="n">file_name</span><span class="p">,</span> <span class="n">lon</span><span class="p">,</span> <span class="n">lat</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">except</span> <span class="n">ProcessError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;Requested position does not project in camera model&#39;</span> <span class="ow">in</span> <span class="n">e</span><span class="o">.</span><span class="n">stderr</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Skip geom_match; Region of interest corner located at (</span><span class="si">{</span><span class="n">lon</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">lat</span><span class="si">}</span><span class="s1">) does not project to image </span><span class="si">{</span><span class="n">source_cube</span><span class="o">.</span><span class="n">base_name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+
+    <span class="c1"># Estimate the transformation</span>
+    <span class="n">affine</span> <span class="o">=</span> <span class="n">estimate_affine_transformation</span><span class="p">(</span><span class="n">destination_corners</span><span class="p">,</span> <span class="n">source_corners</span><span class="p">)</span>
+
+    <span class="c1"># Apply the subpixel matcher with an affine transformation</span>
+    <span class="n">restemplate</span> <span class="o">=</span> <span class="n">subpixel_transformed_template</span><span class="p">(</span><span class="n">bcenter_x</span><span class="p">,</span> <span class="n">bcenter_y</span><span class="p">,</span>
+                                                <span class="n">center_x</span><span class="p">,</span> <span class="n">center_y</span><span class="p">,</span>
+                                                <span class="n">destination_cube</span><span class="p">,</span> <span class="n">source_cube</span><span class="p">,</span>
+                                                <span class="n">affine</span><span class="p">,</span>
+                                                <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+                                                <span class="o">**</span><span class="n">template_kwargs</span><span class="p">)</span>
+
+    <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span> <span class="n">corrmap</span> <span class="o">=</span> <span class="n">restemplate</span>
+
+    <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">y</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="n">dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">([</span><span class="n">center_x</span><span class="o">-</span><span class="n">x</span><span class="p">,</span> <span class="n">center_y</span><span class="o">-</span><span class="n">y</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">dist</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span> <span class="n">corrmap</span></div>
+
+
+<div class="viewcode-block" id="subpixel_register_measure"><a class="viewcode-back" href="../../../library/matcher/subpixel.html#autocnet.matcher.subpixel.subpixel_register_measure">[docs]</a><span class="k">def</span> <span class="nf">subpixel_register_measure</span><span class="p">(</span><span class="n">measureid</span><span class="p">,</span>
+                              <span class="n">subpixel_template_kwargs</span><span class="o">=</span><span class="p">{},</span>
+                              <span class="n">size_x</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">size_y</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+                              <span class="n">cost_func</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">:</span> <span class="mi">1</span><span class="o">/</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">y</span><span class="p">,</span>
+                              <span class="n">threshold</span><span class="o">=</span><span class="mf">0.005</span><span class="p">,</span>
+                              <span class="n">ncg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                              <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a measure, subpixel register to the reference measure of its associated point.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ncg : obj</span>
+<span class="sd">          the network candidate graph that the point is associated with; used for</span>
+<span class="sd">          the DB session that is able to access the point.</span>
+
+<span class="sd">    measureid : int or obj</span>
+<span class="sd">              The identifier of the measure in the DB or a Measures object</span>
+
+<span class="sd">    subpixel_template_kwargs : dict</span>
+<span class="sd">                               Any keyword arguments passed to the template matcher</span>
+
+<span class="sd">    cost : func</span>
+<span class="sd">           A generic cost function accepting two arguments (x,y), where x is the</span>
+<span class="sd">           distance that a point has shifted from the original, sensor identified</span>
+<span class="sd">           intersection, and y is the correlation coefficient coming out of the</span>
+<span class="sd">           template matcher.</span>
+
+<span class="sd">    threshold : numeric</span>
+<span class="sd">                measures with a cost &lt;= the threshold are marked as ignore=True in</span>
+<span class="sd">                the database.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">measureid</span><span class="p">,</span> <span class="n">Measures</span><span class="p">):</span>
+        <span class="n">measureid</span> <span class="o">=</span> <span class="n">measureid</span><span class="o">.</span><span class="n">id</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;measureid&#39;</span><span class="p">:</span><span class="n">measureid</span><span class="p">,</span>
+              <span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="s1">&#39;&#39;</span><span class="p">}</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ncg</span><span class="o">.</span><span class="n">Session</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">BrokenPipeError</span><span class="p">(</span><span class="s1">&#39;This func requires a database session from a NetworkCandidateGraph.&#39;</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">ncg</span><span class="o">.</span><span class="n">session_scope</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+        <span class="c1"># Setup the measure that is going to be matched</span>
+        <span class="n">destination</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Measures</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Measures</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">measureid</span><span class="p">)</span><span class="o">.</span><span class="n">one</span><span class="p">()</span>
+        <span class="n">destinationimageid</span> <span class="o">=</span> <span class="n">destination</span><span class="o">.</span><span class="n">imageid</span>
+        <span class="n">destinationimage</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Images</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Images</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">destinationimageid</span><span class="p">)</span><span class="o">.</span><span class="n">one</span><span class="p">()</span>
+        <span class="n">destination_node</span> <span class="o">=</span> <span class="n">NetworkNode</span><span class="p">(</span><span class="n">node_id</span><span class="o">=</span><span class="n">destinationimageid</span><span class="p">,</span> <span class="n">image_path</span><span class="o">=</span><span class="n">destinationimage</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+
+        <span class="c1"># Get the point id and set up the reference measure</span>
+        <span class="n">pointid</span> <span class="o">=</span> <span class="n">destination</span><span class="o">.</span><span class="n">pointid</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Measures</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Measures</span><span class="o">.</span><span class="n">pointid</span><span class="o">==</span><span class="n">pointid</span><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">Measures</span><span class="o">.</span><span class="n">id</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        <span class="n">source</span><span class="o">.</span><span class="n">template_metric</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">source</span><span class="o">.</span><span class="n">template_shift</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">source</span><span class="o">.</span><span class="n">phase_error</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">source</span><span class="o">.</span><span class="n">phase_diff</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">source</span><span class="o">.</span><span class="n">phase_shift</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">source</span><span class="o">.</span><span class="n">weight</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="n">sourceid</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">imageid</span>
+        <span class="n">sourceimage</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Images</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Images</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">sourceid</span><span class="p">)</span><span class="o">.</span><span class="n">one</span><span class="p">()</span>
+        <span class="n">source_node</span> <span class="o">=</span> <span class="n">NetworkNode</span><span class="p">(</span><span class="n">node_id</span><span class="o">=</span><span class="n">sourceid</span><span class="p">,</span> <span class="n">image_path</span><span class="o">=</span><span class="n">sourceimage</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+
+        <span class="n">resultlog</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Attempting to subpixel register measure </span><span class="si">{</span><span class="n">measureid</span><span class="si">}</span><span class="s1">: (</span><span class="si">{</span><span class="n">pointid</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">destinationimage</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">)</span>
+        <span class="n">currentlog</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;measureid&#39;</span><span class="p">:</span> <span class="n">measureid</span><span class="p">,</span>
+                      <span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="p">}</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">new_x</span><span class="p">,</span> <span class="n">new_y</span><span class="p">,</span> <span class="n">dist</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span>  <span class="n">_</span> <span class="o">=</span> <span class="n">geom_match</span><span class="p">(</span><span class="n">source_node</span><span class="o">.</span><span class="n">geodata</span><span class="p">,</span> <span class="n">destination_node</span><span class="o">.</span><span class="n">geodata</span><span class="p">,</span>
+                                                        <span class="n">source</span><span class="o">.</span><span class="n">sample</span><span class="p">,</span> <span class="n">source</span><span class="o">.</span><span class="n">line</span><span class="p">,</span>
+                                                        <span class="n">template_kwargs</span><span class="o">=</span><span class="n">subpixel_template_kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;geom_match failed on measure </span><span class="si">{</span><span class="n">measureid</span><span class="si">}</span><span class="s1"> with exception -&gt; </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">destination</span><span class="o">.</span><span class="n">ignore</span> <span class="o">=</span> <span class="kc">True</span> <span class="c1"># geom_match failed</span>
+            <span class="n">currentlog</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Failed to register measure </span><span class="si">{</span><span class="n">measureid</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">resultlog</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">currentlog</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">resultlog</span>
+
+        <span class="k">if</span> <span class="n">new_x</span> <span class="o">==</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">new_y</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">destination</span><span class="o">.</span><span class="n">ignore</span> <span class="o">=</span> <span class="kc">True</span> <span class="c1"># Unable to geom match</span>
+            <span class="n">currentlog</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Failed to geom match.&#39;</span>
+            <span class="n">resultlog</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">currentlog</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">resultlog</span>
+
+        <span class="n">destination</span><span class="o">.</span><span class="n">template_metric</span> <span class="o">=</span> <span class="n">metric</span>
+        <span class="n">destination</span><span class="o">.</span><span class="n">template_shift</span> <span class="o">=</span> <span class="n">dist</span>
+
+        <span class="n">cost</span> <span class="o">=</span> <span class="n">cost_func</span><span class="p">(</span><span class="n">destination</span><span class="o">.</span><span class="n">template_shift</span><span class="p">,</span> <span class="n">destination</span><span class="o">.</span><span class="n">template_metric</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">cost</span> <span class="o">&lt;=</span> <span class="n">threshold</span><span class="p">:</span>
+            <span class="n">destination</span><span class="o">.</span><span class="n">ignore</span> <span class="o">=</span> <span class="kc">True</span> <span class="c1"># Threshold criteria not met</span>
+            <span class="n">currentlog</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Cost failed. Distance shifted: </span><span class="si">{</span><span class="n">destination</span><span class="o">.</span><span class="n">template_shift</span><span class="si">}</span><span class="s1">. Metric: </span><span class="si">{</span><span class="n">destination</span><span class="o">.</span><span class="n">template_metric</span><span class="si">}</span><span class="s1">.&#39;</span>
+            <span class="n">resultlog</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">currentlog</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">resultlog</span>
+
+        <span class="c1"># Update the measure</span>
+        <span class="n">destination</span><span class="o">.</span><span class="n">sample</span> <span class="o">=</span> <span class="n">new_x</span>
+        <span class="n">destination</span><span class="o">.</span><span class="n">line</span> <span class="o">=</span> <span class="n">new_y</span>
+        <span class="n">destination</span><span class="o">.</span><span class="n">weight</span> <span class="o">=</span> <span class="n">cost</span>
+        <span class="n">destination</span><span class="o">.</span><span class="n">choosername</span> <span class="o">=</span> <span class="s1">&#39;subpixel_register_measure&#39;</span>
+
+        <span class="c1"># In case this is a second run, set the ignore to False if this</span>
+        <span class="c1"># measures passed. Also, set the source measure back to ignore=False</span>
+        <span class="n">destination</span><span class="o">.</span><span class="n">ignore</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">source</span><span class="o">.</span><span class="n">ignore</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">currentlog</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Success.&#39;</span>
+        <span class="n">resultlog</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">currentlog</span><span class="p">)</span>
+
+
+    <span class="k">return</span> <span class="n">resultlog</span></div>
+
+
+<div class="viewcode-block" id="subpixel_register_point"><a class="viewcode-back" href="../../../library/matcher/subpixel.html#autocnet.matcher.subpixel.subpixel_register_point">[docs]</a><span class="k">def</span> <span class="nf">subpixel_register_point</span><span class="p">(</span><span class="n">pointid</span><span class="p">,</span>
+                            <span class="n">subpixel_template_kwargs</span><span class="o">=</span><span class="p">{},</span>
+                            <span class="n">cost_func</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">:</span> <span class="mi">1</span><span class="o">/</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">y</span><span class="p">,</span>
+                            <span class="n">threshold</span><span class="o">=</span><span class="mf">0.005</span><span class="p">,</span>
+                            <span class="n">ncg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                            <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given some point, subpixel register all of the measures in the point to the</span>
+<span class="sd">    first measure.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pointid : int or obj</span>
+<span class="sd">              The identifier of the point in the DB or a Points object</span>
+
+<span class="sd">    subpixel_template_kwargs : dict</span>
+<span class="sd">                               Ay keyword arguments passed to the template matcher</span>
+
+<span class="sd">    cost : func</span>
+<span class="sd">           A generic cost function accepting two arguments (x,y), where x is the</span>
+<span class="sd">           distance that a point has shifted from the original, sensor identified</span>
+<span class="sd">           intersection, and y is the correlation coefficient coming out of the</span>
+<span class="sd">           template matcher.</span>
+
+<span class="sd">    threshold : numeric</span>
+<span class="sd">                measures with a cost &lt;= the threshold are marked as ignore=True in</span>
+<span class="sd">                the database.</span>
+<span class="sd">    ncg : obj</span>
+<span class="sd">          the network candidate graph that the point is associated with; used for</span>
+<span class="sd">          the DB session that is able to access the point.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ncg</span><span class="o">.</span><span class="n">Session</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">BrokenPipeError</span><span class="p">(</span><span class="s1">&#39;This func requires a database session from a NetworkCandidateGraph.&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pointid</span><span class="p">,</span> <span class="n">Points</span><span class="p">):</span>
+        <span class="n">pointid</span> <span class="o">=</span> <span class="n">pointid</span><span class="o">.</span><span class="n">id</span>
+
+    <span class="k">with</span> <span class="n">ncg</span><span class="o">.</span><span class="n">session_scope</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+        <span class="n">measures</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Measures</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Measures</span><span class="o">.</span><span class="n">pointid</span> <span class="o">==</span> <span class="n">pointid</span><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">Measures</span><span class="o">.</span><span class="n">id</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="n">measures</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">source</span><span class="o">.</span><span class="n">template_metric</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">source</span><span class="o">.</span><span class="n">template_shift</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">source</span><span class="o">.</span><span class="n">phase_error</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">source</span><span class="o">.</span><span class="n">phase_diff</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">source</span><span class="o">.</span><span class="n">phase_shift</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">sourceid</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">imageid</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Images</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Images</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">sourceid</span><span class="p">)</span><span class="o">.</span><span class="n">one</span><span class="p">()</span>
+        <span class="n">source_node</span> <span class="o">=</span> <span class="n">NetworkNode</span><span class="p">(</span><span class="n">node_id</span><span class="o">=</span><span class="n">sourceid</span><span class="p">,</span> <span class="n">image_path</span><span class="o">=</span><span class="n">res</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">source_node</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="n">ncg</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Attempting to subpixel register </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">measures</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="si">}</span><span class="s1"> measures for point </span><span class="si">{</span><span class="n">pointid</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="n">resultlog</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">measure</span> <span class="ow">in</span> <span class="n">measures</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+            <span class="n">currentlog</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;measureid&#39;</span><span class="p">:</span><span class="n">measure</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                        <span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="s1">&#39;&#39;</span><span class="p">}</span>
+            <span class="n">cost</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">destinationid</span> <span class="o">=</span> <span class="n">measure</span><span class="o">.</span><span class="n">imageid</span>
+
+            <span class="n">res</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Images</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Images</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">destinationid</span><span class="p">)</span><span class="o">.</span><span class="n">one</span><span class="p">()</span>
+            <span class="n">destination_node</span> <span class="o">=</span> <span class="n">NetworkNode</span><span class="p">(</span><span class="n">node_id</span><span class="o">=</span><span class="n">destinationid</span><span class="p">,</span> <span class="n">image_path</span><span class="o">=</span><span class="n">res</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+            <span class="n">destination_node</span><span class="o">.</span><span class="n">parent</span> <span class="o">=</span> <span class="n">ncg</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;geom_match image:&#39;</span><span class="p">,</span> <span class="n">res</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">new_x</span><span class="p">,</span> <span class="n">new_y</span><span class="p">,</span> <span class="n">dist</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span>  <span class="n">_</span> <span class="o">=</span> <span class="n">geom_match</span><span class="p">(</span><span class="n">source_node</span><span class="o">.</span><span class="n">geodata</span><span class="p">,</span> <span class="n">destination_node</span><span class="o">.</span><span class="n">geodata</span><span class="p">,</span>
+                                                        <span class="n">source</span><span class="o">.</span><span class="n">apriorisample</span><span class="p">,</span> <span class="n">source</span><span class="o">.</span><span class="n">aprioriline</span><span class="p">,</span>
+                                                        <span class="n">template_kwargs</span><span class="o">=</span><span class="n">subpixel_template_kwargs</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;geom_match failed on measure </span><span class="si">{</span><span class="n">measure</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s1"> with exception -&gt; </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="n">currentlog</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;geom_match failed on measure </span><span class="si">{</span><span class="n">measure</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">resultlog</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">currentlog</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">measure</span><span class="o">.</span><span class="n">weight</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">measure</span><span class="o">.</span><span class="n">ignore</span> <span class="o">=</span> <span class="kc">True</span> <span class="c1"># Geom match failed and no previous sucesses</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="n">new_x</span> <span class="o">==</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">new_y</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">currentlog</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Failed to register measure </span><span class="si">{</span><span class="n">measure</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s1">.&#39;</span>
+                <span class="n">resultlog</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">currentlog</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">measure</span><span class="o">.</span><span class="n">weight</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">measure</span><span class="o">.</span><span class="n">ignore</span> <span class="o">=</span> <span class="kc">True</span> <span class="c1"># Unable to geom match and no previous sucesses</span>
+                <span class="k">continue</span>
+
+            <span class="n">measure</span><span class="o">.</span><span class="n">template_metric</span> <span class="o">=</span> <span class="n">metric</span>
+            <span class="n">measure</span><span class="o">.</span><span class="n">template_shift</span> <span class="o">=</span> <span class="n">dist</span>
+
+            <span class="n">cost</span> <span class="o">=</span> <span class="n">cost_func</span><span class="p">(</span><span class="n">measure</span><span class="o">.</span><span class="n">template_shift</span><span class="p">,</span> <span class="n">measure</span><span class="o">.</span><span class="n">template_metric</span><span class="p">)</span>
+
+            <span class="c1"># Check to see if the cost function requirement has been met</span>
+            <span class="k">if</span> <span class="n">measure</span><span class="o">.</span><span class="n">weight</span> <span class="ow">and</span> <span class="n">cost</span> <span class="o">&lt;</span> <span class="n">measure</span><span class="o">.</span><span class="n">weight</span><span class="p">:</span>
+                <span class="n">currentlog</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Previous match provided better correlation. </span><span class="si">{</span><span class="n">measure</span><span class="o">.</span><span class="n">weight</span><span class="si">}</span><span class="s1"> &gt; </span><span class="si">{</span><span class="n">cost</span><span class="si">}</span><span class="s1">.&#39;</span>
+                <span class="n">resultlog</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">currentlog</span><span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">measure</span><span class="o">.</span><span class="n">weight</span> <span class="ow">and</span> <span class="n">cost</span> <span class="o">==</span> <span class="n">measure</span><span class="o">.</span><span class="n">weight</span><span class="p">:</span>
+                <span class="n">currentlog</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;WTF old and new cost are equal for measure </span><span class="si">{</span><span class="n">measure</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s1">. </span><span class="si">{</span><span class="n">measure</span><span class="o">.</span><span class="n">weight</span><span class="si">}</span><span class="s1"> = </span><span class="si">{</span><span class="n">cost</span><span class="si">}</span><span class="s1">.&#39;</span>
+                <span class="n">resultlog</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">currentlog</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="n">cost</span> <span class="o">&lt;=</span> <span class="n">threshold</span><span class="p">:</span>
+                <span class="n">currentlog</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Cost failed. Distance calculated: </span><span class="si">{</span><span class="n">measure</span><span class="o">.</span><span class="n">template_shift</span><span class="si">}</span><span class="s1">. Metric calculated: </span><span class="si">{</span><span class="n">measure</span><span class="o">.</span><span class="n">template_metric</span><span class="si">}</span><span class="s1">.&#39;</span>
+                <span class="n">resultlog</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">currentlog</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">measure</span><span class="o">.</span><span class="n">weight</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">measure</span><span class="o">.</span><span class="n">ignore</span> <span class="o">=</span> <span class="kc">True</span> <span class="c1"># Threshold criteria not met and no previous sucesses</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Update the measure</span>
+            <span class="n">measure</span><span class="o">.</span><span class="n">sample</span> <span class="o">=</span> <span class="n">new_x</span>
+            <span class="n">measure</span><span class="o">.</span><span class="n">line</span> <span class="o">=</span> <span class="n">new_y</span>
+            <span class="n">measure</span><span class="o">.</span><span class="n">weight</span> <span class="o">=</span> <span class="n">cost</span>
+            <span class="n">measure</span><span class="o">.</span><span class="n">choosername</span> <span class="o">=</span> <span class="s1">&#39;subpixel_register_point&#39;</span>
+
+            <span class="c1"># In case this is a second run, set the ignore to False if this</span>
+            <span class="c1"># measures passed. Also, set the source measure back to ignore=False</span>
+            <span class="n">measure</span><span class="o">.</span><span class="n">ignore</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">source</span><span class="o">.</span><span class="n">ignore</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">currentlog</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Success. Distance shifted: </span><span class="si">{</span><span class="n">measure</span><span class="o">.</span><span class="n">template_shift</span><span class="si">}</span><span class="s1">. Metric: </span><span class="si">{</span><span class="n">measure</span><span class="o">.</span><span class="n">template_metric</span><span class="si">}</span><span class="s1">.&#39;</span>
+            <span class="n">resultlog</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">currentlog</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">resultlog</span></div>
+
+<div class="viewcode-block" id="subpixel_register_points"><a class="viewcode-back" href="../../../library/matcher/subpixel.html#autocnet.matcher.subpixel.subpixel_register_points">[docs]</a><span class="k">def</span> <span class="nf">subpixel_register_points</span><span class="p">(</span><span class="n">subpixel_template_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;image_size&#39;</span><span class="p">:(</span><span class="mi">251</span><span class="p">,</span><span class="mi">251</span><span class="p">)},</span>
+                             <span class="n">cost_kwargs</span><span class="o">=</span><span class="p">{},</span>
+                             <span class="n">threshold</span><span class="o">=</span><span class="mf">0.005</span><span class="p">,</span>
+                             <span class="n">Session</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Serial subpixel registration of all of the points in a given DB table.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Session : obj</span>
+<span class="sd">              A SQLAlchemy Session factory.</span>
+
+<span class="sd">    pointid : int</span>
+<span class="sd">              The identifier of the point in the DB</span>
+
+<span class="sd">    subpixel_template_kwargs : dict</span>
+<span class="sd">                               Ay keyword arguments passed to the template matcher</span>
+
+<span class="sd">    cost : func</span>
+<span class="sd">           A generic cost function accepting two arguments (x,y), where x is the</span>
+<span class="sd">           distance that a point has shifted from the original, sensor identified</span>
+<span class="sd">           intersection, and y is the correlation coefficient coming out of the</span>
+<span class="sd">           template matcher.</span>
+
+<span class="sd">    threshold : numeric</span>
+<span class="sd">                measures with a cost &lt;= the threshold are marked as ignore=True in</span>
+<span class="sd">                the database.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">Session</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">BrokenPipeError</span><span class="p">(</span><span class="s1">&#39;This func requires a database session.&#39;</span><span class="p">)</span>
+    <span class="n">session</span> <span class="o">=</span> <span class="n">Session</span><span class="p">()</span>
+    <span class="n">pointids</span> <span class="o">=</span> <span class="p">[</span><span class="n">point</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Points</span><span class="p">)]</span>
+    <span class="n">session</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">pointid</span> <span class="ow">in</span> <span class="n">pointids</span><span class="p">:</span>
+        <span class="n">subpixel_register_point</span><span class="p">(</span><span class="n">pointid</span><span class="p">,</span>
+                                <span class="n">subpixel_template_kwargs</span><span class="o">=</span><span class="n">subpixel_template_kwargs</span><span class="p">,</span>
+                                <span class="o">**</span><span class="n">cost_kwargs</span><span class="p">)</span></div>
+
+</pre></div>
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>vis.graph_view — Graph Visualization &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../None"></script>
+    <script type="text/javascript" src="../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" >
+    <link rel="search" title="Search" href="../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../index.html" >
+    <link rel="up" title="vis — Data Visualization" href="index.html" >
+    <link rel="next" title="&lt;no title&gt;" href="../../developers/index.html" >
+    <link rel="prev" title="vis — Data Visualization" href="index.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../index.html" >Library Reference</a></li>
+          <li class="active"><a href="index.html" accesskey="U"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vis</span></code> — Data Visualization</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+      <li class="active">
+        <a href="../../developers/index.html" title="&lt;no title&gt;"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="index.html" title="vis — Data Visualization"
+           accesskey="P">previous</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vis</span></code> — Data Visualization</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../../developers/index.html"
+                        title="next chapter">&lt;no title&gt;</a></p>
+  <h3>This Page</h3>
+  <div>
+    <a href="../../_sources/library/vis/graph_view.rst.txt"
+       rel="nofollow">Show Source</a>
+  </div>
+<div class="this-page-menu">
+  <a href="/scipy/docs/scipy-docs/library/vis/graph_view.rst.rst">Edit page</a>
+</div>
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <div class="section" id="vis-graph-view-graph-visualization">
+<h1><code class="xref py py-mod docutils literal notranslate"><span class="pre">vis.graph_view</span></code> — Graph Visualization<a class="headerlink" href="#vis-graph-view-graph-visualization" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="xref py py-mod docutils literal notranslate"><span class="pre">vis.graph_view</span></code> module supports visualization of candidate graph
+objects, nodes, and edges.  This is basic visualization functionality
+that is monkey patched in to the graph objects.  This is not intended to be
+low level diagnostic visualization</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 0.1.0.</span></p>
+</div>
+<span class="target" id="module-autocnet.vis.graph_view"></span><dl class="py function">
+<dt id="autocnet.vis.graph_view.cluster_plot">
+<code class="sig-prename descclassname">autocnet.vis.graph_view.</code><code class="sig-name descname">cluster_plot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">graph</span></em>, <em class="sig-param"><span class="n">ax</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cmap</span><span class="o">=</span><span class="default_value">'Spectral'</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/vis/graph_view.html#cluster_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.vis.graph_view.cluster_plot" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>graph</strong> (<em>object</em>) – A networkX or derived graph object</p></li>
+<li><p><strong>ax</strong> (<em>object</em>) – A MatPlotLib axes object</p></li>
+<li><p><strong>cmap</strong> (<em>str</em>) – A MatPlotLib color map string. Default ‘Spectral’</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ax</strong> – A MatPlotLib axes object that was either passed in
+or a new axes object</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.vis.graph_view.plot_edge">
+<code class="sig-prename descclassname">autocnet.vis.graph_view.</code><code class="sig-name descname">plot_edge</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">edge</span></em>, <em class="sig-param"><span class="n">ax</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">clean_keys</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">image_space</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">downsampling</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">scatter_kwargs</span><span class="o">=</span><span class="default_value">{}</span></em>, <em class="sig-param"><span class="n">line_kwargs</span><span class="o">=</span><span class="default_value">{}</span></em>, <em class="sig-param"><span class="n">image_kwargs</span><span class="o">=</span><span class="default_value">{}</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/vis/graph_view.html#plot_edge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.vis.graph_view.plot_edge" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the correspondences for a given edge</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>edge</strong> (<em>object</em>) – A graph edge object</p></li>
+<li><p><strong>ax</strong> (<em>object</em>) – A MatPlotLIb axes object</p></li>
+<li><p><strong>clean_keys</strong> (<em>list</em>) – of strings of masking array names to apply</p></li>
+<li><p><strong>image_space</strong> (<em>int</em>) – The number of pixels to insert between the images</p></li>
+<li><p><strong>downsample</strong> (<em>bool</em>) – </p></li>
+<li><p><strong>scatter_kwargs</strong> (<em>dict</em>) – of MatPlotLib arguments to be applied to the scatter plots</p></li>
+<li><p><strong>line_kwargs</strong> (<em>dict</em>) – of MatPlotLib arguments to be applied to the lines connecting matches</p></li>
+<li><p><strong>image_kwargs</strong> (<em>dict</em>) – of MatPlotLib arguments to be applied to the image rendering</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ax</strong> – A MatPlotLib axes object.  Either the argument passed in
+or a new object</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.vis.graph_view.plot_graph">
+<code class="sig-prename descclassname">autocnet.vis.graph_view.</code><code class="sig-name descname">plot_graph</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">graph</span></em>, <em class="sig-param"><span class="n">ax</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cmap</span><span class="o">=</span><span class="default_value">'Spectral'</span></em>, <em class="sig-param"><span class="n">labels</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">font_size</span><span class="o">=</span><span class="default_value">12</span></em>, <em class="sig-param"><span class="n">clusters</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/vis/graph_view.html#plot_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.vis.graph_view.plot_graph" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>graph</strong> (<em>object</em>) – A networkX or derived graph object</p></li>
+<li><p><strong>ax</strong> (<em>objext</em>) – A MatPlotLib axes object</p></li>
+<li><p><strong>cmap</strong> (<em>str</em>) – A MatPlotLib color map string. Default ‘Spectral’</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ax</strong> – A MatPlotLib axes object. Either the argument passed in
+or a new object</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.vis.graph_view.plot_node">
+<code class="sig-prename descclassname">autocnet.vis.graph_view.</code><code class="sig-name descname">plot_node</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">node</span></em>, <em class="sig-param"><span class="n">ax</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">clean_keys</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">index_mask</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">downsampling</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/vis/graph_view.html#plot_node"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.vis.graph_view.plot_node" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the array and keypoints for a given node.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>object</em>) – A Node object from which data is extracted</p></li>
+<li><p><strong>ax</strong> (<em>object</em>) – A MatPlotLIb axes object</p></li>
+<li><p><strong>clean_keys</strong> (<em>list</em>) – of strings of masking array names to apply</p></li>
+<li><p><strong>kwargs</strong> (<em>dict</em>) – of MatPlotLib plotting options</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ax</strong> – A MatPlotLib axes object.  Either the argument passed in
+or a new object</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>object</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>autocnet.transformation.spatial &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../None"></script>
+    <script type="text/javascript" src="../../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" >
+    <link rel="search" title="Search" href="../../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../../index.html" >
+    <link rel="up" title="Module code" href="../../index.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../../index.html" accesskey="U">Module code</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <h1>Source code for autocnet.transformation.spatial</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">pyproj</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<div class="viewcode-block" id="og2oc"><a class="viewcode-back" href="../../../library/transformation/spatial.html#autocnet.transformation.spatial.og2oc">[docs]</a><span class="k">def</span> <span class="nf">og2oc</span><span class="p">(</span><span class="n">lon</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">semi_major</span><span class="p">,</span> <span class="n">semi_minor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts planetographic latitude to planetocentric latitude using pyproj pipeline.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    lon : float</span>
+<span class="sd">          longitude 0 to 360 domain (in degrees)</span>
+
+<span class="sd">    lat : float</span>
+<span class="sd">          planetographic latitude (in degrees)</span>
+
+<span class="sd">    semi_major : float</span>
+<span class="sd">                 Radius from the center of the body to the equator</span>
+
+<span class="sd">    semi_minor : float</span>
+<span class="sd">                 Radius from the center of the body to the pole</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    lon: float</span>
+<span class="sd">         longitude (in degrees)</span>
+
+<span class="sd">    lat: float</span>
+<span class="sd">         planetocentric latitude (in degrees)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lon_og</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">lon</span><span class="p">)</span>
+    <span class="n">lat_og</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">lat</span><span class="p">)</span>
+
+    <span class="n">proj_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    +proj=pipeline</span>
+<span class="s2">    +step +proj=geoc +a=</span><span class="si">{</span><span class="n">semi_major</span><span class="si">}</span><span class="s2"> +b=</span><span class="si">{</span><span class="n">semi_minor</span><span class="si">}</span><span class="s2"> +lon_wrap=180 +xy_in=rad +xy_out=rad</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+    <span class="n">og2oc</span> <span class="o">=</span> <span class="n">pyproj</span><span class="o">.</span><span class="n">transformer</span><span class="o">.</span><span class="n">Transformer</span><span class="o">.</span><span class="n">from_pipeline</span><span class="p">(</span><span class="n">proj_str</span><span class="p">)</span>
+    <span class="n">lon_oc</span><span class="p">,</span> <span class="n">lat_oc</span> <span class="o">=</span> <span class="n">og2oc</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">lon_og</span><span class="p">,</span> <span class="n">lat_og</span><span class="p">,</span> <span class="n">errcheck</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">radians</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">degrees</span><span class="p">(</span><span class="n">lon_oc</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">degrees</span><span class="p">(</span><span class="n">lat_oc</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="oc2og"><a class="viewcode-back" href="../../../library/transformation/spatial.html#autocnet.transformation.spatial.oc2og">[docs]</a><span class="k">def</span> <span class="nf">oc2og</span><span class="p">(</span><span class="n">lon</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">semi_major</span><span class="p">,</span> <span class="n">semi_minor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts planetocentric latitude to planetographic latitude using pyproj pipeline.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    lon : float</span>
+<span class="sd">          longitude 0 to 360 domain (in degrees)</span>
+
+<span class="sd">    lat : float</span>
+<span class="sd">          planetocentric latitude (in degrees)</span>
+
+<span class="sd">    semi_major : float</span>
+<span class="sd">                 Radius from the center of the body to the equator</span>
+
+<span class="sd">    semi_minor : float</span>
+<span class="sd">                 Radius from the center of the body to the pole</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    lon : float</span>
+<span class="sd">          longitude (in degrees)</span>
+
+<span class="sd">    lat : float</span>
+<span class="sd">          planetographic latitude (in degrees)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">lon_oc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">lon</span><span class="p">)</span>
+    <span class="n">lat_oc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">lat</span><span class="p">)</span>
+
+    <span class="n">proj_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    +proj=pipeline</span>
+<span class="s2">    +step +proj=geoc +a=</span><span class="si">{</span><span class="n">semi_major</span><span class="si">}</span><span class="s2"> +b=</span><span class="si">{</span><span class="n">semi_minor</span><span class="si">}</span><span class="s2"> +lon_wrap=180 +inv +xy_in=rad +xy_out=rad</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+    <span class="n">oc2og</span> <span class="o">=</span> <span class="n">pyproj</span><span class="o">.</span><span class="n">transformer</span><span class="o">.</span><span class="n">Transformer</span><span class="o">.</span><span class="n">from_pipeline</span><span class="p">(</span><span class="n">proj_str</span><span class="p">)</span>
+    <span class="n">lon_og</span><span class="p">,</span> <span class="n">lat_og</span> <span class="o">=</span> <span class="n">oc2og</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">lon_oc</span><span class="p">,</span> <span class="n">lat_oc</span><span class="p">,</span> <span class="n">errcheck</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">radians</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">degrees</span><span class="p">(</span><span class="n">lon_og</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">degrees</span><span class="p">(</span><span class="n">lat_og</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="reproject"><a class="viewcode-back" href="../../../library/transformation/spatial.html#autocnet.transformation.spatial.reproject">[docs]</a><span class="k">def</span> <span class="nf">reproject</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="n">semi_major</span><span class="p">,</span> <span class="n">semi_minor</span><span class="p">,</span> <span class="n">source_proj</span><span class="p">,</span> <span class="n">dest_proj</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Thin wrapper around PyProj&#39;s Transform() function to transform 1 or more three-dimensional</span>
+<span class="sd">    point from one coordinate system to another. If converting between Cartesian</span>
+<span class="sd">    body-centered body-fixed (BCBF) coordinates and Longitude/Latitude/Altitude coordinates,</span>
+<span class="sd">    the values input for semi-major and semi-minor axes determine whether latitudes are</span>
+<span class="sd">    planetographic or planetocentric and determine the shape of the datum for altitudes.</span>
+<span class="sd">    If semi_major == semi_minor, then latitudes are interpreted/created as planetocentric</span>
+<span class="sd">    and altitudes are interpreted/created as referenced to a spherical datum.</span>
+<span class="sd">    If semi_major != semi_minor, then latitudes are interpreted/created as planetographic</span>
+<span class="sd">    and altitudes are interpreted/created as referenced to an ellipsoidal datum.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    record : object</span>
+<span class="sd">             Pandas series object</span>
+
+<span class="sd">    semi_major : float</span>
+<span class="sd">                 Radius from the center of the body to the equater</span>
+
+<span class="sd">    semi_minor : float</span>
+<span class="sd">                 Radius from the pole to the center of mass</span>
+
+<span class="sd">    source_proj : str</span>
+<span class="sd">                         Pyproj string that defines a projection space ie. &#39;geocent&#39;</span>
+
+<span class="sd">    dest_proj : str</span>
+<span class="sd">                      Pyproj string that defines a project space ie. &#39;latlon&#39;</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    : list</span>
+<span class="sd">      Transformed coordinates as y, x, z</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">source_pyproj</span> <span class="o">=</span> <span class="n">pyproj</span><span class="o">.</span><span class="n">Proj</span><span class="p">(</span><span class="n">proj</span><span class="o">=</span><span class="n">source_proj</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">semi_major</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="n">semi_minor</span><span class="p">,</span> <span class="n">lon_wrap</span><span class="o">=</span><span class="mi">180</span><span class="p">)</span>
+    <span class="n">dest_pyproj</span> <span class="o">=</span> <span class="n">pyproj</span><span class="o">.</span><span class="n">Proj</span><span class="p">(</span><span class="n">proj</span><span class="o">=</span><span class="n">dest_proj</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">semi_major</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="n">semi_minor</span><span class="p">,</span> <span class="n">lon_wrap</span><span class="o">=</span><span class="mi">180</span><span class="p">)</span>
+
+    <span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">pyproj</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">source_pyproj</span><span class="p">,</span> <span class="n">dest_pyproj</span><span class="p">,</span> <span class="n">record</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">record</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">record</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">z</span></div>
+</pre></div>
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

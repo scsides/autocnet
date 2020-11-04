@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>autocnet.utils.utils &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../None"></script>
+    <script type="text/javascript" src="../../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" >
+    <link rel="search" title="Search" href="../../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../../index.html" >
+    <link rel="up" title="Module code" href="../../index.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../../index.html" accesskey="U">Module code</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <h1>Source code for autocnet.utils.utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">importlib</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">json</span>
+
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">reduce</span><span class="p">,</span> <span class="n">singledispatch</span><span class="p">,</span> <span class="n">update_wrapper</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+
+<span class="kn">from</span> <span class="nn">osgeo</span> <span class="kn">import</span> <span class="n">ogr</span>
+
+<span class="k">def</span> <span class="nf">tile</span><span class="p">(</span><span class="n">array_size</span><span class="p">,</span> <span class="n">tilesize</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">overlap</span><span class="o">=</span><span class="mi">500</span><span class="p">):</span>
+    <span class="n">stepsize</span> <span class="o">=</span> <span class="n">tilesize</span> <span class="o">-</span> <span class="n">overlap</span>
+    <span class="k">if</span> <span class="n">stepsize</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Overlap can not be greater than tilesize.&#39;</span><span class="p">)</span>
+    <span class="c1"># Compute the tiles</span>
+    <span class="k">if</span> <span class="n">tilesize</span> <span class="o">&gt;=</span> <span class="n">array_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="n">ytiles</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="n">array_size</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ystarts</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">array_size</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">stepsize</span><span class="p">)</span>
+        <span class="n">ystops</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">tilesize</span><span class="p">,</span> <span class="n">array_size</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">stepsize</span><span class="p">)</span>
+        <span class="n">ytiles</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">ystarts</span><span class="p">,</span> <span class="n">ystops</span><span class="p">))</span>
+        <span class="n">ytiles</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">ytiles</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">stepsize</span><span class="p">,</span> <span class="n">array_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+
+    <span class="k">if</span> <span class="n">tilesize</span> <span class="o">&gt;=</span> <span class="n">array_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="n">xtiles</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="n">array_size</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">xstarts</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">array_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">stepsize</span><span class="p">)</span>
+        <span class="n">xstops</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">tilesize</span><span class="p">,</span> <span class="n">array_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">stepsize</span><span class="p">)</span>
+        <span class="n">xtiles</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">xstarts</span><span class="p">,</span> <span class="n">xstops</span><span class="p">))</span>
+        <span class="n">xtiles</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">xtiles</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">stepsize</span><span class="p">,</span> <span class="n">array_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="n">tiles</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">xtiles</span><span class="p">,</span> <span class="n">ytiles</span><span class="p">)</span>
+
+    <span class="n">slices</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">tile</span> <span class="ow">in</span> <span class="n">tiles</span><span class="p">:</span>
+        <span class="c1"># xstart, ystart, xcount, ycount</span>
+        <span class="n">xstart</span> <span class="o">=</span> <span class="n">tile</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">ystart</span> <span class="o">=</span> <span class="n">tile</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">xstop</span> <span class="o">=</span> <span class="n">tile</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">ystop</span> <span class="o">=</span> <span class="n">tile</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">pixels</span> <span class="o">=</span> <span class="p">[</span><span class="n">xstart</span><span class="p">,</span> <span class="n">ystart</span><span class="p">,</span>
+                  <span class="n">xstop</span> <span class="o">-</span> <span class="n">xstart</span><span class="p">,</span>
+                  <span class="n">ystop</span> <span class="o">-</span> <span class="n">ystart</span><span class="p">]</span>
+        <span class="n">slices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pixels</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">slices</span>
+
+<div class="viewcode-block" id="compare_dicts"><a class="viewcode-back" href="../../../library/utils/utils.html#autocnet.utils.utils.compare_dicts">[docs]</a><span class="k">def</span> <span class="nf">compare_dicts</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">o</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given two dictionaries, compare them with support for np.ndarray and</span>
+<span class="sd">    pd.DataFrame objects</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    d : dict</span>
+<span class="sd">        first dict to compare</span>
+
+<span class="sd">    o : dict</span>
+<span class="sd">        second dict to compare</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; d = {&#39;a&#39;:0}</span>
+<span class="sd">    &gt;&gt;&gt; o = {&#39;a&#39;:0}</span>
+<span class="sd">    &gt;&gt;&gt; compare_dicts(d, o)</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; d[&#39;a&#39;] = 1</span>
+<span class="sd">    &gt;&gt;&gt; compare_dicts(d,o)</span>
+<span class="sd">    False</span>
+<span class="sd">    &gt;&gt;&gt; d[&#39;a&#39;] = np.arange(3)</span>
+<span class="sd">    &gt;&gt;&gt; o[&#39;a&#39;] = np.arange(3)</span>
+<span class="sd">    &gt;&gt;&gt; compare_dicts(d,o)</span>
+<span class="sd">    True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">o</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">o</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">v</span><span class="o">.</span><span class="n">equals</span><span class="p">(</span><span class="n">o</span><span class="p">[</span><span class="n">k</span><span class="p">]):</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">o</span><span class="p">[</span><span class="n">k</span><span class="p">]):</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="s1">&#39;_geodata&#39;</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">v</span> <span class="o">==</span> <span class="n">o</span><span class="p">[</span><span class="n">k</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="crossform"><a class="viewcode-back" href="../../../library/utils/utils.html#autocnet.utils.utils.crossform">[docs]</a><span class="k">def</span> <span class="nf">crossform</span><span class="p">(</span><span class="n">a</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return the cross form, e.g. a in the cross product of a b.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    a : ndarray</span>
+<span class="sd">        (3,) vector</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    a : ndarray</span>
+<span class="sd">        (3,3)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">a</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
+                     <span class="p">[</span><span class="n">a</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
+                     <span class="p">[</span><span class="o">-</span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">]])</span></div>
+
+
+<div class="viewcode-block" id="normalize_vector"><a class="viewcode-back" href="../../../library/utils/utils.html#autocnet.utils.utils.normalize_vector">[docs]</a><span class="k">def</span> <span class="nf">normalize_vector</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Normalize a standard form line</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    line : ndarray</span>
+<span class="sd">           Standard form of a line (Ax + By + C = 0)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    line : ndarray</span>
+<span class="sd">           The normalized line</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; x = np.array([3, 1, 2])</span>
+<span class="sd">    &gt;&gt;&gt; nv = normalize_vector(x)</span>
+<span class="sd">    &gt;&gt;&gt; print(np.round(nv, 6))  # For doc test float percision</span>
+<span class="sd">    [0.801784 0.267261 0.534522]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">line</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">line</span> <span class="o">/</span> <span class="nb">abs</span><span class="p">(</span><span class="n">n</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="getnearest"><a class="viewcode-back" href="../../../library/utils/utils.html#autocnet.utils.utils.getnearest">[docs]</a><span class="k">def</span> <span class="nf">getnearest</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given an iterable, get the index nearest to the input value</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    iterable : iterable</span>
+<span class="sd">               An iterable to search</span>
+
+<span class="sd">    value : int, float</span>
+<span class="sd">            The value to search for</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        : int</span>
+<span class="sd">          The index into the list</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">iterable</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">i</span><span class="p">:</span> <span class="nb">abs</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">value</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="checkbandnumbers"><a class="viewcode-back" href="../../../library/utils/utils.html#autocnet.utils.utils.checkbandnumbers">[docs]</a><span class="k">def</span> <span class="nf">checkbandnumbers</span><span class="p">(</span><span class="n">bands</span><span class="p">,</span> <span class="n">checkbands</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a list of input bands, check that the passed</span>
+<span class="sd">    tuple contains those bands.</span>
+
+<span class="sd">    In case of THEMIS, we check for band 9 as band 9 is the temperature</span>
+<span class="sd">    band required to derive thermal temperature.  We also check for band 10</span>
+<span class="sd">    which is required for TES atmosphere calculations.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    bands : tuple</span>
+<span class="sd">            of bands in the input image</span>
+<span class="sd">    checkbands : list</span>
+<span class="sd">                 of bands to check against</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">     : bool</span>
+<span class="sd">       True if the bands are present, else False</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">checkbands</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">bands</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="checkdeplaid"><a class="viewcode-back" href="../../../library/utils/utils.html#autocnet.utils.utils.checkdeplaid">[docs]</a><span class="k">def</span> <span class="nf">checkdeplaid</span><span class="p">(</span><span class="n">incidence</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given an incidence angle, select the appropriate deplaid method.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    incidence : float</span>
+<span class="sd">                incidence angle extracted from the campt results.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">incidence</span> <span class="o">&gt;=</span> <span class="mi">95</span> <span class="ow">and</span> <span class="n">incidence</span> <span class="o">&lt;=</span> <span class="mi">180</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;night&#39;</span>
+    <span class="k">elif</span> <span class="n">incidence</span> <span class="o">&gt;=</span><span class="mi">90</span> <span class="ow">and</span> <span class="n">incidence</span> <span class="o">&lt;</span> <span class="mi">95</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;night&#39;</span>
+    <span class="k">elif</span> <span class="n">incidence</span> <span class="o">&gt;=</span> <span class="mi">85</span> <span class="ow">and</span> <span class="n">incidence</span> <span class="o">&lt;</span> <span class="mi">90</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;day&#39;</span>
+    <span class="k">elif</span> <span class="n">incidence</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">incidence</span> <span class="o">&lt;</span> <span class="mi">85</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;day&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="checkmonotonic"><a class="viewcode-back" href="../../../library/utils/utils.html#autocnet.utils.utils.checkmonotonic">[docs]</a><span class="k">def</span> <span class="nf">checkmonotonic</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">piecewise</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check if a given iterable is monotonically increasing.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    iterable : iterable</span>
+<span class="sd">                Any Python iterable object</span>
+
+<span class="sd">    piecewise : boolean</span>
+<span class="sd">                If false, return a boolean for the entire iterable,</span>
+<span class="sd">                else return a list with elementwise monotinicy checks</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    monotonic : bool/list</span>
+<span class="sd">                A boolean list of all True if monotonic, or including</span>
+<span class="sd">                an inflection point</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">monotonic</span> <span class="o">=</span> <span class="p">[</span><span class="kc">True</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">x</span> <span class="o">&lt;</span> <span class="n">y</span> <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">iterable</span><span class="p">[</span><span class="mi">1</span><span class="p">:])]</span>
+    <span class="k">if</span> <span class="n">piecewise</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">monotonic</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">monotonic</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="find_in_dict"><a class="viewcode-back" href="../../../library/utils/utils.html#autocnet.utils.utils.find_in_dict">[docs]</a><span class="k">def</span> <span class="nf">find_in_dict</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Recursively find an entry in a dictionary</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    obj : dict</span>
+<span class="sd">          The dictionary to search</span>
+<span class="sd">    key : str</span>
+<span class="sd">          The key to find in the dictionary</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    item : obj</span>
+<span class="sd">           The value from the dictionary</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">obj</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="nb">dict</span><span class="p">):</span>
+            <span class="n">item</span> <span class="o">=</span> <span class="n">find_in_dict</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">item</span></div>
+
+
+<div class="viewcode-block" id="find_nested_in_dict"><a class="viewcode-back" href="../../../library/utils/utils.html#autocnet.utils.utils.find_nested_in_dict">[docs]</a><span class="k">def</span> <span class="nf">find_nested_in_dict</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">key_list</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Traverse a list of keys into a dict.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : dict</span>
+<span class="sd">           The dictionary to be traversed</span>
+<span class="sd">    key_list: list</span>
+<span class="sd">              The list of keys to be travered.  Keys are</span>
+<span class="sd">              traversed in the order they are entered in</span>
+<span class="sd">              the list</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    value : object</span>
+<span class="sd">            The value in the dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">d</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="n">d</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">key_list</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="make_homogeneous"><a class="viewcode-back" href="../../../library/utils/utils.html#autocnet.utils.utils.make_homogeneous">[docs]</a><span class="k">def</span> <span class="nf">make_homogeneous</span><span class="p">(</span><span class="n">points</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert a set of points (n x dim array) to</span>
+<span class="sd">        homogeneous coordinates.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    points : arraylike</span>
+<span class="sd">             n x m array of points, where n is the number</span>
+<span class="sd">             of points.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">     : arraylike</span>
+<span class="sd">       n x m + 1 array of homogeneous points</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">homogeneous</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">points</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">points</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">))))</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="n">columns</span> <span class="o">=</span> <span class="n">points</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">]</span>
+        <span class="n">homogeneous</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">homogeneous</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">points</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+                                    <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">homogeneous</span></div>
+
+
+
+<div class="viewcode-block" id="remove_field_name"><a class="viewcode-back" href="../../../library/utils/utils.html#autocnet.utils.utils.remove_field_name">[docs]</a><span class="k">def</span> <span class="nf">remove_field_name</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a numpy structured array, remove a column and return</span>
+<span class="sd">    a copy of the remainder of the array</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    a : ndarray</span>
+<span class="sd">        Numpy structured array</span>
+
+<span class="sd">    name : str</span>
+<span class="sd">           of the index (column) to be removed</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    b : ndarray</span>
+<span class="sd">        Numpy structured array with the &#39;name&#39; column removed</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+        <span class="n">names</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">names</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">b</span></div>
+
+
+<div class="viewcode-block" id="calculate_slope"><a class="viewcode-back" href="../../../library/utils/utils.html#autocnet.utils.utils.calculate_slope">[docs]</a><span class="k">def</span> <span class="nf">calculate_slope</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculates the 2-dimensional slope between the points in two dataframes each containing two columns [&#39;x&#39;, &#39;y&#39;]</span>
+<span class="sd">    The slope is calculated from x1 to x2.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x1 : dataframe</span>
+<span class="sd">         Each row is a point with columns [&#39;x&#39;, &#39;y&#39;]</span>
+<span class="sd">    x2 : dataframe</span>
+<span class="sd">        Each row is a point with columns [&#39;x&#39;, &#39;y&#39;]</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    : dataframe</span>
+<span class="sd">      A dataframe with the slope between the points in x1 and x2 for each row.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+    <span class="n">sl</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">x1</span><span class="o">.</span><span class="n">index</span>
+        <span class="n">sl</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">x1</span> <span class="o">=</span> <span class="n">x1</span><span class="o">.</span><span class="n">values</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="n">x2</span> <span class="o">=</span> <span class="n">x2</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">slopes</span> <span class="o">=</span> <span class="p">(</span><span class="n">x2</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">x1</span><span class="p">[:,</span><span class="mi">1</span><span class="p">])</span><span class="o">/</span><span class="p">(</span><span class="n">x2</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">x1</span><span class="p">[:,</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">sl</span><span class="p">:</span>
+        <span class="n">slopes</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">slopes</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">slopes</span></div>
+
+
+<div class="viewcode-block" id="cartesian"><a class="viewcode-back" href="../../../library/utils/utils.html#autocnet.utils.utils.cartesian">[docs]</a><span class="k">def</span> <span class="nf">cartesian</span><span class="p">(</span><span class="n">arrays</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a cartesian product of input arrays.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    arrays : list of array-like</span>
+<span class="sd">        1-D arrays to form the cartesian product of.</span>
+<span class="sd">    out : ndarray</span>
+<span class="sd">        Array to place the cartesian product in.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out : ndarray</span>
+<span class="sd">        2-D array of shape (M, len(arrays)) containing cartesian products</span>
+<span class="sd">        formed of input arrays.</span>
+
+<span class="sd">    from scikit-learn</span>
+<span class="sd">    https://github.com/scikit-learn/scikit-learn/blob/master/sklearn/utils/extmath.py</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">arrays</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">arrays</span><span class="p">]</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">arrays</span><span class="p">)</span>
+    <span class="n">dtype</span> <span class="o">=</span> <span class="n">arrays</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span>
+
+    <span class="n">ix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">indices</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">ix</span> <span class="o">=</span> <span class="n">ix</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">arrays</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">ix</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">arr</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">arrays</span><span class="p">):</span>
+        <span class="n">out</span><span class="p">[:,</span> <span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">arrays</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="n">ix</span><span class="p">[:,</span> <span class="n">n</span><span class="p">]]</span>
+
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+<div class="viewcode-block" id="array_to_poly"><a class="viewcode-back" href="../../../library/utils/utils.html#autocnet.utils.utils.array_to_poly">[docs]</a><span class="k">def</span> <span class="nf">array_to_poly</span><span class="p">(</span><span class="n">array</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a geojson geom</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    array : array-like</span>
+<span class="sd">            2-D array of size (n, 2) of x, y coordinates</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    geom : GeoJson</span>
+<span class="sd">           geojson containing the necessary data to construct</span>
+<span class="sd">           a poly gon</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Array is not the proper size.&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+    <span class="n">geom_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="p">[</span><span class="n">array</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="n">geom</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Polygon&quot;</span><span class="p">,</span> <span class="s2">&quot;coordinates&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">geom_array</span><span class="p">]}</span>
+    <span class="n">poly</span> <span class="o">=</span> <span class="n">ogr</span><span class="o">.</span><span class="n">CreateGeometryFromJson</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">geom</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">poly</span></div>
+
+
+<div class="viewcode-block" id="methodispatch"><a class="viewcode-back" href="../../../library/utils/utils.html#autocnet.utils.utils.methodispatch">[docs]</a><span class="k">def</span> <span class="nf">methodispatch</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    New dispatch decorator that looks at the second argument to</span>
+<span class="sd">    avoid self</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    func : Object</span>
+<span class="sd">        Function object to be dispatched</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    wrapper : Object</span>
+<span class="sd">        Wrapped function call chosen by the dispatcher</span>
+<span class="sd">    ----------</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dispatcher</span> <span class="o">=</span> <span class="n">singledispatch</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">dispatcher</span><span class="o">.</span><span class="n">dispatch</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="vm">__class__</span><span class="p">)(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+
+    <span class="n">wrapper</span><span class="o">.</span><span class="n">register</span> <span class="o">=</span> <span class="n">dispatcher</span><span class="o">.</span><span class="n">register</span>
+    <span class="n">update_wrapper</span><span class="p">(</span><span class="n">wrapper</span><span class="p">,</span> <span class="n">dispatcher</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">wrapper</span></div>
+
+
+<div class="viewcode-block" id="decorate_class"><a class="viewcode-back" href="../../../library/utils/utils.html#autocnet.utils.utils.decorate_class">[docs]</a><span class="k">def</span> <span class="nf">decorate_class</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">decorator</span><span class="p">,</span> <span class="n">exclude</span><span class="o">=</span><span class="p">[],</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span> <span class="c1"># pragma: no cover</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Decorates a class with a give docorator. Returns a subclass with</span>
+<span class="sd">    dectorations applied</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cls : Class</span>
+<span class="sd">          A class to be decorated</span>
+
+<span class="sd">    decorator : callable</span>
+<span class="sd">                callable to wrap cls&#39;s methods with</span>
+
+<span class="sd">    exclude : list</span>
+<span class="sd">              list of method names to exclude from being decorated</span>
+
+<span class="sd">    args, kwargs : list, dict</span>
+<span class="sd">                   Parameters to pass into decorator</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">callable</span><span class="p">(</span><span class="n">decorator</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Decorator must be callable.&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">decorate</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="n">attributes</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">attributes</span><span class="p">:</span> <span class="c1"># there&#39;s propably a better way to do this</span>
+            <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">attr</span><span class="p">)):</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
+                <span class="k">if</span> <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;_&#39;</span> <span class="ow">or</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">exclude</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">decorator</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">attr</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="bp">cls</span>
+    <span class="c1"># return decorated copy (i.e. a subclass with decorations)</span>
+    <span class="k">return</span> <span class="n">decorate</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="s1">&#39;cls_copy&#39;</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__bases__</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)))</span></div>
+
+<div class="viewcode-block" id="create_decorator"><a class="viewcode-back" href="../../../library/utils/utils.html#autocnet.utils.utils.create_decorator">[docs]</a><span class="k">def</span> <span class="nf">create_decorator</span><span class="p">(</span><span class="n">dec</span><span class="p">,</span> <span class="o">**</span><span class="n">namespace</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a decorator function using arbirary params. The objects passed in</span>
+<span class="sd">    can be used in the body. Originally designed with the idea of automatically</span>
+<span class="sd">    updating one object after the decorated object was modified.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwarg</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">namespace</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="nb">locals</span><span class="p">()[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">namespace</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">exec</span><span class="p">(</span><span class="n">dec</span><span class="o">.</span><span class="vm">__code__</span><span class="p">,</span> <span class="nb">locals</span><span class="p">(),</span> <span class="nb">globals</span><span class="p">())</span>
+            <span class="k">if</span> <span class="n">ret</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">ret</span>
+        <span class="k">return</span> <span class="n">wrapper</span>
+    <span class="k">return</span> <span class="n">decorator</span></div>
+
+<div class="viewcode-block" id="bytescale"><a class="viewcode-back" href="../../../library/utils/utils.html#autocnet.utils.utils.bytescale">[docs]</a><span class="k">def</span> <span class="nf">bytescale</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">cmin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cmax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is pulled directly from scipy.misc as they are deprecating bytescale.</span>
+
+<span class="sd">    Byte scales an array (image).</span>
+<span class="sd">    Byte scaling means converting the input image to uint8 dtype and scaling</span>
+<span class="sd">    the range to ``(low, high)`` (default 0-255).</span>
+<span class="sd">    If the input image already has dtype uint8, no scaling is done.</span>
+<span class="sd">    This function is only available if Python Imaging Library (PIL) is installed.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : ndarray</span>
+<span class="sd">        PIL image data array.</span>
+<span class="sd">    cmin : scalar, optional</span>
+<span class="sd">        Bias scaling of small values. Default is ``data.min()``.</span>
+<span class="sd">    cmax : scalar, optional</span>
+<span class="sd">        Bias scaling of large values. Default is ``data.max()``.</span>
+<span class="sd">    high : scalar, optional</span>
+<span class="sd">        Scale max value to `high`.  Default is 255.</span>
+<span class="sd">    low : scalar, optional</span>
+<span class="sd">        Scale min value to `low`.  Default is 0.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    img_array : uint8 ndarray</span>
+<span class="sd">        The byte-scaled array.</span>
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from scipy.misc import bytescale</span>
+<span class="sd">    &gt;&gt;&gt; img = np.array([[ 91.06794177,   3.39058326,  84.4221549 ],</span>
+<span class="sd">    ...                 [ 73.88003259,  80.91433048,   4.88878881],</span>
+<span class="sd">    ...                 [ 51.53875334,  34.45808177,  27.5873488 ]])</span>
+<span class="sd">    &gt;&gt;&gt; bytescale(img)</span>
+<span class="sd">    array([[255,   0, 236],</span>
+<span class="sd">           [205, 225,   4],</span>
+<span class="sd">           [140,  90,  70]], dtype=uint8)</span>
+<span class="sd">    &gt;&gt;&gt; bytescale(img, high=200, low=100)</span>
+<span class="sd">    array([[200, 100, 192],</span>
+<span class="sd">           [180, 188, 102],</span>
+<span class="sd">           [155, 135, 128]], dtype=uint8)</span>
+<span class="sd">    &gt;&gt;&gt; bytescale(img, cmin=0, cmax=255)</span>
+<span class="sd">    array([[91,  3, 84],</span>
+<span class="sd">           [74, 81,  5],</span>
+<span class="sd">           [52, 34, 28]], dtype=uint8)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">data</span>
+
+    <span class="k">if</span> <span class="n">high</span> <span class="o">&gt;</span> <span class="mi">255</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`high` should be less than or equal to 255.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">low</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`low` should be greater than or equal to 0.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">high</span> <span class="o">&lt;</span> <span class="n">low</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`high` should be greater than or equal to `low`.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">cmin</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">cmin</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">cmax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">cmax</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+
+    <span class="n">cscale</span> <span class="o">=</span> <span class="n">cmax</span> <span class="o">-</span> <span class="n">cmin</span>
+    <span class="k">if</span> <span class="n">cscale</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`cmax` should be larger than `cmin`.&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">cscale</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">cscale</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="n">scale</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">high</span> <span class="o">-</span> <span class="n">low</span><span class="p">)</span> <span class="o">/</span> <span class="n">cscale</span>
+    <span class="n">bytedata</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="o">-</span> <span class="n">cmin</span><span class="p">)</span> <span class="o">*</span> <span class="n">scale</span> <span class="o">+</span> <span class="n">low</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">bytedata</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">low</span><span class="p">,</span> <span class="n">high</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="import_func"><a class="viewcode-back" href="../../../library/utils/utils.html#autocnet.utils.utils.import_func">[docs]</a><span class="k">def</span> <span class="nf">import_func</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Imports a function from the autocnet package.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    func : str</span>
+<span class="sd">           import path. For example, to import the place_points_in_overlap function,</span>
+<span class="sd">           this func can be called with: &#39;spatial.overlap.place_points_in_overlap&#39;</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    func : obj</span>
+<span class="sd">           The function object for use.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">func</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;.&#39;</span><span class="p">:</span>
+        <span class="c1"># Since this intentionally forces the package to be autocnet</span>
+        <span class="c1"># need the import path relative to the package name. Convenience</span>
+        <span class="c1"># for the caller to add the &#39;.&#39; so they don&#39;t get a cryptic</span>
+        <span class="c1"># ModuleImportError.</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;.</span><span class="si">{</span><span class="n">func</span><span class="si">}</span><span class="s1">&#39;</span>
+
+    <span class="n">module</span><span class="p">,</span> <span class="n">func</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">package</span><span class="o">=</span><span class="s1">&#39;autocnet&#39;</span><span class="p">)</span>
+    <span class="n">func</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">func</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">func</span></div>
+</pre></div>
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>matcher.subpixel — Performing subpixel registration between images &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../None"></script>
+    <script type="text/javascript" src="../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" >
+    <link rel="search" title="Search" href="../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../index.html" >
+    <link rel="up" title="matcher — Graph Based Data Representaton" href="index.html" >
+    <link rel="next" title="matcher.ciratefi — RST-BC Invariant template match algorithm" href="ciratefi.html" >
+    <link rel="prev" title="matcher.cuda_outlier_detector — Finding outliers in both the keypoints and the matches" href="cuda_outlier_detector.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../index.html" >Library Reference</a></li>
+          <li class="active"><a href="index.html" accesskey="U"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher</span></code> — Graph Based Data Representaton</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+      <li class="active">
+        <a href="ciratefi.html" title="matcher.ciratefi — RST-BC Invariant template match algorithm"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="cuda_outlier_detector.html" title="matcher.cuda_outlier_detector — Finding outliers in both the keypoints and the matches"
+           accesskey="P">previous</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="cuda_outlier_detector.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.cuda_outlier_detector</span></code> — Finding outliers in both the keypoints and the matches</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="ciratefi.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.ciratefi</span></code> — RST-BC Invariant template match algorithm</a></p>
+  <h3>This Page</h3>
+  <div>
+    <a href="../../_sources/library/matcher/subpixel.rst.txt"
+       rel="nofollow">Show Source</a>
+  </div>
+<div class="this-page-menu">
+  <a href="/scipy/docs/scipy-docs/library/matcher/subpixel.rst.rst">Edit page</a>
+</div>
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <div class="section" id="matcher-subpixel-performing-subpixel-registration-between-images">
+<h1><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.subpixel</span></code> — Performing subpixel registration between images<a class="headerlink" href="#matcher-subpixel-performing-subpixel-registration-between-images" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.subpixel</span></code> module</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 0.1.0.</span></p>
+</div>
+<span class="target" id="module-autocnet.matcher.subpixel"></span><dl class="py function">
+<dt id="autocnet.matcher.subpixel.check_image_size">
+<code class="sig-prename descclassname">autocnet.matcher.subpixel.</code><code class="sig-name descname">check_image_size</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">imagesize</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/subpixel.html#check_image_size"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.subpixel.check_image_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an x,y tuple, ensure that the values
+are odd. Used by the subpixel template to also ensure
+that the template size is the one requested and not 2x
+the template size.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>imagesize</strong> (<em>tuple</em>) – in the form (size_x, size_y)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.matcher.subpixel.clip_roi">
+<code class="sig-prename descclassname">autocnet.matcher.subpixel.</code><code class="sig-name descname">clip_roi</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">img</span></em>, <em class="sig-param"><span class="n">center_x</span></em>, <em class="sig-param"><span class="n">center_y</span></em>, <em class="sig-param"><span class="n">size_x</span><span class="o">=</span><span class="default_value">200</span></em>, <em class="sig-param"><span class="n">size_y</span><span class="o">=</span><span class="default_value">200</span></em>, <em class="sig-param"><span class="n">dtype</span><span class="o">=</span><span class="default_value">'uint64'</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/subpixel.html#clip_roi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.subpixel.clip_roi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an input image, clip a square region of interest
+centered on some pixel at some size.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>img</strong> (<em>ndarray</em><em> or </em><em>object</em>) – The input image to be clipped or an object
+with a read_array method that takes a pixels
+argument in the form [xstart, ystart, xstop, ystop]</p></li>
+<li><p><strong>center_x</strong> (<em>Numeric</em>) – The x coordinate to the center of the roi</p></li>
+<li><p><strong>center_y</strong> (<em>Numeric</em>) – The y coordinate to the center of the roi</p></li>
+<li><p><strong>img_size</strong> (<em>int</em>) – 1/2 of the total image size. This value is the
+number of pixels grabbed from each side of the center</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>clipped_img</strong> – The clipped image</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.matcher.subpixel.estimate_affine_transformation">
+<code class="sig-prename descclassname">autocnet.matcher.subpixel.</code><code class="sig-name descname">estimate_affine_transformation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">destination_coordinates</span></em>, <em class="sig-param"><span class="n">source_coordinates</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/subpixel.html#estimate_affine_transformation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.subpixel.estimate_affine_transformation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a set of destination control points compute the affine transformation
+required to project the source control points into the destination.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>destination_coordinates</strong> (<em>array-like</em>) – An n,2 data structure containing the destination control points</p></li>
+<li><p><strong>source_coordinates</strong> (<em>array-like</em>) – An n,2 data structure containing the source control points</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An skimage affine transform object</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.matcher.subpixel.geom_match">
+<code class="sig-prename descclassname">autocnet.matcher.subpixel.</code><code class="sig-name descname">geom_match</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">destination_cube</span></em>, <em class="sig-param"><span class="n">source_cube</span></em>, <em class="sig-param"><span class="n">bcenter_x</span></em>, <em class="sig-param"><span class="n">bcenter_y</span></em>, <em class="sig-param"><span class="n">template_kwargs</span><span class="o">=</span><span class="default_value">{'image_size': (59, 59), 'template_size': (31, 31)}</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/subpixel.html#geom_match"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.subpixel.geom_match" title="Permalink to this definition">¶</a></dt>
+<dd><p>Propagates a source measure into destination images and then perfroms subpixel registration.
+Measure creation is done by projecting the (lon, lat) associated with the source measure into the
+destination image. The created measure is then matched to the source measure using a quick projection
+of the destination image into source image space (using an affine transformation) and a naive
+template match with optional phase template match.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>destination_cube</strong> (<em>plio.io.io_gdal.GeoDataset</em>) – The image to be matched to</p></li>
+<li><p><strong>source_cube</strong> (<em>plio.io.io_gdal.GeoDataset</em>) – The image that is transformed and matched into the destination_cube</p></li>
+<li><p><strong>bcenter_x</strong> (<em>int</em>) – sample location of source measure in base_cube</p></li>
+<li><p><strong>bcenter_y</strong> (<em>int</em>) – line location of source measure in base_cube</p></li>
+<li><p><strong>size_x</strong> (<em>int</em>) – half-height of the subimage used in the affine transformation</p></li>
+<li><p><strong>size_y</strong> (<em>int</em>) – half-width of the subimage used in affine transformation</p></li>
+<li><p><strong>template_kwargs</strong> (<em>dict</em>) – contains keywords necessary for autocnet.matcher.subpixel.subpixel_template</p></li>
+<li><p><strong>verbose</strong> (<em>boolean</em>) – indicates level of print out desired. If True, two subplots are output; the first subplot contains
+the source subimage and projected destination subimage, the second subplot contains the registered
+measure’s location in the base subimage and the unprojected destination subimage with the corresponding
+template metric correlation map.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>sample</strong> (<em>int</em>) – sample of new measure in destination image space</p></li>
+<li><p><strong>line</strong> (<em>int</em>) – line of new measures in destination image space</p></li>
+<li><p><strong>dist</strong> (<em>np.float or tuple of np.float</em>) – distance matching algorithm moved measure
+if template matcher only (default): returns dist_template
+if template and phase matcher:      returns (dist_template, dist_phase)</p></li>
+<li><p><strong>metric</strong> (<em>np.float or tuple of np.float</em>) – matching metric output by the matcher
+if template matcher only (default): returns maxcorr
+if template and phase matcher:      returns (maxcorr, perror, pdiff)</p></li>
+<li><p><strong>temp_corrmap</strong> (<em>np.ndarray</em>) – correlation map of the naive template matcher</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#autocnet.matcher.subpixel.subpixel_template" title="autocnet.matcher.subpixel.subpixel_template"><code class="xref py py-obj docutils literal notranslate"><span class="pre">autocnet.matcher.subpixel.subpixel_template</span></code></a></dt><dd><p>for list of kwargs that can be passed to the matcher</p>
+</dd>
+<dt><a class="reference internal" href="#autocnet.matcher.subpixel.subpixel_phase" title="autocnet.matcher.subpixel.subpixel_phase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">autocnet.matcher.subpixel.subpixel_phase</span></code></a></dt><dd><p>for list of kwargs that can be passed to the matcher</p>
+</dd>
+</dl>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.matcher.subpixel.iterative_phase">
+<code class="sig-prename descclassname">autocnet.matcher.subpixel.</code><code class="sig-name descname">iterative_phase</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sx</span></em>, <em class="sig-param"><span class="n">sy</span></em>, <em class="sig-param"><span class="n">dx</span></em>, <em class="sig-param"><span class="n">dy</span></em>, <em class="sig-param"><span class="n">s_img</span></em>, <em class="sig-param"><span class="n">d_img</span></em>, <em class="sig-param"><span class="n">size</span><span class="o">=</span><span class="default_value">(51, 51)</span></em>, <em class="sig-param"><span class="n">reduction</span><span class="o">=</span><span class="default_value">11</span></em>, <em class="sig-param"><span class="n">convergence_threshold</span><span class="o">=</span><span class="default_value">1.0</span></em>, <em class="sig-param"><span class="n">max_dist</span><span class="o">=</span><span class="default_value">50</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/subpixel.html#iterative_phase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.subpixel.iterative_phase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iteratively apply a subpixel phase matcher to source (s_img) and destination (d_img)
+images. The size parameter is used to set the initial search space. The algorithm
+is recursively applied to reduce the total search space by reduction until the convergence criteria
+are met. Convergence is defined as the point at which the computed shifts (x_shift,y_shift) are
+less than the convergence_threshold. In instances where the size is reducted to 1 pixel the
+algorithm terminates and returns None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sx</strong> (<em>numeric</em>) – The x position of the center of the template to be matched to</p></li>
+<li><p><strong>sy</strong> (<em>numeric</em>) – The y position of the center of the template to be matched to</p></li>
+<li><p><strong>dx</strong> (<em>numeric</em>) – The x position of the center of the search to be matched from</p></li>
+<li><p><strong>dy</strong> (<em>numeric</em>) – The y position of the center of the search to be matched to</p></li>
+<li><p><strong>s_img</strong> (<em>object</em>) – A plio geodata object from which the template is extracted</p></li>
+<li><p><strong>d_img</strong> (<em>object</em>) – A plio geodata object from which the search is extracted</p></li>
+<li><p><strong>size</strong> (<em>tuple</em>) – Size of the template in the form (x,y)</p></li>
+<li><p><strong>reduction</strong> (<em>int</em>) – With each recursive call to this func, the size is reduced by this amount</p></li>
+<li><p><strong>convergence_threshold</strong> (<em>float</em>) – The value under which the result can shift in the x and y directions to force a break</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>dx</strong> (<em>float</em>) – The new x value for the match in the destination (d) image</p></li>
+<li><p><strong>dy</strong> (<em>float</em>) – The new y value for the match in the destination (d) image</p></li>
+<li><p><strong>metrics</strong> (<em>tuple</em>) – A tuple of metrics. In the case of the phase matcher this are difference
+and RMSE in the phase dimension.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#autocnet.matcher.subpixel.subpixel_phase" title="autocnet.matcher.subpixel.subpixel_phase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">subpixel_phase</span></code></a></dt><dd><p>the function that applies a single iteration of the phase matcher</p>
+</dd>
+</dl>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.matcher.subpixel.subpixel_ciratefi">
+<code class="sig-prename descclassname">autocnet.matcher.subpixel.</code><code class="sig-name descname">subpixel_ciratefi</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sx</span></em>, <em class="sig-param"><span class="n">sy</span></em>, <em class="sig-param"><span class="n">dx</span></em>, <em class="sig-param"><span class="n">dy</span></em>, <em class="sig-param"><span class="n">s_img</span></em>, <em class="sig-param"><span class="n">d_img</span></em>, <em class="sig-param"><span class="n">search_size</span><span class="o">=</span><span class="default_value">251</span></em>, <em class="sig-param"><span class="n">template_size</span><span class="o">=</span><span class="default_value">51</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/subpixel.html#subpixel_ciratefi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.subpixel.subpixel_ciratefi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses a pattern-matcher on subsets of two images determined from the passed-in keypoints and optional sizes to
+compute an x and y offset from the search keypoint to the template keypoint and an associated strength.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sx</strong> (<em>numeric</em>) – The x position of the center of the template to be matched to</p></li>
+<li><p><strong>sy</strong> (<em>numeric</em>) – The y position of the center of the template to be matched to</p></li>
+<li><p><strong>dx</strong> (<em>numeric</em>) – The x position of the center of the search to be matched from</p></li>
+<li><p><strong>dy</strong> (<em>numeric</em>) – The y position of the center of the search to be matched to</p></li>
+<li><p><strong>s_img</strong> (<em>object</em>) – A plio geodata object from which the template is extracted</p></li>
+<li><p><strong>d_img</strong> (<em>object</em>) – A plio geodata object from which the search is extracted</p></li>
+<li><p><strong>search_size</strong> (<em>int</em>) – An odd integer for the size of the search image</p></li>
+<li><p><strong>template_size</strong> (<em>int</em>) – A odd integer for the size of the template that is iterated
+over the search images</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>x_offset</strong> (<em>float</em>) – Shift in the x-dimension</p></li>
+<li><p><strong>y_offset</strong> (<em>float</em>) – Shift in the y-dimension</p></li>
+<li><p><strong>strength</strong> (<em>float</em>) – Strength of the correspondence in the range [-1, 1]</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.matcher.subpixel.subpixel_phase">
+<code class="sig-prename descclassname">autocnet.matcher.subpixel.</code><code class="sig-name descname">subpixel_phase</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sx</span></em>, <em class="sig-param"><span class="n">sy</span></em>, <em class="sig-param"><span class="n">dx</span></em>, <em class="sig-param"><span class="n">dy</span></em>, <em class="sig-param"><span class="n">s_img</span></em>, <em class="sig-param"><span class="n">d_img</span></em>, <em class="sig-param"><span class="n">image_size</span><span class="o">=</span><span class="default_value">(51, 51)</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/subpixel.html#subpixel_phase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.subpixel.subpixel_phase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply the spectral domain matcher to a search and template image. To
+shift the images, the x_shift and y_shift, need to be subtracted from
+the center of the search image. It may also be necessary to apply the
+fractional pixel adjustment as well (if for example the center of the
+search is not an integer); this function do not manage shifting.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>template</strong> (<em>ndarray</em>) – The template used to search</p></li>
+<li><p><strong>search</strong> (<em>ndarray</em>) – The search image</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>x_offset</strong> (<em>float</em>) – Shift in the x-dimension</p></li>
+<li><p><strong>y_offset</strong> (<em>float</em>) – Shift in the y-dimension</p></li>
+<li><p><strong>strength</strong> (<em>tuple</em>) – With the RMSE error and absolute difference in phase</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.matcher.subpixel.subpixel_register_measure">
+<code class="sig-prename descclassname">autocnet.matcher.subpixel.</code><code class="sig-name descname">subpixel_register_measure</code><span class="sig-paren">(</span><em class="sig-param">measureid</em>, <em class="sig-param">subpixel_template_kwargs={}</em>, <em class="sig-param">size_x=100</em>, <em class="sig-param">size_y=100</em>, <em class="sig-param">cost_func=&lt;function &lt;lambda&gt;&gt;</em>, <em class="sig-param">threshold=0.005</em>, <em class="sig-param">ncg=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/subpixel.html#subpixel_register_measure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.subpixel.subpixel_register_measure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a measure, subpixel register to the reference measure of its associated point.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ncg</strong> (<em>obj</em>) – the network candidate graph that the point is associated with; used for
+the DB session that is able to access the point.</p></li>
+<li><p><strong>measureid</strong> (<em>int</em><em> or </em><em>obj</em>) – The identifier of the measure in the DB or a Measures object</p></li>
+<li><p><strong>subpixel_template_kwargs</strong> (<em>dict</em>) – Any keyword arguments passed to the template matcher</p></li>
+<li><p><strong>cost</strong> (<em>func</em>) – A generic cost function accepting two arguments (x,y), where x is the
+distance that a point has shifted from the original, sensor identified
+intersection, and y is the correlation coefficient coming out of the
+template matcher.</p></li>
+<li><p><strong>threshold</strong> (<em>numeric</em>) – measures with a cost &lt;= the threshold are marked as ignore=True in
+the database.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.matcher.subpixel.subpixel_register_point">
+<code class="sig-prename descclassname">autocnet.matcher.subpixel.</code><code class="sig-name descname">subpixel_register_point</code><span class="sig-paren">(</span><em class="sig-param">pointid</em>, <em class="sig-param">subpixel_template_kwargs={}</em>, <em class="sig-param">cost_func=&lt;function &lt;lambda&gt;&gt;</em>, <em class="sig-param">threshold=0.005</em>, <em class="sig-param">ncg=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/subpixel.html#subpixel_register_point"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.subpixel.subpixel_register_point" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given some point, subpixel register all of the measures in the point to the
+first measure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pointid</strong> (<em>int</em><em> or </em><em>obj</em>) – The identifier of the point in the DB or a Points object</p></li>
+<li><p><strong>subpixel_template_kwargs</strong> (<em>dict</em>) – Ay keyword arguments passed to the template matcher</p></li>
+<li><p><strong>cost</strong> (<em>func</em>) – A generic cost function accepting two arguments (x,y), where x is the
+distance that a point has shifted from the original, sensor identified
+intersection, and y is the correlation coefficient coming out of the
+template matcher.</p></li>
+<li><p><strong>threshold</strong> (<em>numeric</em>) – measures with a cost &lt;= the threshold are marked as ignore=True in
+the database.</p></li>
+<li><p><strong>ncg</strong> (<em>obj</em>) – the network candidate graph that the point is associated with; used for
+the DB session that is able to access the point.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.matcher.subpixel.subpixel_register_points">
+<code class="sig-prename descclassname">autocnet.matcher.subpixel.</code><code class="sig-name descname">subpixel_register_points</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">subpixel_template_kwargs</span><span class="o">=</span><span class="default_value">{'image_size': (251, 251)}</span></em>, <em class="sig-param"><span class="n">cost_kwargs</span><span class="o">=</span><span class="default_value">{}</span></em>, <em class="sig-param"><span class="n">threshold</span><span class="o">=</span><span class="default_value">0.005</span></em>, <em class="sig-param"><span class="n">Session</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/subpixel.html#subpixel_register_points"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.subpixel.subpixel_register_points" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serial subpixel registration of all of the points in a given DB table.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Session</strong> (<em>obj</em>) – A SQLAlchemy Session factory.</p></li>
+<li><p><strong>pointid</strong> (<em>int</em>) – The identifier of the point in the DB</p></li>
+<li><p><strong>subpixel_template_kwargs</strong> (<em>dict</em>) – Ay keyword arguments passed to the template matcher</p></li>
+<li><p><strong>cost</strong> (<em>func</em>) – A generic cost function accepting two arguments (x,y), where x is the
+distance that a point has shifted from the original, sensor identified
+intersection, and y is the correlation coefficient coming out of the
+template matcher.</p></li>
+<li><p><strong>threshold</strong> (<em>numeric</em>) – measures with a cost &lt;= the threshold are marked as ignore=True in
+the database.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.matcher.subpixel.subpixel_template">
+<code class="sig-prename descclassname">autocnet.matcher.subpixel.</code><code class="sig-name descname">subpixel_template</code><span class="sig-paren">(</span><em class="sig-param">sx</em>, <em class="sig-param">sy</em>, <em class="sig-param">dx</em>, <em class="sig-param">dy</em>, <em class="sig-param">s_img</em>, <em class="sig-param">d_img</em>, <em class="sig-param">image_size=(251</em>, <em class="sig-param">251)</em>, <em class="sig-param">template_size=(51</em>, <em class="sig-param">51)</em>, <em class="sig-param">func=&lt;function pattern_match&gt;</em>, <em class="sig-param">verbose=False</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/subpixel.html#subpixel_template"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.subpixel.subpixel_template" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses a pattern-matcher on subsets of two images determined from the passed-in keypoints and optional sizes to
+compute an x and y offset from the search keypoint to the template keypoint and an associated strength.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sx</strong> (<em>Numeric</em>) – Source X coordinate</p></li>
+<li><p><strong>sy</strong> (<em>Numeric</em>) – Source y coordinate</p></li>
+<li><p><strong>dx</strong> (<em>Numeric</em>) – The desintation x coordinate</p></li>
+<li><p><strong>dy</strong> (<em>Numeric</em>) – The destination y coordinate</p></li>
+<li><p><strong>s_img</strong> (<em>GeoDataset</em>) – The source image GeoDataset</p></li>
+<li><p><strong>d_img</strong> (<em>GeoDataset</em>) – The destination image GeoDataset</p></li>
+<li><p><strong>image_size</strong> (<em>tuple</em>) – (xsize, ysize) of the image that is searched within (this should be larger
+than the template size)</p></li>
+<li><p><strong>template_size</strong> (<em>tuple</em>) – (xsize, ysize) of the template to iterate over the image in order
+to identify the area(s) of highest correlation.</p></li>
+<li><p><strong>func</strong> (<em>callable</em>) – The function used to pattern match</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em>) – If true, generate plots of the matches</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>x_shift</strong> (<em>float</em>) – Shift in the x-dimension</p></li>
+<li><p><strong>y_shift</strong> (<em>float</em>) – Shift in the y-dimension</p></li>
+<li><p><strong>strength</strong> (<em>float</em>) – Strength of the correspondence in the range [-1, 1]</p></li>
+<li><p><strong>corrmap</strong> (<em>ndarray</em>) – An n,m array of correlation coefficients</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="naive_template.html#autocnet.matcher.naive_template.pattern_match" title="autocnet.matcher.naive_template.pattern_match"><code class="xref py py-obj docutils literal notranslate"><span class="pre">autocnet.matcher.naive_template.pattern_match</span></code></a></dt><dd><p>for the kwargs that can be passed to the matcher</p>
+</dd>
+<dt><a class="reference internal" href="naive_template.html#autocnet.matcher.naive_template.pattern_match_autoreg" title="autocnet.matcher.naive_template.pattern_match_autoreg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">autocnet.matcher.naive_template.pattern_match_autoreg</span></code></a></dt><dd><p>for the jwargs that can be passed to the autoreg style matcher</p>
+</dd>
+</dl>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.matcher.subpixel.subpixel_transformed_template">
+<code class="sig-prename descclassname">autocnet.matcher.subpixel.</code><code class="sig-name descname">subpixel_transformed_template</code><span class="sig-paren">(</span><em class="sig-param">sx</em>, <em class="sig-param">sy</em>, <em class="sig-param">dx</em>, <em class="sig-param">dy</em>, <em class="sig-param">s_img</em>, <em class="sig-param">d_img</em>, <em class="sig-param">transform</em>, <em class="sig-param">image_size=(251</em>, <em class="sig-param">251)</em>, <em class="sig-param">template_size=(51</em>, <em class="sig-param">51)</em>, <em class="sig-param">template_buffer=5</em>, <em class="sig-param">func=&lt;function pattern_match&gt;</em>, <em class="sig-param">verbose=False</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/subpixel.html#subpixel_transformed_template"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.subpixel.subpixel_transformed_template" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses a pattern-matcher on subsets of two images determined from the passed-in keypoints and optional sizes to
+compute an x and y offset from the search keypoint to the template keypoint and an associated strength.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sx</strong> (<em>Numeric</em>) – Source X coordinate</p></li>
+<li><p><strong>sy</strong> (<em>Numeric</em>) – Source y coordinate</p></li>
+<li><p><strong>dx</strong> (<em>Numeric</em>) – The desintation x coordinate</p></li>
+<li><p><strong>dy</strong> (<em>Numeric</em>) – The destination y coordinate</p></li>
+<li><p><strong>s_img</strong> (<em>GeoDataset</em>) – The source image GeoDataset</p></li>
+<li><p><strong>d_img</strong> (<em>GeoDataset</em>) – The destination image GeoDataset</p></li>
+<li><p><strong>transform</strong> (<em>object</em>) – A skiage transform object that has scale. The transform object is
+used to project the template into the image.</p></li>
+<li><p><strong>image_size</strong> (<em>tuple</em>) – (xsize, ysize) of the image that is searched within (this should be larger
+than the template size)</p></li>
+<li><p><strong>template_size</strong> (<em>tuple</em>) – (xsize, ysize) of the template to iterate over the image in order
+to identify the area(s) of highest correlation.</p></li>
+<li><p><strong>template_buffer</strong> (<em>int</em>) – The inverse buffer applied to the transformed template image. When
+the warp is applied to project from the template into the image, some
+amount of no data exists around the edges. This variable is used to clip
+some number of pixels off the edges of the template. The higher the rotation
+the higher this value should be.</p></li>
+<li><p><strong>func</strong> (<em>callable</em>) – The function used to pattern match</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em>) – If true, generate plots of the matches</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>x_shift</strong> (<em>float</em>) – Shift in the x-dimension</p></li>
+<li><p><strong>y_shift</strong> (<em>float</em>) – Shift in the y-dimension</p></li>
+<li><p><strong>strength</strong> (<em>float</em>) – Strength of the correspondence in the range [-1, 1]</p></li>
+<li><p><strong>corrmap</strong> (<em>ndarray</em>) – An n,m array of correlation coefficients</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="naive_template.html#autocnet.matcher.naive_template.pattern_match" title="autocnet.matcher.naive_template.pattern_match"><code class="xref py py-obj docutils literal notranslate"><span class="pre">autocnet.matcher.naive_template.pattern_match</span></code></a></dt><dd><p>for the kwargs that can be passed to the matcher</p>
+</dd>
+<dt><a class="reference internal" href="naive_template.html#autocnet.matcher.naive_template.pattern_match_autoreg" title="autocnet.matcher.naive_template.pattern_match_autoreg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">autocnet.matcher.naive_template.pattern_match_autoreg</span></code></a></dt><dd><p>for the jwargs that can be passed to the autoreg style matcher</p>
+</dd>
+</dl>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

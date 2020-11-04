@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>Matching &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../None"></script>
+    <script type="text/javascript" src="../../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" >
+    <link rel="search" title="Search" href="../../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../../index.html" >
+    <link rel="up" title="Working With Apollo Pan" href="../index.html" >
+    <link rel="next" title="Fundamental Matrix" href="4.%20Fundamental%20Matrix.html" >
+    <link rel="prev" title="Extracting Keypoints (Interest Points)" href="2.%20Extracting%20Keypoints%20%28Interest%20Points%29.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../../index.html" >&lt;no title&gt;</a></li>
+          <li class="active"><a href="../index.html" accesskey="U">Working With Apollo Pan</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+      <li class="active">
+        <a href="4.%20Fundamental%20Matrix.html" title="Fundamental Matrix"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="2.%20Extracting%20Keypoints%20%28Interest%20Points%29.html" title="Extracting Keypoints (Interest Points)"
+           accesskey="P">previous</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../../../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Matching</a><ul>
+<li><a class="reference internal" href="#CandidateGraph--&gt;-Custom-Extraction-Func--&gt;-Matching">CandidateGraph -&gt; Custom Extraction Func -&gt; Matching</a></li>
+<li><a class="reference internal" href="#The-matches-DataFrame">The matches DataFrame</a></li>
+<li><a class="reference internal" href="#Position,-Ambiguity,-and-Score">Position, Ambiguity, and Score</a><ul>
+<li><a class="reference internal" href="#Score">Score</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="2.%20Extracting%20Keypoints%20%28Interest%20Points%29.html"
+                        title="previous chapter">Extracting Keypoints (Interest Points)</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="4.%20Fundamental%20Matrix.html"
+                        title="next chapter">Fundamental Matrix</a></p>
+  <h3>This Page</h3>
+  <div>
+    <a href="../../../_sources/users/tutorials/apollopan/3. Matching.ipynb.txt"
+       rel="nofollow">Show Source</a>
+  </div>
+<div class="this-page-menu">
+  <a href="/scipy/docs/scipy-docs/users/tutorials/apollopan/3. Matching.ipynb.rst">Edit page</a>
+</div>
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container,
+div.nbinput.container div.prompt,
+div.nbinput.container div.input_area,
+div.nbinput.container div[class*=highlight],
+div.nbinput.container div[class*=highlight] pre,
+div.nboutput.container,
+div.nboutput.container div.prompt,
+div.nboutput.container div.output_area,
+div.nboutput.container div[class*=highlight],
+div.nboutput.container div[class*=highlight] pre {
+    background: none;
+    border: none;
+    padding: 0 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    background: #f5f5f5;
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt a.copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+</style>
+<div class="section" id="Matching">
+<h1>Matching<a class="headerlink" href="#Matching" title="Permalink to this headline">¶</a></h1>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="s1">&#39;/data/autocnet&#39;</span><span class="p">))</span>
+
+<span class="kn">import</span> <span class="nn">autocnet</span>
+<span class="kn">from</span> <span class="nn">autocnet</span> <span class="kn">import</span> <span class="n">CandidateGraph</span>
+
+<span class="c1"># The GPU based extraction library that contains SIFT extraction and matching</span>
+<span class="kn">import</span> <span class="nn">cudasift</span> <span class="k">as</span> <span class="nn">cs</span>
+
+<span class="c1"># A method to resize the images on the fly.</span>
+<span class="kn">from</span> <span class="nn">scipy.misc</span> <span class="kn">import</span> <span class="n">imresize</span>
+
+<span class="o">%</span><span class="k">pylab</span> inline
+<span class="n">figsize</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Populating the interactive namespace from numpy and matplotlib
+</pre></div></div>
+</div>
+<div class="section" id="CandidateGraph--&gt;-Custom-Extraction-Func--&gt;-Matching">
+<h2>CandidateGraph -&gt; Custom Extraction Func -&gt; Matching<a class="headerlink" href="#CandidateGraph-->-Custom-Extraction-Func-->-Matching" title="Permalink to this headline">¶</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">a</span> <span class="o">=</span> <span class="s1">&#39;AS15-P-0111_CENTER_LRG_CROPPED.png&#39;</span>
+<span class="n">b</span> <span class="o">=</span> <span class="s1">&#39;AS15-P-0112_CENTER_LRG_CROPPED.png&#39;</span>
+
+<span class="n">adj</span> <span class="o">=</span> <span class="p">{</span><span class="n">a</span><span class="p">:[</span><span class="n">b</span><span class="p">],</span>
+       <span class="n">b</span><span class="p">:[</span><span class="n">a</span><span class="p">]}</span>
+
+<span class="n">cg</span> <span class="o">=</span> <span class="n">CandidateGraph</span><span class="o">.</span><span class="n">from_adjacency</span><span class="p">(</span><span class="n">adj</span><span class="p">)</span>
+
+<span class="c1"># Enable the GPU</span>
+<span class="n">autocnet</span><span class="o">.</span><span class="n">cuda</span><span class="p">(</span><span class="n">enable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">gpu</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># Write a custom keypoint extraction function - this could get monkey patched onto the graph object...</span>
+<span class="k">def</span> <span class="nf">extract</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">downsample_amount</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">total_size</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">downsample_amount</span><span class="p">:</span>
+        <span class="n">downsample_amount</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">total_size</span> <span class="o">/</span> <span class="mi">12500</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">downsample_amount</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">downsample_amount</span><span class="p">))</span>
+    <span class="c1"># Downsample</span>
+    <span class="n">arr</span> <span class="o">=</span> <span class="n">imresize</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">interp</span><span class="o">=</span><span class="s1">&#39;lanczos&#39;</span><span class="p">)</span>
+
+    <span class="n">npts</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">arr0</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">/</span> <span class="mf">3.5</span>
+    <span class="n">sd</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">PySiftData</span><span class="p">(</span><span class="n">npts</span><span class="p">)</span>
+    <span class="n">cs</span><span class="o">.</span><span class="n">ExtractKeypoints</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">sd</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">kp</span><span class="p">,</span> <span class="n">des</span> <span class="o">=</span> <span class="n">sd</span><span class="o">.</span><span class="n">to_data_frame</span><span class="p">()</span>
+    <span class="n">kp</span> <span class="o">=</span> <span class="n">kp</span><span class="p">[[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;scale&#39;</span><span class="p">,</span> <span class="s1">&#39;sharpness&#39;</span><span class="p">,</span> <span class="s1">&#39;edgeness&#39;</span><span class="p">,</span> <span class="s1">&#39;orientation&#39;</span><span class="p">,</span> <span class="s1">&#39;score&#39;</span><span class="p">,</span> <span class="s1">&#39;ambiguity&#39;</span><span class="p">]]</span>
+    <span class="n">kp</span><span class="p">[</span><span class="s1">&#39;score&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">kp</span><span class="p">[</span><span class="s1">&#39;ambiguity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="k">return</span> <span class="n">kp</span><span class="p">,</span> <span class="n">des</span><span class="p">,</span> <span class="n">sd</span><span class="p">,</span> <span class="n">downsample_amount</span><span class="p">,</span> <span class="n">arr</span>
+
+<span class="n">arr0</span> <span class="o">=</span> <span class="n">cg</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">geodata</span><span class="o">.</span><span class="n">read_array</span><span class="p">()</span>
+<span class="n">kp0</span><span class="p">,</span> <span class="n">des0</span><span class="p">,</span> <span class="n">sd0</span><span class="p">,</span> <span class="n">downsample_amount0</span><span class="p">,</span> <span class="n">arr0</span> <span class="o">=</span> <span class="n">extract</span><span class="p">(</span><span class="n">arr0</span><span class="p">,</span> <span class="n">thresh</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">arr1</span> <span class="o">=</span> <span class="n">cg</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">geodata</span><span class="o">.</span><span class="n">read_array</span><span class="p">()</span>
+<span class="n">kp1</span><span class="p">,</span> <span class="n">des1</span><span class="p">,</span> <span class="n">sd1</span><span class="p">,</span> <span class="n">downsample_amount1</span><span class="p">,</span> <span class="n">arr1</span> <span class="o">=</span> <span class="n">extract</span><span class="p">(</span><span class="n">arr1</span><span class="p">,</span> <span class="n">thresh</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># How much downsampling?</span>
+<span class="n">downsample_amount0</span><span class="p">,</span> <span class="n">downsample_amount1</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(5, 5)
+</pre></div></div>
+</div>
+<p>Now that the keypoints have been extracted it is time to apply the GPU based matcher. Since this is working with the lower level API, the correspondences are read from the GPU and then piped back. This is technical inefficient, but fast enough that saving a few lines of code managing GPU memory is worth it.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">sd0</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">PySiftData</span><span class="o">.</span><span class="n">from_data_frame</span><span class="p">(</span><span class="n">kp0</span><span class="p">,</span> <span class="n">des0</span><span class="p">)</span>
+<span class="n">sd1</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">PySiftData</span><span class="o">.</span><span class="n">from_data_frame</span><span class="p">(</span><span class="n">kp1</span><span class="p">,</span> <span class="n">des1</span><span class="p">)</span>
+<span class="c1"># Apply the matcher</span>
+<span class="n">cs</span><span class="o">.</span><span class="n">PyMatchSiftData</span><span class="p">(</span><span class="n">sd0</span><span class="p">,</span> <span class="n">sd1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="The-matches-DataFrame">
+<h2>The matches DataFrame<a class="headerlink" href="#The-matches-DataFrame" title="Permalink to this headline">¶</a></h2>
+<p>Matches are stored as <a class="reference external" href="http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html">Pandas DataFrames</a> meaning that all functionality available to a Pandas DataFrame is available to the matches. This includes:</p>
+<ul class="simple">
+<li><p>Visualization</p></li>
+<li><p>Sorting</p></li>
+<li><p>SQL style queries</p></li>
+<li><p>Split-Apply-Combine Operations</p></li>
+<li><p>Statistical Analysis</p></li>
+</ul>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">matches</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">sd0</span><span class="o">.</span><span class="n">to_data_frame</span><span class="p">()</span>
+<span class="n">matches</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>x</th>
+      <th>y</th>
+      <th>scale</th>
+      <th>sharpness</th>
+      <th>edgeness</th>
+      <th>orientation</th>
+      <th>score</th>
+      <th>ambiguity</th>
+      <th>match</th>
+      <th>match_xpos</th>
+      <th>match_ypos</th>
+      <th>match_error</th>
+      <th>subsampling</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>9528.347656</td>
+      <td>195.259979</td>
+      <td>20.769804</td>
+      <td>3.171909</td>
+      <td>4.874205</td>
+      <td>191.425842</td>
+      <td>0.952312</td>
+      <td>0.998823</td>
+      <td>1969</td>
+      <td>7409.627930</td>
+      <td>464.366821</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>4080.437012</td>
+      <td>66.662041</td>
+      <td>16.442673</td>
+      <td>-1.066230</td>
+      <td>5.038958</td>
+      <td>272.796051</td>
+      <td>0.978477</td>
+      <td>0.999569</td>
+      <td>351</td>
+      <td>7551.666992</td>
+      <td>42.322033</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>5775.711914</td>
+      <td>140.684418</td>
+      <td>21.859934</td>
+      <td>2.915606</td>
+      <td>4.006656</td>
+      <td>247.030746</td>
+      <td>0.936110</td>
+      <td>0.949781</td>
+      <td>21</td>
+      <td>3847.362793</td>
+      <td>140.941910</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+</div>
+<div class="section" id="Position,-Ambiguity,-and-Score">
+<h2>Position, Ambiguity, and Score<a class="headerlink" href="#Position,-Ambiguity,-and-Score" title="Permalink to this headline">¶</a></h2>
+<p>Three important pieces of information in the matches dataframe are the x/y position of correspondences, the ambiguity, and the score.</p>
+<p><strong>Position</strong>: The position of the correspondence in arr0 (assuming matches points to sd0) is the <code class="docutils literal notranslate"><span class="pre">x</span></code> and <code class="docutils literal notranslate"><span class="pre">y</span></code> position. The correspondence position in the other image is defined by <code class="docutils literal notranslate"><span class="pre">match_xpos</span></code> and <code class="docutils literal notranslate"><span class="pre">match_ypos</span></code>.</p>
+<p><strong>Ambiguity</strong>: Ambiguity is a measure of Lowe’s ratio test that compares the ‘likeness’ of correspondences. In brief, during matching the top two matches are found. Meaning correspondence 0 in the source image is matched to 2 candidate correspondences in the other image. The quality of these matches is defined as the distance between two 128 element vectors (the descriptors). Ambiguity is a measure of the ratio of the second distance to the first distance. The closer this value is to 1, the more
+ambiguous the correspondence. The lower the ambiguity the better. Lowe suggests 0.8 as a threshold, but this is too constraining for highly homogeneous planetary data.</p>
+<p><strong>Score</strong>: Score is a measure of the quality of the match scaled to the range [0,1] from the inital, unknown range of Euclidean distances. The higher the score the better.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># Box plot and descriptive stats for the distribution of ambiguities</span>
+<span class="n">matches</span><span class="o">.</span><span class="n">boxplot</span><span class="p">(</span><span class="s1">&#39;ambiguity&#39;</span><span class="p">)</span>
+<span class="n">matches</span><span class="p">[</span><span class="s1">&#39;ambiguity&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+count    17062.000000
+mean         0.991214
+std          0.010747
+min          0.789020
+25%          0.988632
+50%          0.994540
+75%          0.997817
+max          0.999998
+Name: ambiguity, dtype: float64
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../_images/users_tutorials_apollopan_3._Matching_10_1.png" src="../../../_images/users_tutorials_apollopan_3._Matching_10_1.png" />
+</div>
+</div>
+<p>Clearly, Lowe’s suggested 0.8 ratio is going to remove almost all of the data. The 0.95 threshold looks attractive as it is below the lower quartile break.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">ksub</span> <span class="o">=</span> <span class="n">matches</span><span class="p">[</span><span class="n">matches</span><span class="o">.</span><span class="n">ambiguity</span> <span class="o">&lt;=</span> <span class="mf">0.95</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># And plot</span>
+<span class="n">imshow</span><span class="p">(</span><span class="n">arr0</span><span class="p">)</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">ksub</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">ksub</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="s1">&#39;ro&#39;</span><span class="p">)</span>
+<span class="n">show</span><span class="p">()</span>
+<span class="n">imshow</span><span class="p">(</span><span class="n">arr1</span><span class="p">)</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">ksub</span><span class="o">.</span><span class="n">match_xpos</span><span class="p">,</span> <span class="n">ksub</span><span class="o">.</span><span class="n">match_ypos</span><span class="p">,</span> <span class="s1">&#39;bo&#39;</span><span class="p">)</span>
+<span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../_images/users_tutorials_apollopan_3._Matching_13_0.png" src="../../../_images/users_tutorials_apollopan_3._Matching_13_0.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../_images/users_tutorials_apollopan_3._Matching_13_1.png" src="../../../_images/users_tutorials_apollopan_3._Matching_13_1.png" />
+</div>
+</div>
+<div class="section" id="Score">
+<h3>Score<a class="headerlink" href="#Score" title="Permalink to this headline">¶</a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">ksub</span><span class="o">.</span><span class="n">boxplot</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="s1">&#39;score&#39;</span><span class="p">)</span>
+<span class="n">ksub</span><span class="o">.</span><span class="n">score</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+count    163.000000
+mean       0.898343
+std        0.048708
+min        0.775125
+25%        0.866216
+50%        0.897366
+75%        0.929772
+max        0.989991
+Name: score, dtype: float64
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../_images/users_tutorials_apollopan_3._Matching_15_1.png" src="../../../_images/users_tutorials_apollopan_3._Matching_15_1.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">kss</span> <span class="o">=</span> <span class="n">ksub</span><span class="p">[</span><span class="n">ksub</span><span class="o">.</span><span class="n">score</span> <span class="o">&gt;=</span> <span class="mf">0.925310</span><span class="p">]</span>
+<span class="n">imshow</span><span class="p">(</span><span class="n">arr0</span><span class="p">)</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">kss</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">kss</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="s1">&#39;ro&#39;</span><span class="p">)</span>
+<span class="n">show</span><span class="p">()</span>
+<span class="n">imshow</span><span class="p">(</span><span class="n">arr1</span><span class="p">)</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">kss</span><span class="o">.</span><span class="n">match_xpos</span><span class="p">,</span> <span class="n">kss</span><span class="o">.</span><span class="n">match_ypos</span><span class="p">,</span> <span class="s1">&#39;bo&#39;</span><span class="p">)</span>
+<span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../_images/users_tutorials_apollopan_3._Matching_16_0.png" src="../../../_images/users_tutorials_apollopan_3._Matching_16_0.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../_images/users_tutorials_apollopan_3._Matching_16_1.png" src="../../../_images/users_tutorials_apollopan_3._Matching_16_1.png" />
+</div>
+</div>
+<p>The combined reduction due to <code class="docutils literal notranslate"><span class="pre">ambiguity</span></code> and <code class="docutils literal notranslate"><span class="pre">score</span></code> winnowing has generated what looks like a relatively good starting point for more robust outlier detection methods.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

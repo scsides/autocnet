@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>autocnet.io.keypoints &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../None"></script>
+    <script type="text/javascript" src="../../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" >
+    <link rel="search" title="Search" href="../../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../../index.html" >
+    <link rel="up" title="Module code" href="../../index.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../../index.html" accesskey="U">Module code</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <h1>Source code for autocnet.io.keypoints</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">plio.io</span> <span class="kn">import</span> <span class="n">io_hdf</span>
+
+<span class="kn">from</span> <span class="nn">autocnet.utils</span> <span class="kn">import</span> <span class="n">utils</span>
+
+<div class="viewcode-block" id="from_hdf"><a class="viewcode-back" href="../../../library/io/keypoints.html#autocnet.io.keypoints.from_hdf">[docs]</a><span class="k">def</span> <span class="nf">from_hdf</span><span class="p">(</span><span class="n">in_path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">keypoints</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">descriptors</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    For a given node, load the keypoints and descriptors from a hdf5 file. The</span>
+<span class="sd">    keypoints and descriptors kwargs support returning only keypoints or descriptors.</span>
+<span class="sd">    The index kwarg supports returning a subset of the data.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    in_path : str</span>
+<span class="sd">              handle to the file</span>
+
+<span class="sd">    key : str</span>
+<span class="sd">          An optional path into the HDF5.  For example key=&#39;image_name&#39;, will</span>
+<span class="sd">          search /image_name/descriptors for the descriptors.</span>
+
+<span class="sd">    index : iterable</span>
+<span class="sd">            an h5py accepted indexer to pull only a subset of the keypoints</span>
+<span class="sd">            off disk. Default is None to pull all keypoints.</span>
+
+<span class="sd">    keypoints : bool</span>
+<span class="sd">                if True (default) return the keypoints</span>
+
+<span class="sd">    descriptors : bool</span>
+<span class="sd">                  if True (default) return the descriptors</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    keypoints : DataFrame</span>
+<span class="sd">                A pandas dataframe of keypoints.</span>
+
+<span class="sd">    descriptors : ndarray</span>
+<span class="sd">                  A numpy array of descriptors</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">in_path</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">hdf</span> <span class="o">=</span> <span class="n">io_hdf</span><span class="o">.</span><span class="n">HDFDataset</span><span class="p">(</span><span class="n">in_path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">hdf</span> <span class="o">=</span> <span class="n">in_path</span>
+
+    <span class="n">outd</span> <span class="o">=</span> <span class="s1">&#39;/descriptors&#39;</span>
+    <span class="n">outk</span> <span class="o">=</span> <span class="s1">&#39;/keypoints&#39;</span>
+
+    <span class="k">if</span> <span class="n">index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">index</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+
+        <span class="c1"># The indices into HDF have to be sorted lists. When indices get passed in</span>
+        <span class="c1"># they are frequently ordered, so this pulls the data using the sorted</span>
+        <span class="c1"># index and then reorders the data.</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+        <span class="n">ii</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="c1"># Is is important to use sorted() so that an in-place sort is NOT used.</span>
+        <span class="k">if</span> <span class="n">descriptors</span><span class="p">:</span>
+            <span class="n">desc</span> <span class="o">=</span> <span class="n">hdf</span><span class="p">[</span><span class="n">outd</span><span class="p">][</span><span class="n">index</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()]</span>
+            <span class="n">desc</span> <span class="o">=</span> <span class="n">desc</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">keypoints</span><span class="p">:</span>
+            <span class="n">raw_kps</span> <span class="o">=</span> <span class="n">hdf</span><span class="p">[</span><span class="n">outk</span><span class="p">][</span><span class="n">index</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()]</span>
+            <span class="n">raw_kps</span> <span class="o">=</span> <span class="n">raw_kps</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Unlike numpy hdf does not handle NoneType as a proxy for `:`</span>
+        <span class="k">if</span> <span class="n">descriptors</span><span class="p">:</span>
+            <span class="n">desc</span> <span class="o">=</span> <span class="n">hdf</span><span class="p">[</span><span class="n">outd</span><span class="p">][:]</span>
+        <span class="k">if</span> <span class="n">keypoints</span><span class="p">:</span>
+            <span class="n">raw_kps</span> <span class="o">=</span> <span class="n">hdf</span><span class="p">[</span><span class="n">outk</span><span class="p">][:]</span>
+    
+    <span class="k">if</span> <span class="n">keypoints</span><span class="p">:</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">raw_kps</span><span class="p">[</span><span class="s1">&#39;index&#39;</span><span class="p">]</span>
+        <span class="n">clean_kps</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">remove_field_name</span><span class="p">(</span><span class="n">raw_kps</span><span class="p">,</span> <span class="s1">&#39;index&#39;</span><span class="p">)</span>
+        <span class="n">columns</span> <span class="o">=</span> <span class="n">clean_kps</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span>
+
+        <span class="n">allkps</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">clean_kps</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">in_path</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">hdf</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">keypoints</span> <span class="ow">and</span> <span class="n">descriptors</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">allkps</span><span class="p">,</span> <span class="n">desc</span>
+    <span class="k">elif</span> <span class="n">keypoints</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">allkps</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">desc</span></div>
+
+
+<div class="viewcode-block" id="to_hdf"><a class="viewcode-back" href="../../../library/io/keypoints.html#autocnet.io.keypoints.to_hdf">[docs]</a><span class="k">def</span> <span class="nf">to_hdf</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="n">keypoints</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">descriptors</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Save keypoints and descriptors to HDF at a given out_path at either</span>
+<span class="sd">    the root or at some arbitrary path given by a key.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    keypoints : DataFrame</span>
+<span class="sd">                Pandas dataframe of keypoints</span>
+
+<span class="sd">    descriptors : ndarray</span>
+<span class="sd">                  of feature descriptors</span>
+
+<span class="sd">    out_path : str</span>
+<span class="sd">               to the HDF5 file</span>
+
+<span class="sd">    key : str</span>
+<span class="sd">          path within the HDF5 file.  If given, the keypoints and descriptors</span>
+<span class="sd">          are save at &lt;key&gt;/keypoints and &lt;key&gt;/descriptors respectively.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># If the out_path is a string, access the HDF5 file</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">hdf</span> <span class="o">=</span> <span class="n">io_hdf</span><span class="o">.</span><span class="n">HDFDataset</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">hdf</span> <span class="o">=</span> <span class="n">out_path</span>
+
+    <span class="n">grps</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">hdf</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="n">outd</span> <span class="o">=</span> <span class="s1">&#39;/descriptors&#39;</span>
+    <span class="n">outk</span> <span class="o">=</span> <span class="s1">&#39;/keypoints&#39;</span>
+    <span class="k">if</span> <span class="n">descriptors</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Strip the leading slash</span>
+        <span class="k">if</span> <span class="n">outd</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="ow">in</span> <span class="n">grps</span><span class="p">:</span>
+            <span class="k">del</span> <span class="n">hdf</span><span class="p">[</span><span class="n">outd</span><span class="p">]</span> <span class="c1"># pragma: no cover</span>
+
+        <span class="n">hdf</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="n">outd</span><span class="p">,</span>
+                        <span class="n">data</span><span class="o">=</span><span class="n">descriptors</span><span class="p">,</span>
+                        <span class="n">compression</span><span class="o">=</span><span class="n">io_hdf</span><span class="o">.</span><span class="n">DEFAULT_COMPRESSION</span><span class="p">,</span>
+                        <span class="n">compression_opts</span><span class="o">=</span><span class="n">io_hdf</span><span class="o">.</span><span class="n">DEFAULT_COMPRESSION_VALUE</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">keypoints</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">outk</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="ow">in</span> <span class="n">grps</span><span class="p">:</span>
+            <span class="k">del</span> <span class="n">hdf</span><span class="p">[</span><span class="n">outk</span><span class="p">]</span>  <span class="c1"># pragma: no cover</span>
+
+        <span class="n">hdf</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="n">outk</span><span class="p">,</span>
+                        <span class="n">data</span><span class="o">=</span><span class="n">hdf</span><span class="o">.</span><span class="n">df_to_sarray</span><span class="p">(</span><span class="n">keypoints</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()),</span>
+                        <span class="n">compression</span><span class="o">=</span><span class="n">io_hdf</span><span class="o">.</span><span class="n">DEFAULT_COMPRESSION</span><span class="p">,</span>
+                        <span class="n">compression_opts</span><span class="o">=</span><span class="n">io_hdf</span><span class="o">.</span><span class="n">DEFAULT_COMPRESSION_VALUE</span><span class="p">)</span>
+
+    <span class="c1">#except:</span>
+        <span class="c1">#warnings.warn(&#39;Descriptors for the node {} are already stored&#39;.format(self[&#39;image_name&#39;]))</span>
+
+    <span class="c1"># If the out_path is a string, assume this method is being called as a singleton</span>
+    <span class="c1"># and close the hdf file gracefully.  If an object, let the instantiator of the</span>
+    <span class="c1"># object close the file</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">del</span> <span class="n">hdf</span></div>
+
+<div class="viewcode-block" id="from_npy"><a class="viewcode-back" href="../../../library/io/keypoints.html#autocnet.io.keypoints.from_npy">[docs]</a><span class="k">def</span> <span class="nf">from_npy</span><span class="p">(</span><span class="n">in_path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load keypoints and descriptors from a .npz file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    in_path : str</span>
+<span class="sd">              PATH to the npz file</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    keypoints : DataFrame</span>
+<span class="sd">                of keypoints</span>
+
+<span class="sd">    descriptors : ndarray</span>
+<span class="sd">                  of feature descriptors</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">nzf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">in_path</span><span class="p">,</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">descriptors</span> <span class="o">=</span> <span class="n">nzf</span><span class="p">[</span><span class="s1">&#39;descriptors&#39;</span><span class="p">]</span>
+    <span class="n">keypoints</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">nzf</span><span class="p">[</span><span class="s1">&#39;keypoints&#39;</span><span class="p">],</span> <span class="n">index</span><span class="o">=</span><span class="n">nzf</span><span class="p">[</span><span class="s1">&#39;keypoints_idx&#39;</span><span class="p">],</span> <span class="n">columns</span><span class="o">=</span><span class="n">nzf</span><span class="p">[</span><span class="s1">&#39;keypoints_columns&#39;</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">keypoints</span><span class="p">,</span> <span class="n">descriptors</span></div>
+
+<div class="viewcode-block" id="to_npy"><a class="viewcode-back" href="../../../library/io/keypoints.html#autocnet.io.keypoints.to_npy">[docs]</a><span class="k">def</span> <span class="nf">to_npy</span><span class="p">(</span><span class="n">keypoints</span><span class="p">,</span> <span class="n">descriptors</span><span class="p">,</span> <span class="n">out_path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Save keypoints and descriptors to a .npz file at some out_path</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    keypoints : DataFrame</span>
+<span class="sd">                of keypoints</span>
+
+<span class="sd">    descriptors : ndarray</span>
+<span class="sd">                  of feature descriptors</span>
+
+<span class="sd">    out_path : str</span>
+<span class="sd">               PATH and filename to save the features</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">savez</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="n">descriptors</span><span class="o">=</span><span class="n">descriptors</span><span class="p">,</span>
+             <span class="n">keypoints</span><span class="o">=</span><span class="n">keypoints</span><span class="p">,</span>
+             <span class="n">keypoints_idx</span><span class="o">=</span><span class="n">keypoints</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+             <span class="n">keypoints_columns</span><span class="o">=</span><span class="n">keypoints</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="create_output_path"><a class="viewcode-back" href="../../../library/io/keypoints.html#autocnet.io.keypoints.create_output_path">[docs]</a><span class="k">def</span> <span class="nf">create_output_path</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">outdir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a filename for keypoints and descriptors, create an output</span>
+<span class="sd">    directory with _kps.h5 appended.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    filename : str</span>
+<span class="sd">               The filename or full path</span>
+<span class="sd">    outdir : str</span>
+<span class="sd">             An optional output path</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    outh5 : str</span>
+<span class="sd">            Path of the output h5 file</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">image_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>                                    
+    <span class="n">image_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>                                     
+                                                                                   
+    <span class="k">if</span> <span class="n">outdir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>                                                             
+        <span class="n">outh5</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">image_path</span><span class="p">,</span> <span class="n">image_name</span> <span class="o">+</span> <span class="s1">&#39;_kps.h5&#39;</span><span class="p">)</span>                   
+    <span class="k">else</span><span class="p">:</span>                                                                          
+        <span class="n">outh5</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="n">image_name</span> <span class="o">+</span> <span class="s1">&#39;_kps.h5&#39;</span><span class="p">)</span>                       
+                                                                                   
+    <span class="k">return</span> <span class="n">outh5</span> </div>
+</pre></div>
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

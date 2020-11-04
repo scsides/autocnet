@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>autocnet.matcher.ciratefi &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../None"></script>
+    <script type="text/javascript" src="../../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" >
+    <link rel="search" title="Search" href="../../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../../index.html" >
+    <link rel="up" title="Module code" href="../../index.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../../index.html" accesskey="U">Module code</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <h1>Source code for autocnet.matcher.ciratefi</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">bisect</span> <span class="kn">import</span> <span class="n">bisect_left</span>
+
+<span class="kn">import</span> <span class="nn">cv2</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">skimage.transform</span> <span class="kn">import</span> <span class="n">rescale</span>
+<span class="kn">from</span> <span class="nn">scipy.ndimage.interpolation</span> <span class="kn">import</span> <span class="n">rotate</span>
+<span class="kn">from</span> <span class="nn">scipy.ndimage.interpolation</span> <span class="kn">import</span> <span class="n">zoom</span>
+
+<span class="kn">import</span> <span class="nn">autocnet.utils.utils</span> <span class="k">as</span> <span class="nn">util</span>
+
+
+<div class="viewcode-block" id="cifi"><a class="viewcode-back" href="../../../library/matcher/ciratefi.html#autocnet.matcher.ciratefi.cifi">[docs]</a><span class="k">def</span> <span class="nf">cifi</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">search_image</span><span class="p">,</span> <span class="n">thresh</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span> <span class="n">use_percentile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+         <span class="n">radii</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">12</span><span class="p">)),</span> <span class="n">scales</span><span class="o">=</span><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.57</span><span class="p">,</span> <span class="mf">0.66</span><span class="p">,</span>  <span class="mf">0.76</span><span class="p">,</span> <span class="mf">0.87</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Circular sampling filter (Cifi) uses projections of the template and search</span>
+<span class="sd">        images on a set of circular rings to detect the first grade candidate pixels</span>
+<span class="sd">        and the points&#39; corresponding best fit scales for Ciratefi.</span>
+
+<span class="sd">        A set of scales is applied to the template and is radially sampled for each radii</span>
+<span class="sd">        &#39;r&#39; passed in. The template sample is equal to sum of the grayscale values</span>
+<span class="sd">        divided by 2*pi*r.</span>
+
+<span class="sd">        Each pixel in the search image is similarly sampled. Every pixel then gets</span>
+<span class="sd">        correlated with the template samples at all scales. The scales with the highest</span>
+<span class="sd">        correlation are the considered the &#39;best fit scales&#39;.</span>
+
+<span class="sd">        parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        template : np.array</span>
+<span class="sd">                   The input search template used to &#39;query&#39; the destination</span>
+<span class="sd">                   image</span>
+
+<span class="sd">        search_image : np.array</span>
+<span class="sd">                       The image or sub-image to be searched</span>
+
+<span class="sd">        thresh : float</span>
+<span class="sd">                 The correlation thresh hold above which a point will</span>
+<span class="sd">                 be a first grade candidate point. If use_percentile=True</span>
+<span class="sd">                 this will act as a percentile, for example, passing 90 means</span>
+<span class="sd">                 keep values in the top 90th percentile</span>
+
+<span class="sd">        use_percentile : bool</span>
+<span class="sd">                         If True (default), thresh is a percentile instead of a hard</span>
+<span class="sd">                         strength value</span>
+
+<span class="sd">        radii : np.array</span>
+<span class="sd">                The list of radii to use for radial sampling</span>
+
+<span class="sd">        scales : list</span>
+<span class="sd">                 The list of scales to be applied to the template image, best if</span>
+<span class="sd">                 a geometric series</span>
+
+<span class="sd">        verbose : bool</span>
+<span class="sd">                  Set to True in order to output images and text describing the outputs. Can</span>
+<span class="sd">                  cause a serious decrease in performance. False by default.</span>
+
+<span class="sd">        returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        fg_candidate_pixels : ndarray</span>
+<span class="sd">                              array of pixels that passed the filter in tuples (y,x)</span>
+
+<span class="sd">        best_scales : ndarray</span>
+<span class="sd">                      parrallel array of best scales for the first grade candidate points</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># check inputs for validity</span>
+    <span class="k">if</span> <span class="n">template</span><span class="o">.</span><span class="n">shape</span> <span class="o">&gt;</span> <span class="n">search_image</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Template Image is smaller than Search Image for template of&#39;</span>
+                         <span class="s1">&#39;size: </span><span class="si">{}</span><span class="s1"> and search image of size: </span><span class="si">{}</span><span class="s1">&#39;</span>
+                         <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">search_image</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+
+    <span class="n">radii</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">radii</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">radii</span><span class="o">.</span><span class="n">size</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">radii</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Input radii list is empty&#39;</span><span class="p">)</span>
+
+    <span class="n">scales</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">scales</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">scales</span><span class="o">.</span><span class="n">size</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">scales</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Input scales list is empty&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">max</span><span class="p">(</span><span class="n">radii</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Max Radii is larger than original template, this may produce sub-par results.&#39;</span>
+                      <span class="s1">&#39;Max radii: </span><span class="si">{}</span><span class="s1"> max template dimension: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">radii</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">shape</span><span class="p">)))</span>
+
+    <span class="k">if</span> <span class="n">thresh</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">1.</span> <span class="ow">or</span> <span class="n">thresh</span> <span class="o">&gt;</span> <span class="mf">1.</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">use_percentile</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Thresholds must be in range [-1,1] when not using percentiles. Got: </span><span class="si">{}</span><span class="s1">&#39;</span>
+                         <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">thresh</span><span class="p">))</span>
+
+    <span class="c1"># Cifi -- Circular Sample on Template</span>
+    <span class="n">template_result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">scales</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">radii</span><span class="p">)))</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">scales</span><span class="p">):</span>
+
+        <span class="n">scaled_img</span> <span class="o">=</span> <span class="n">rescale</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">preserve_range</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">multichannel</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">radii</span><span class="p">):</span>
+            <span class="c1"># Handle case where image shape is too small</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">scaled_img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span>
+                        <span class="nb">int</span><span class="p">(</span><span class="n">scaled_img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">template_result</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># if radius is bigger than extents, force sum to -1</span>
+            <span class="k">if</span> <span class="n">r</span> <span class="o">&gt;</span> <span class="n">b</span> <span class="ow">or</span> <span class="n">r</span> <span class="o">&gt;</span> <span class="n">a</span><span class="p">:</span>
+                <span class="n">template_result</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># generate a circular mask</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">circ_mask</span><span class="p">(</span><span class="n">scaled_img</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">),</span> <span class="n">r</span><span class="p">)</span>
+
+            <span class="n">inv_area</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">r</span><span class="p">)</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">scaled_img</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span> <span class="o">*</span> <span class="n">inv_area</span>
+            <span class="k">if</span> <span class="n">s</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">s</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="n">template_result</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span>
+
+    <span class="c1"># Cifi2 -- Circular Sample on Target Image</span>
+    <span class="n">search_result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">search_image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">search_image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">radii</span><span class="p">)))</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">search_image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">search_image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])):</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">radii</span><span class="p">):</span>
+                <span class="n">inv_area</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">r</span><span class="p">)</span>
+
+                <span class="n">mask</span> <span class="o">=</span> <span class="n">circ_mask</span><span class="p">(</span><span class="n">search_image</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">),</span> <span class="n">r</span><span class="p">)</span>
+                <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">search_image</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span> <span class="o">*</span> <span class="n">inv_area</span>
+
+                <span class="k">if</span> <span class="n">s</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">r</span> <span class="ow">or</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">r</span> <span class="ow">or</span> <span class="n">y</span><span class="o">+</span><span class="n">r</span> <span class="o">&gt;</span> <span class="n">search_image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">or</span> <span class="n">x</span><span class="o">+</span><span class="n">r</span> <span class="o">&gt;</span> <span class="n">search_image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                    <span class="n">s</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="n">search_result</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span>
+
+    <span class="c1"># Perform Normalized Cross-Correlation between template and target image</span>
+    <span class="n">coeffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">search_result</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">search_result</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="n">best_scales</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">search_result</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">search_result</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+
+    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">search_result</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">search_result</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">scale</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">max_coeff</span> <span class="o">=</span> <span class="o">-</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">template_result</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+
+                <span class="n">result</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">matchTemplate</span><span class="p">(</span><span class="n">template_result</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span>
+                                           <span class="n">search_result</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span> <span class="n">method</span><span class="o">=</span><span class="n">cv2</span><span class="o">.</span><span class="n">TM_CCORR_NORMED</span><span class="p">)</span>
+                <span class="n">score</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">score</span> <span class="o">&gt;</span> <span class="n">max_coeff</span><span class="p">:</span>
+                    <span class="n">max_coeff</span> <span class="o">=</span> <span class="n">score</span>
+                    <span class="n">scale</span> <span class="o">=</span> <span class="n">i</span>
+
+            <span class="n">coeffs</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">max_coeff</span>
+            <span class="n">best_scales</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">scales</span><span class="p">[</span><span class="n">scale</span><span class="p">]</span>
+
+    <span class="c1"># get first grade candidate points</span>
+
+    <span class="k">if</span> <span class="n">use_percentile</span><span class="p">:</span>
+        <span class="n">thresh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">coeffs</span><span class="p">,</span> <span class="n">thresh</span><span class="p">)</span>
+
+    <span class="n">fg_candidate_pixels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">),</span> <span class="n">coeff</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">ndenumerate</span><span class="p">(</span><span class="n">coeffs</span><span class="p">)</span> <span class="k">if</span> <span class="n">coeff</span> <span class="o">&gt;=</span> <span class="n">thresh</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">fg_candidate_pixels</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Cifi returned empty set.&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="c1"># pragma: no cover</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">coeffs</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">fg_candidate_pixels</span><span class="p">,</span> <span class="n">best_scales</span></div>
+
+
+<div class="viewcode-block" id="rafi"><a class="viewcode-back" href="../../../library/matcher/ciratefi.html#autocnet.matcher.ciratefi.rafi">[docs]</a><span class="k">def</span> <span class="nf">rafi</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">search_image</span><span class="p">,</span> <span class="n">candidate_pixels</span><span class="p">,</span> <span class="n">best_scales</span><span class="p">,</span> <span class="n">thresh</span><span class="o">=</span><span class="mi">95</span><span class="p">,</span>
+         <span class="n">use_percentile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">8</span><span class="p">,</span> <span class="n">radii</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">)),</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The seconds filter in Ciratefi, the Radial Sampling Filter (Rafi), uses</span>
+<span class="sd">    projections of the template image and the search image on a set of radial</span>
+<span class="sd">    lines to upgrade the first grade the candidate pixels from cefi to</span>
+<span class="sd">    seconds grade candidate pixels along with there corresponding best</span>
+<span class="sd">    fit rotation.</span>
+
+<span class="sd">    The template image is radially sampled at angles 0-2*pi at steps alpha and</span>
+<span class="sd">    with the best fit radius (largest sampling radius from radii list that fits</span>
+<span class="sd">    in the template image)</span>
+
+<span class="sd">    Sampling for each line equals the sum of the greyscales divided by the</span>
+<span class="sd">    best fit radius.</span>
+
+<span class="sd">    The search image is similarly sampled at each candidate pixel and is correlated</span>
+<span class="sd">    with the radial samples on the template. The best fit angle is the angle that</span>
+<span class="sd">    maximizes this correlation, and the second grade candidate pixels are determined</span>
+<span class="sd">    by the strength of the correlation and the passed threshold</span>
+
+<span class="sd">    parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    template : np.array</span>
+<span class="sd">               The input search template used to &#39;query&#39; the destination</span>
+<span class="sd">               image</span>
+
+<span class="sd">    search_image : np.array</span>
+<span class="sd">                   The image or sub-image to be searched</span>
+
+<span class="sd">    candidate_pixels : np.array</span>
+<span class="sd">                       array of candidate pixels in tuples (y,x), best if</span>
+<span class="sd">                       the pixel are the output of Cifi</span>
+
+<span class="sd">    best_scales : ndarray</span>
+<span class="sd">             The list of best fit scales for each candidate point,</span>
+<span class="sd">             the length should equal the length of the candidate point</span>
+<span class="sd">             list</span>
+
+<span class="sd">    thresh : float</span>
+<span class="sd">             The correlation thresh hold above which a point will</span>
+<span class="sd">             be a first grade candidate point. If use_percentile=True</span>
+<span class="sd">             this will act as a percentile, for example, passing 90 means</span>
+<span class="sd">             keep values in the top 90th percentile</span>
+
+<span class="sd">    use_percentile : bool</span>
+<span class="sd">                     If True (default), thresh is a percentile instead of a hard</span>
+<span class="sd">                     strength value</span>
+
+<span class="sd">    alpha : float</span>
+<span class="sd">            Must be greater than 0, if alpha is greater than 2*pi, it is reduced to it&#39;s</span>
+<span class="sd">            equivalent angle in [0,2*pi]. alpha list = np.arange(0, 2*pi, alpha)</span>
+
+<span class="sd">    radii : list</span>
+<span class="sd">            The list of radii to use for radial sampling, best if the list</span>
+<span class="sd">            is the same as the one used for Cifi</span>
+
+<span class="sd">    verbose : bool</span>
+<span class="sd">              Set to True in order to output images and text describing the outputs. Can</span>
+<span class="sd">              cause a serious decrease in performance. False by default.</span>
+
+<span class="sd">    returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    sg_candidate_points : ndarray</span>
+
+<span class="sd">    best_rotation : ndarray</span>
+<span class="sd">                    Parrallel array of the best fit rotations for each</span>
+<span class="sd">                    second grade candidate pixel</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># check inputs for validity</span>
+
+    <span class="k">if</span> <span class="n">search_image</span><span class="o">.</span><span class="n">shape</span> <span class="o">&lt;</span> <span class="n">template</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Template Image is smaller than Search Image for template of&#39;</span>
+                         <span class="s1">&#39;size: </span><span class="si">{}</span><span class="s1"> and search image of size: </span><span class="si">{}</span><span class="s1">&#39;</span>
+                         <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">search_image</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+
+    <span class="n">candidate_pixels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">candidate_pixels</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">candidate_pixels</span><span class="o">.</span><span class="n">size</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">candidate_pixels</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;cadidate pixel list is empty&#39;</span><span class="p">)</span>
+
+    <span class="n">best_scales</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">best_scales</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">best_scales</span><span class="o">.</span><span class="n">size</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">best_scales</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;best_scale list is empty&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">best_scales</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">search_image</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Search image and scales must be of the same shape &#39;</span>
+                         <span class="s1">&#39;got: best scales shape: </span><span class="si">{}</span><span class="s1">, search image shape: </span><span class="si">{}</span><span class="s1">&#39;</span>
+                         <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">best_scales</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">search_image</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+
+    <span class="n">radii</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">radii</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">radii</span><span class="o">.</span><span class="n">size</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">radii</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Input radii list is empty&#39;</span><span class="p">)</span>
+
+    <span class="n">best_scales</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">best_scales</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">best_scales</span><span class="o">.</span><span class="n">size</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">best_scales</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Input best_scales list is empty&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">max</span><span class="p">(</span><span class="n">radii</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Max Radii is larger than original template, this mat produce sub-par results.&#39;</span>
+                      <span class="s1">&#39;Max radii: </span><span class="si">{}</span><span class="s1"> max template dimension: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">radii</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">shape</span><span class="p">)))</span>
+
+    <span class="k">if</span> <span class="n">thresh</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">1.</span> <span class="ow">or</span> <span class="n">thresh</span> <span class="o">&gt;</span> <span class="mf">1.</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">use_percentile</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Thresholds must be in range [-1,1] when not using percentiles. Got: </span><span class="si">{}</span><span class="s1">&#39;</span>
+                         <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">thresh</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">alpha</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Alpha must be &gt;= 0&#39;</span><span class="p">)</span>
+    <span class="n">alpha</span> <span class="o">%=</span> <span class="mi">2</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span>
+
+    <span class="c1"># Rafi 1  -- Get Radial Samples of Template Image</span>
+    <span class="n">alpha_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
+    <span class="n">template_alpha_samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">alpha_list</span><span class="p">))</span>
+    <span class="n">center_y</span><span class="p">,</span> <span class="n">center_x</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span>
+                          <span class="nb">int</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span>
+
+    <span class="c1"># find the largest fitting radius</span>
+    <span class="n">rad_thresh</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">center_x</span><span class="p">,</span> <span class="n">center_y</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">rad_thresh</span> <span class="o">&gt;=</span> <span class="nb">max</span><span class="p">(</span><span class="n">radii</span><span class="p">):</span>
+        <span class="n">radius</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">radii</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">radius</span> <span class="o">=</span> <span class="n">radii</span><span class="p">[</span><span class="n">bisect_left</span><span class="p">(</span><span class="n">radii</span><span class="p">,</span> <span class="n">rad_thresh</span><span class="p">)]</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">template_alpha_samples</span><span class="p">)):</span>
+        <span class="c1"># Create Radial Line Mask</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">radial_line_mask</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="p">(</span><span class="n">center_y</span><span class="p">,</span> <span class="n">center_x</span><span class="p">),</span> <span class="n">radius</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha_list</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="c1"># Sum the values</span>
+        <span class="n">template_alpha_samples</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">template</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span><span class="o">/</span><span class="n">radius</span>
+
+    <span class="c1"># Rafi 2 -- Get Radial Samples of the Search Image for all First Grade Candidate Points</span>
+    <span class="n">rafi_alpha_means</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">candidate_pixels</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">alpha_list</span><span class="p">)))</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">candidate_pixels</span><span class="p">)):</span>
+        <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">candidate_pixels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+        <span class="n">rad</span> <span class="o">=</span> <span class="n">radius</span> <span class="k">if</span> <span class="nb">min</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">radius</span> <span class="k">else</span> <span class="nb">min</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+        <span class="n">cropped_search</span> <span class="o">=</span> <span class="n">search_image</span><span class="p">[</span><span class="n">y</span><span class="o">-</span><span class="n">rad</span><span class="p">:</span><span class="n">y</span><span class="o">+</span><span class="n">rad</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">x</span><span class="o">-</span><span class="n">rad</span><span class="p">:</span><span class="n">x</span><span class="o">+</span><span class="n">rad</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">scaled_img</span> <span class="o">=</span> <span class="n">rescale</span><span class="p">(</span><span class="n">cropped_search</span><span class="p">,</span> <span class="n">best_scales</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">],</span> <span class="n">preserve_range</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">multichannel</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># Will except if image size too small after scaling</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">scaled_center_y</span><span class="p">,</span> <span class="n">scaled_center_x</span> <span class="o">=</span> <span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">scaled_img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span>
+                                                <span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">scaled_img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">))</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="se">\&#39;</span><span class="s1"> window is to small to use for scale </span><span class="si">{}</span><span class="s1"> at resulting size&#39;</span>
+                          <span class="o">.</span><span class="n">format</span><span class="p">((</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">),</span> <span class="n">best_scales</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">],</span> <span class="n">scaled_img</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+            <span class="n">rafi_alpha_means</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">negative</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">alpha_list</span><span class="p">)))</span>
+            <span class="k">continue</span>
+
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">alpha_list</span><span class="p">)):</span>
+            <span class="c1"># Create Radial Mask</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">radial_line_mask</span><span class="p">(</span><span class="n">scaled_img</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="p">(</span><span class="n">scaled_center_y</span><span class="p">,</span> <span class="n">scaled_center_x</span><span class="p">),</span>
+                                         <span class="n">scaled_center_y</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha_list</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+            <span class="n">rafi_alpha_means</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">scaled_img</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span><span class="o">/</span><span class="n">radius</span>
+
+    <span class="n">best_rotation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">candidate_pixels</span><span class="p">))</span>
+    <span class="n">rafi_coeffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">candidate_pixels</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="c1"># pragma: no cover</span>
+        <span class="n">image_pixels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">search_image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">search_image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+
+    <span class="c1"># Perform Normalized Cross-Correlation between template and target image</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">candidate_pixels</span><span class="p">)):</span>
+        <span class="n">maxcoeff</span> <span class="o">=</span> <span class="o">-</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span>
+        <span class="n">maxrotate</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">candidate_pixels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">alpha_list</span><span class="p">)):</span>
+            <span class="c1"># perform circular shifting of template sums</span>
+            <span class="n">shifted_template_angle_sums</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">template_alpha_samples</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">matchTemplate</span><span class="p">(</span><span class="n">shifted_template_angle_sums</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span>
+                                       <span class="n">rafi_alpha_means</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span> <span class="n">method</span><span class="o">=</span><span class="n">cv2</span><span class="o">.</span><span class="n">TM_CCORR_NORMED</span><span class="p">)</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">score</span> <span class="o">&gt;</span> <span class="n">maxcoeff</span><span class="p">:</span>
+                <span class="n">maxcoeff</span> <span class="o">=</span> <span class="n">score</span>
+                <span class="n">maxrotate</span> <span class="o">=</span> <span class="n">j</span>
+
+        <span class="n">rafi_coeffs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">maxcoeff</span>
+        <span class="n">best_rotation</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">alpha_list</span><span class="p">[</span><span class="n">maxrotate</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="c1"># pragma: no cover</span>
+            <span class="n">image_pixels</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">maxcoeff</span>
+
+    <span class="c1"># Get second grade candidate points and best rotation</span>
+
+    <span class="k">if</span> <span class="n">use_percentile</span><span class="p">:</span>
+        <span class="n">thresh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">rafi_coeffs</span><span class="p">,</span> <span class="n">thresh</span><span class="p">)</span>
+
+    <span class="n">rafi_mask</span> <span class="o">=</span> <span class="n">rafi_coeffs</span> <span class="o">&gt;=</span> <span class="n">thresh</span>
+    <span class="n">sg_candidate_points</span> <span class="o">=</span> <span class="n">candidate_pixels</span><span class="p">[</span><span class="n">rafi_mask</span><span class="p">]</span>
+    <span class="n">best_rotation</span> <span class="o">=</span> <span class="n">best_rotation</span><span class="p">[</span><span class="n">rafi_mask</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">sg_candidate_points</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Second filter Rafi returned empty set.&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="c1"># pragma: no cover</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">image_pixels</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">sg_candidate_points</span><span class="p">,</span> <span class="n">best_rotation</span></div>
+
+
+<div class="viewcode-block" id="tefi"><a class="viewcode-back" href="../../../library/matcher/ciratefi.html#autocnet.matcher.ciratefi.tefi">[docs]</a><span class="k">def</span> <span class="nf">tefi</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">search_image</span><span class="p">,</span> <span class="n">candidate_pixels</span><span class="p">,</span> <span class="n">best_scales</span><span class="p">,</span> <span class="n">best_angles</span><span class="p">,</span>
+         <span class="n">scales</span><span class="o">=</span><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.57</span><span class="p">,</span> <span class="mf">0.66</span><span class="p">,</span>  <span class="mf">0.76</span><span class="p">,</span> <span class="mf">0.87</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="n">upsampling</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">thresh</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+         <span class="n">alpha</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">16</span><span class="p">,</span> <span class="n">use_percentile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Template Matching Filter (Tefi) is the third and final filter for ciratefi.</span>
+
+<span class="sd">    For every candidate pixel, tefi rotates and scales the template image by the list</span>
+<span class="sd">    of scales and angles passed in (which, ideally are the output from cefi and rafi</span>
+<span class="sd">    respectively) and performs template match around the candidate pixels at the</span>
+<span class="sd">    approriate scale and rotation angle. Here, the scales, angles and candidate</span>
+<span class="sd">    points should be a parrallel array structure.</span>
+
+<span class="sd">    Any points with correlation strength over the threshold are returned as</span>
+<span class="sd">    the the strongest candidates for the image location. If knows the point</span>
+<span class="sd">    exists in one location, thresh should be 100 and use_percentile = True.</span>
+
+<span class="sd">    parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    template : ndarray</span>
+<span class="sd">               The input search template used to &#39;query&#39; the destination</span>
+<span class="sd">               image</span>
+
+<span class="sd">    image : ndarray</span>
+<span class="sd">            The image or sub-image to be searched</span>
+
+<span class="sd">    candidate_pixels : ndarray</span>
+<span class="sd">                       array of candidate pixels in tuples (y,x), best if</span>
+<span class="sd">                       the pixel are the output of Cifi</span>
+
+<span class="sd">    best_scales : ndarray</span>
+<span class="sd">                  The list of best fit scales for each candidate point, the length</span>
+<span class="sd">                  should equal the length of the candidate point list</span>
+
+<span class="sd">    best_angles : ndarray</span>
+<span class="sd">                  The list of best fit rotation for each candidate point in radians,</span>
+<span class="sd">                  the length should equal the length of the candidate point list</span>
+
+<span class="sd">    upsampling : int</span>
+<span class="sd">                 upsample degree</span>
+
+<span class="sd">    thresh : float</span>
+<span class="sd">             The correlation thresh hold above which a point will</span>
+<span class="sd">             be a first grade candidate point. If use_percentile=True</span>
+<span class="sd">             this will act as a percentile, for example, passing 90 means</span>
+<span class="sd">             keep values in the top 90th percentile</span>
+
+<span class="sd">    use_percentile : bool</span>
+<span class="sd">                     If True (default), thresh is a percentile instead of a hard</span>
+<span class="sd">                     strength value</span>
+
+<span class="sd">    alpha : float</span>
+<span class="sd">            A float between 0 &amp; 2*pi, alpha list = np.arange(0, 2*pi, alpha)</span>
+
+<span class="sd">    verbose : bool</span>
+<span class="sd">              Set to True in order to output images and text describing the outputs. Can</span>
+<span class="sd">              cause a serious decrease in performance. False by default.</span>
+
+<span class="sd">    returns</span>
+<span class="sd">    -------</span>
+
+<span class="sd">    results : ndarray</span>
+<span class="sd">              array of pixel tuples (y,x) which over the threshold</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># check all inputs for validity, probably a better way to do this</span>
+
+    <span class="k">if</span> <span class="n">search_image</span><span class="o">.</span><span class="n">shape</span> <span class="o">&lt;</span> <span class="n">template</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Template Image is smaller than Search Image for template of&#39;</span>
+                         <span class="s1">&#39;size: </span><span class="si">{}</span><span class="s1"> and search image of size: </span><span class="si">{}</span><span class="s1">&#39;</span>
+                         <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">search_image</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+
+    <span class="n">candidate_pixels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">candidate_pixels</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">candidate_pixels</span><span class="o">.</span><span class="n">size</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">candidate_pixels</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;cadidate pixel list is empty&#39;</span><span class="p">)</span>
+
+    <span class="n">best_scales</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">best_scales</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">best_scales</span><span class="o">.</span><span class="n">size</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">best_scales</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;best_scale list is empty&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">best_scales</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">search_image</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Search image and scales must be of the same shape &#39;</span>
+                         <span class="s1">&#39;got: best scales shape: </span><span class="si">{}</span><span class="s1">, search image shape: </span><span class="si">{}</span><span class="s1">&#39;</span>
+                         <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">best_scales</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">search_image</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+
+    <span class="n">best_angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">best_angles</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">best_angles</span><span class="o">.</span><span class="n">size</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">best_angles</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Input best angle list is empty&#39;</span><span class="p">)</span>
+
+    <span class="n">best_scales</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">best_scales</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">best_scales</span><span class="o">.</span><span class="n">size</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">best_scales</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Input best_scales list is empty&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">thresh</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">1.</span> <span class="ow">or</span> <span class="n">thresh</span> <span class="o">&gt;</span> <span class="mf">1.</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">use_percentile</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Thresholds must be in range [-1,1] when not using percentiles. Got: </span><span class="si">{}</span><span class="s1">&#39;</span>
+                         <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">thresh</span><span class="p">))</span>
+
+    <span class="c1"># Check inputs</span>
+    <span class="k">if</span> <span class="n">upsampling</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Upsampling must be &gt;= 1, got </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">upsampling</span><span class="p">))</span>
+
+    <span class="n">tefi_coeffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">candidate_pixels</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="c1"># if verbose, preallocate pixel data</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="c1"># pragma: no cover</span>
+        <span class="n">image_pixels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">search_image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">search_image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+
+    <span class="c1"># check for upsampling</span>
+    <span class="k">if</span> <span class="n">upsampling</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">u_template</span> <span class="o">=</span> <span class="n">zoom</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">upsampling</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">u_search_image</span> <span class="o">=</span> <span class="n">zoom</span><span class="p">(</span><span class="n">search_image</span><span class="p">,</span> <span class="n">upsampling</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+    <span class="n">alpha_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
+    <span class="n">candidate_pixels</span> <span class="o">*=</span> <span class="nb">int</span><span class="p">(</span><span class="n">upsampling</span><span class="p">)</span>
+
+    <span class="c1"># Tefi -- Template Matching Filter</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">candidate_pixels</span><span class="p">)):</span>
+        <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">candidate_pixels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">best_scale_idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">scales</span> <span class="o">==</span> <span class="n">best_scales</span><span class="p">[</span><span class="n">y</span><span class="o">//</span><span class="n">upsampling</span><span class="p">,</span> <span class="n">x</span><span class="o">//</span><span class="n">upsampling</span><span class="p">]))[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">best_alpha_idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">alpha_list</span><span class="p">,</span> <span class="n">best_angles</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">atol</span><span class="o">=.</span><span class="mi">01</span><span class="p">)))[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">tefi_coeffs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">continue</span>
+
+        <span class="n">tefi_scales</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">scales</span><span class="p">)</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">best_scale_idx</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">best_scale_idx</span><span class="o">+</span><span class="mi">2</span><span class="p">),</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;wrap&#39;</span><span class="p">)</span>
+        <span class="n">tefi_alphas</span> <span class="o">=</span> <span class="n">alpha_list</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">best_alpha_idx</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">best_alpha_idx</span><span class="o">+</span><span class="mi">2</span><span class="p">),</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;wrap&#39;</span><span class="p">)</span>
+
+        <span class="n">scalesxalphas</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">cartesian</span><span class="p">([</span><span class="n">tefi_scales</span><span class="p">,</span> <span class="n">tefi_alphas</span><span class="p">])</span>
+
+        <span class="n">max_coeff</span> <span class="o">=</span> <span class="o">-</span><span class="n">math</span><span class="o">.</span><span class="n">inf</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">scalesxalphas</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">transformed_template</span> <span class="o">=</span> <span class="n">rescale</span><span class="p">(</span><span class="n">u_template</span><span class="p">,</span> <span class="n">scalesxalphas</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span><span class="n">preserve_range</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">multichannel</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">transformed_template</span> <span class="o">=</span> <span class="n">rotate</span><span class="p">(</span><span class="n">transformed_template</span><span class="p">,</span> <span class="n">scalesxalphas</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+
+            <span class="n">y_window</span><span class="p">,</span> <span class="n">x_window</span> <span class="o">=</span> <span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">transformed_template</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span>
+                                  <span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">transformed_template</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">))</span>
+
+            <span class="n">cropped_search</span> <span class="o">=</span> <span class="n">u_search_image</span><span class="p">[</span><span class="n">y</span><span class="o">-</span><span class="n">y_window</span><span class="p">:</span><span class="n">y</span><span class="o">+</span><span class="n">y_window</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">x</span><span class="o">-</span><span class="n">x_window</span><span class="p">:</span><span class="n">x</span><span class="o">+</span><span class="n">x_window</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="k">if</span><span class="p">(</span><span class="n">y</span> <span class="o">&lt;</span> <span class="n">y_window</span> <span class="ow">or</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">x_window</span> <span class="ow">or</span> <span class="n">cropped_search</span><span class="o">.</span><span class="n">shape</span> <span class="o">&lt;</span> <span class="n">transformed_template</span><span class="o">.</span><span class="n">shape</span> <span class="ow">or</span>
+               <span class="n">cropped_search</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">transformed_template</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
+                <span class="n">score</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">matchTemplate</span><span class="p">(</span><span class="n">transformed_template</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span> <span class="n">cropped_search</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span> <span class="n">method</span><span class="o">=</span><span class="n">cv2</span><span class="o">.</span><span class="n">TM_CCORR_NORMED</span><span class="p">)</span>
+                <span class="n">score</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">score</span> <span class="o">&gt;</span> <span class="n">max_coeff</span><span class="p">:</span>
+                <span class="n">max_coeff</span> <span class="o">=</span> <span class="n">score</span>
+
+        <span class="n">tefi_coeffs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">max_coeff</span>
+
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="c1"># pragma: no cover</span>
+            <span class="n">image_pixels</span><span class="p">[</span><span class="n">y</span><span class="o">//</span><span class="n">upsampling</span><span class="p">,</span> <span class="n">x</span><span class="o">//</span><span class="n">upsampling</span><span class="p">]</span> <span class="o">=</span> <span class="n">max_coeff</span>
+
+    <span class="k">if</span> <span class="n">use_percentile</span><span class="p">:</span>
+        <span class="n">thresh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">tefi_coeffs</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">thresh</span><span class="p">))</span>
+
+    <span class="n">result_points</span> <span class="o">=</span> <span class="n">candidate_pixels</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">tefi_coeffs</span> <span class="o">&gt;=</span> <span class="n">thresh</span><span class="p">)]</span>
+    <span class="n">result_coeffs</span> <span class="o">=</span> <span class="n">tefi_coeffs</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">tefi_coeffs</span> <span class="o">&gt;=</span> <span class="n">thresh</span><span class="p">)]</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="n">result_points</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">result_points</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">ideal_y</span> <span class="o">=</span> <span class="n">u_search_image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="n">ideal_x</span> <span class="o">=</span> <span class="n">u_search_image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">image_pixels</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="o">/</span><span class="n">upsampling</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="o">/</span><span class="n">upsampling</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">80</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">ideal_x</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span><span class="o">/</span><span class="n">upsampling</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="p">(</span><span class="n">ideal_y</span> <span class="o">-</span> <span class="n">y</span><span class="p">)</span><span class="o">/</span><span class="n">upsampling</span>
+
+    <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">result_coeffs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="ciratefi"><a class="viewcode-back" href="../../../library/matcher/ciratefi.html#autocnet.matcher.ciratefi.ciratefi">[docs]</a><span class="k">def</span> <span class="nf">ciratefi</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">search_image</span><span class="p">,</span> <span class="n">upsampling</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">cifi_thresh</span><span class="o">=</span><span class="mi">95</span><span class="p">,</span> <span class="n">rafi_thresh</span><span class="o">=</span><span class="mi">95</span><span class="p">,</span> <span class="n">tefi_thresh</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+             <span class="n">use_percentile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">16</span><span class="p">,</span> <span class="n">scales</span><span class="o">=</span><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.57</span><span class="p">,</span> <span class="mf">0.66</span><span class="p">,</span>  <span class="mf">0.76</span><span class="p">,</span> <span class="mf">0.87</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span>
+             <span class="n">radii</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">)),</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    template : ndarray</span>
+<span class="sd">               The input search template used to &#39;query&#39; the destination</span>
+<span class="sd">               image</span>
+
+<span class="sd">    search_image : ndarray</span>
+<span class="sd">                   The image or sub-image to be searched</span>
+
+<span class="sd">    upsampling : int</span>
+<span class="sd">                 upsample degree</span>
+
+<span class="sd">    cifi_thresh : float</span>
+<span class="sd">             The correlation thresh hold for cifi above which a point will</span>
+<span class="sd">             be a first grade candidate point. If use_percentile=True</span>
+<span class="sd">             this will act as a percentile, for example, passing 90 means</span>
+<span class="sd">             keep values in the top 90th percentile</span>
+
+<span class="sd">    rafi_thresh : float</span>
+<span class="sd">                  The correlation thresh hold for rafi above which a point will</span>
+<span class="sd">                  be a first grade candidate point. If use_percentile=True</span>
+<span class="sd">                  this will act as a percentile, for example, passing 90 means</span>
+<span class="sd">                  keep values in the top 90th percentile</span>
+
+<span class="sd">    tefi_thresh : float</span>
+<span class="sd">                  The correlation thresh hold for tefi above which a point will</span>
+<span class="sd">                  be a first grade candidate point. If use_percentile=True</span>
+<span class="sd">                  this will act as a percentile, for example, passing 90 means</span>
+<span class="sd">                  keep values in the top 90th percentile</span>
+
+<span class="sd">    use_percentile : bool</span>
+<span class="sd">                     If True (default), thresh is a percentile instead of a hard</span>
+<span class="sd">                     strength value</span>
+<span class="sd">    alpha : float</span>
+<span class="sd">            Must be greater than 0, if alpha is greater than 2*pi, it is reduced to it&#39;s</span>
+<span class="sd">            equivalent angle in [0,2*pi]. alpha list = np.arange(0, 2*pi, alpha)</span>
+
+<span class="sd">    radii : np.array</span>
+<span class="sd">            The list of radii to use for radial sampling</span>
+
+<span class="sd">    scales : list</span>
+<span class="sd">             The list of scales to be applied to the template image, best if</span>
+<span class="sd">             a geometric series</span>
+
+<span class="sd">    verbose : bool</span>
+<span class="sd">              Set to True in order to output images and text describing the outputs. Can</span>
+<span class="sd">              cause a serious decrease in performance. False by default.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    results : ndarray</span>
+<span class="sd">              array of pixel in (y, x)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Perform first filter cifi</span>
+    <span class="n">fg_candidate_pixels</span><span class="p">,</span> <span class="n">best_scales</span> <span class="o">=</span> <span class="n">cifi</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">search_image</span><span class="p">,</span> <span class="n">thresh</span><span class="o">=</span><span class="n">cifi_thresh</span><span class="p">,</span>
+                                            <span class="n">use_percentile</span><span class="o">=</span><span class="n">use_percentile</span><span class="p">,</span>
+                                            <span class="n">scales</span><span class="o">=</span><span class="n">scales</span><span class="p">,</span> <span class="n">radii</span><span class="o">=</span><span class="n">radii</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+    <span class="c1"># Perform second filter rafi</span>
+    <span class="n">sg_candidate_points</span><span class="p">,</span> <span class="n">best_rotation</span> <span class="o">=</span> <span class="n">rafi</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">search_image</span><span class="p">,</span> <span class="n">fg_candidate_pixels</span><span class="p">,</span> <span class="n">best_scales</span><span class="p">,</span>
+                                              <span class="n">thresh</span><span class="o">=</span><span class="n">rafi_thresh</span><span class="p">,</span> <span class="n">use_percentile</span><span class="o">=</span><span class="n">use_percentile</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span>
+                                              <span class="n">radii</span><span class="o">=</span><span class="n">radii</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+
+    <span class="c1"># Perform last filter tefi</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">tefi</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">search_image</span><span class="p">,</span> <span class="n">sg_candidate_points</span><span class="p">,</span> <span class="n">best_scales</span><span class="p">,</span> <span class="n">best_rotation</span><span class="p">,</span>
+                   <span class="n">thresh</span><span class="o">=</span><span class="n">tefi_thresh</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">4</span><span class="p">,</span> <span class="n">use_percentile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">upsampling</span><span class="o">=</span><span class="n">upsampling</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+
+    <span class="c1"># return the points found</span>
+    <span class="k">return</span> <span class="n">results</span></div>
+
+
+<div class="viewcode-block" id="to_polar_coord"><a class="viewcode-back" href="../../../library/matcher/ciratefi.html#autocnet.matcher.ciratefi.to_polar_coord">[docs]</a><span class="k">def</span> <span class="nf">to_polar_coord</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">center</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a polar coordinate grid from a shape given</span>
+<span class="sd">    a center.</span>
+
+<span class="sd">    parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    shape : tuple</span>
+<span class="sd">            tuple decribing the desired shape in</span>
+<span class="sd">            (y,x)</span>
+
+<span class="sd">    center : tuple</span>
+<span class="sd">             tuple describing the desired center</span>
+<span class="sd">             for the grid</span>
+
+<span class="sd">    returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    r2 : ndarray</span>
+<span class="sd">         grid of radii from the center</span>
+
+<span class="sd">    theta : ndarray</span>
+<span class="sd">            grid of angles from the center</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ogrid</span><span class="p">[:</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">:</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+    <span class="n">cy</span><span class="p">,</span> <span class="n">cx</span> <span class="o">=</span> <span class="n">center</span>
+    <span class="n">tmin</span><span class="p">,</span> <span class="n">tmax</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+
+    <span class="c1"># ensure stop angle &gt; start angle</span>
+    <span class="k">if</span> <span class="n">tmax</span> <span class="o">&lt;</span> <span class="n">tmin</span><span class="p">:</span>
+        <span class="n">tmax</span> <span class="o">+=</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+
+    <span class="c1"># convert cartesian --&gt; polar coordinates</span>
+    <span class="n">r2</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">cx</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">cx</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">y</span><span class="o">-</span><span class="n">cy</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">y</span><span class="o">-</span><span class="n">cy</span><span class="p">)</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">cx</span><span class="p">,</span> <span class="n">y</span><span class="o">-</span><span class="n">cy</span><span class="p">)</span> <span class="o">-</span> <span class="n">tmin</span>
+
+    <span class="c1"># wrap angles between 0 and 2*pi</span>
+    <span class="n">theta</span> <span class="o">%=</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">r2</span><span class="p">,</span> <span class="n">theta</span></div>
+
+
+<div class="viewcode-block" id="circ_mask"><a class="viewcode-back" href="../../../library/matcher/ciratefi.html#autocnet.matcher.ciratefi.circ_mask">[docs]</a><span class="k">def</span> <span class="nf">circ_mask</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">center</span><span class="p">,</span> <span class="n">radius</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates a circular mask</span>
+
+<span class="sd">    parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    shape : tuple</span>
+<span class="sd">            tuple decribing the desired mask shape in</span>
+<span class="sd">            (y,x)</span>
+
+<span class="sd">    center : tuple</span>
+<span class="sd">             tuple describing the desired center</span>
+<span class="sd">             for the circle</span>
+
+<span class="sd">    radius : float</span>
+<span class="sd">             radius of circlular mask</span>
+
+<span class="sd">    returns</span>
+<span class="sd">    -------</span>
+
+<span class="sd">    mask : ndarray</span>
+<span class="sd">           circular mask of bools</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">r</span><span class="p">,</span> <span class="n">theta</span> <span class="o">=</span> <span class="n">to_polar_coord</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">center</span><span class="p">)</span>
+
+    <span class="n">circle_mask</span> <span class="o">=</span> <span class="n">r</span> <span class="o">==</span> <span class="n">radius</span><span class="o">*</span><span class="n">radius</span>
+    <span class="n">angle_mask</span> <span class="o">=</span> <span class="n">theta</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span>
+
+    <span class="k">return</span> <span class="n">circle_mask</span><span class="o">*</span><span class="n">angle_mask</span></div>
+
+
+<div class="viewcode-block" id="radial_line_mask"><a class="viewcode-back" href="../../../library/matcher/ciratefi.html#autocnet.matcher.ciratefi.radial_line_mask">[docs]</a><span class="k">def</span> <span class="nf">radial_line_mask</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">center</span><span class="p">,</span> <span class="n">radius</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.19460421</span><span class="p">,</span> <span class="n">atol</span><span class="o">=.</span><span class="mi">01</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates a linear mask from center at angle alpha.</span>
+
+<span class="sd">    parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    shape : tuple</span>
+<span class="sd">            tuple decribing the desired mask shape in</span>
+<span class="sd">            (y,x)</span>
+
+<span class="sd">    center : tuple</span>
+<span class="sd">             tuple describing the desired center</span>
+<span class="sd">             for the circle</span>
+
+<span class="sd">    radius : float</span>
+<span class="sd">             radius of the line mask</span>
+
+<span class="sd">    alpha : float</span>
+<span class="sd">            angle for the line mask</span>
+
+<span class="sd">    atol : float</span>
+<span class="sd">           absolute tolerance for alpha, the higher</span>
+<span class="sd">           the tolerance, the wider the angle bandwidth</span>
+
+<span class="sd">    returns</span>
+<span class="sd">    -------</span>
+
+<span class="sd">    mask : ndarray</span>
+<span class="sd">           linear mask of bools</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">r</span><span class="p">,</span> <span class="n">theta</span> <span class="o">=</span> <span class="n">to_polar_coord</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">center</span><span class="p">)</span>
+
+    <span class="n">line_mask</span> <span class="o">=</span> <span class="n">r</span> <span class="o">&lt;=</span> <span class="n">radius</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">anglemask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="p">[</span><span class="n">alpha</span><span class="p">],</span> <span class="n">atol</span><span class="o">=</span><span class="n">atol</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">line_mask</span><span class="o">*</span><span class="n">anglemask</span></div>
+</pre></div>
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

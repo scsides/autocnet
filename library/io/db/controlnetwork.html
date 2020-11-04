@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>io.db.controlnetwork — Database to Control Networks &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../None"></script>
+    <script type="text/javascript" src="../../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" >
+    <link rel="search" title="Search" href="../../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../../index.html" >
+    <link rel="up" title="io.db — Database Models for AutoCNet Server" href="index.html" >
+    <link rel="next" title="io.db.model — Database Models" href="model.html" >
+    <link rel="prev" title="io.db.connection — Database Connection" href="connection.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../../index.html" >Library Reference</a></li>
+          <li class="active"><a href="../index.html" ><code class="xref py py-mod docutils literal notranslate"><span class="pre">io</span></code> — File Input/Output</a></li>
+          <li class="active"><a href="index.html" accesskey="U"><code class="xref py py-mod docutils literal notranslate"><span class="pre">io.db</span></code> — Database Models for AutoCNet Server</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+      <li class="active">
+        <a href="model.html" title="io.db.model — Database Models"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="connection.html" title="io.db.connection — Database Connection"
+           accesskey="P">previous</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="connection.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">io.db.connection</span></code> — Database Connection</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="model.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">io.db.model</span></code> — Database Models</a></p>
+  <h3>This Page</h3>
+  <div>
+    <a href="../../../_sources/library/io/db/controlnetwork.rst.txt"
+       rel="nofollow">Show Source</a>
+  </div>
+<div class="this-page-menu">
+  <a href="/scipy/docs/scipy-docs/library/io/db/controlnetwork.rst.rst">Edit page</a>
+</div>
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <div class="section" id="io-db-controlnetwork-database-to-control-networks">
+<h1><code class="xref py py-mod docutils literal notranslate"><span class="pre">io.db.controlnetwork</span></code> — Database to Control Networks<a class="headerlink" href="#io-db-controlnetwork-database-to-control-networks" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="xref py py-mod docutils literal notranslate"><span class="pre">io.db.controlnetwork</span></code> module contains logic for reading a database stored control network into a pandas dataframe.</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 0.1.0.</span></p>
+</div>
+<span class="target" id="module-autocnet.io.db.controlnetwork"></span><dl class="py function">
+<dt id="autocnet.io.db.controlnetwork.db_to_df">
+<code class="sig-prename descclassname">autocnet.io.db.controlnetwork.</code><code class="sig-name descname">db_to_df</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">engine</span></em>, <em class="sig-param"><span class="n">sql</span><span class="o">=</span><span class="default_value">'\nSELECT measures.&quot;pointid&quot;,\n        points.&quot;pointType&quot;,\n        points.&quot;apriori&quot;,\n        points.&quot;adjusted&quot;,\n        points.&quot;pointIgnore&quot;,\n        measures.&quot;id&quot;,\n        measures.&quot;serialnumber&quot;,\n        measures.&quot;sample&quot;,\n        measures.&quot;line&quot;,\n        measures.&quot;measureType&quot;,\n        measures.&quot;imageid&quot;,\n        measures.&quot;measureIgnore&quot;,\n        measures.&quot;measureJigsawRejected&quot;,\n        measures.&quot;aprioriline&quot;,\n        measures.&quot;apriorisample&quot;\nFROM measures\nINNER JOIN points ON measures.&quot;pointid&quot; = points.&quot;id&quot;\nWHERE\n    points.&quot;pointIgnore&quot; = False AND\n    measures.&quot;measureIgnore&quot; = FALSE AND\n    measures.&quot;measureJigsawRejected&quot; = FALSE AND\n    measures.&quot;imageid&quot; NOT IN\n        (SELECT measures.&quot;imageid&quot;\n        FROM measures\n        INNER JOIN points ON measures.&quot;pointid&quot; = points.&quot;id&quot;\n        WHERE measures.&quot;measureIgnore&quot; = False and measures.&quot;measureJigsawRejected&quot; = False AND points.&quot;pointIgnore&quot; = False\n        GROUP BY measures.&quot;imageid&quot;\n        HAVING COUNT(DISTINCT measures.&quot;pointid&quot;)  &lt; 3)\nORDER BY measures.&quot;pointid&quot;, measures.&quot;id&quot;;\n'</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/autocnet/io/db/controlnetwork.html#db_to_df"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.io.db.controlnetwork.db_to_df" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a set of points/measures in an autocnet database, generate an ISIS
+compliant control network.
+:param path: The full path to the output network.
+:type path: str
+:param flistpath: (Optional) the path to the output filelist. By default</p>
+<blockquote>
+<div><p>the outout filelist path is genrated programatically
+as the provided path with the extension replaced with .lis.
+For example, out.net would have an associated out.lis file.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>sql</strong> (<em>str</em>) – The sql query to execute in the database.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.io.db.controlnetwork.update_measure_from_jigsaw">
+<code class="sig-prename descclassname">autocnet.io.db.controlnetwork.</code><code class="sig-name descname">update_measure_from_jigsaw</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">point</span></em>, <em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">ncg</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/autocnet/io/db/controlnetwork.html#update_measure_from_jigsaw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.io.db.controlnetwork.update_measure_from_jigsaw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the database (associated with ncg) with a single measure’s
+jigsaw line and sample residuals.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>point</strong> (<em>obj</em>) – point identifying object as defined by autocnet.io.db.model.Points</p></li>
+<li><p><strong>path</strong> (<em>str</em>) – absolute path and network name of control network used to update the measure/database.</p></li>
+<li><p><strong>ncg</strong> (<em>obj</em>) – the network candidate graph associated with the measure/database
+being updated.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

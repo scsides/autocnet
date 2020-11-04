@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>transformation.homography — Homographies &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../None"></script>
+    <script type="text/javascript" src="../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" >
+    <link rel="search" title="Search" href="../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../index.html" >
+    <link rel="up" title="transformation — Transformation Objects" href="index.html" >
+    <link rel="next" title="transformation.fundamental_matrix — Fundamental Matrices" href="fundamental.html" >
+    <link rel="prev" title="transformation — Transformation Objects" href="index.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../index.html" >Library Reference</a></li>
+          <li class="active"><a href="index.html" accesskey="U"><code class="xref py py-mod docutils literal notranslate"><span class="pre">transformation</span></code> — Transformation Objects</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+      <li class="active">
+        <a href="fundamental.html" title="transformation.fundamental_matrix — Fundamental Matrices"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="index.html" title="transformation — Transformation Objects"
+           accesskey="P">previous</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">transformation</span></code> — Transformation Objects</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="fundamental.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">transformation.fundamental_matrix</span></code> — Fundamental Matrices</a></p>
+  <h3>This Page</h3>
+  <div>
+    <a href="../../_sources/library/transformation/homography.rst.txt"
+       rel="nofollow">Show Source</a>
+  </div>
+<div class="this-page-menu">
+  <a href="/scipy/docs/scipy-docs/library/transformation/homography.rst.rst">Edit page</a>
+</div>
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <div class="section" id="transformation-homography-homographies">
+<h1><code class="xref py py-mod docutils literal notranslate"><span class="pre">transformation.homography</span></code> — Homographies<a class="headerlink" href="#transformation-homography-homographies" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="xref py py-mod docutils literal notranslate"><span class="pre">transformation.homography</span></code> module contains functions for computing a planar homography between two images and assessing reprojective error.  We do not generally suggest using these methods unless the user is confident that the images are planar.  In testing with planetary data, systematic error occurs due to topography even at long viewing distances.</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 0.1.0.</span></p>
+</div>
+<span class="target" id="module-autocnet.transformation.homography"></span><dl class="py function">
+<dt id="autocnet.transformation.homography.compute_error">
+<code class="sig-prename descclassname">autocnet.transformation.homography.</code><code class="sig-name descname">compute_error</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">H</span></em>, <em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">x1</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/transformation/homography.html#compute_error"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.transformation.homography.compute_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Give this homography, compute the planar reprojection error
+between points a and b.  x and x1 can be n, 2 or n,3 homogeneous
+coordinates.  If only x, y coordinates, assume that z=1, e.g. x, y, 1 for
+all coordiantes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>ndarray</em>) – n,2 array of x,y coordinates</p></li>
+<li><p><strong>x1</strong> (<em>ndarray</em>) – n,2 array of x,y coordinates</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>df</strong> – With columns for x_residual, y_residual, rmse, and
+error contribution.  The dataframe also has cumulative
+x, t, and total RMS statistics accessible via
+df.x_rms, df.y_rms, and df.total_rms, respectively.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dataframe</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.transformation.homography.compute_homography">
+<code class="sig-prename descclassname">autocnet.transformation.homography.</code><code class="sig-name descname">compute_homography</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x1</span></em>, <em class="sig-param"><span class="n">x2</span></em>, <em class="sig-param"><span class="n">method</span><span class="o">=</span><span class="default_value">'ransac'</span></em>, <em class="sig-param"><span class="n">reproj_threshold</span><span class="o">=</span><span class="default_value">2.0</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/transformation/homography.html#compute_homography"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.transformation.homography.compute_homography" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute a planar homography given two sets of keypoints</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x1</strong> (<em>ndarray</em>) – (n, 2) of coordinates from the source image</p></li>
+<li><p><strong>x2</strong> (<em>ndarray</em>) – (n, 2) of coordinates from the destination image</p></li>
+<li><p><strong>method</strong> (<em>{'ransac'</em><em>, </em><em>'lmeds'</em><em>, </em><em>'normal'}</em>) – The openCV algorithm to use for outlier detection</p></li>
+<li><p><strong>reproj_threshold</strong> (<em>float</em>) – The maximum distances in pixels a reprojected points
+can be from the epipolar line to be considered an inlier</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>H</strong> (<em>ndarray</em>) – (3,3) homography</p></li>
+<li><p><strong>mask</strong> (<em>ndarray</em>) – Boolean mask for those values omitted from the homography.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

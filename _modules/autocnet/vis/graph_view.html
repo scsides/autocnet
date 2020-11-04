@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>autocnet.vis.graph_view &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../None"></script>
+    <script type="text/javascript" src="../../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" >
+    <link rel="search" title="Search" href="../../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../../index.html" >
+    <link rel="up" title="Module code" href="../../index.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../../index.html" accesskey="U">Module code</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <h1>Source code for autocnet.vis.graph_view</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span>
+
+<span class="kn">from</span> <span class="nn">skimage.transform</span> <span class="kn">import</span> <span class="n">resize</span>
+
+<span class="k">def</span> <span class="nf">downsample</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">amount</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">resize</span><span class="p">(</span><span class="n">array</span><span class="p">,</span>
+                      <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">array</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">amount</span><span class="p">),</span>
+                      <span class="nb">int</span><span class="p">(</span><span class="n">array</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">amount</span><span class="p">)))</span>
+
+<div class="viewcode-block" id="plot_graph"><a class="viewcode-back" href="../../../library/vis/graph_view.html#autocnet.vis.graph_view.plot_graph">[docs]</a><span class="k">def</span> <span class="nf">plot_graph</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;Spectral&#39;</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">font_size</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">clusters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    graph : object</span>
+<span class="sd">            A networkX or derived graph object</span>
+
+<span class="sd">    ax : objext</span>
+<span class="sd">         A MatPlotLib axes object</span>
+
+<span class="sd">    cmap : str</span>
+<span class="sd">           A MatPlotLib color map string. Default &#39;Spectral&#39;</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ax : object</span>
+<span class="sd">         A MatPlotLib axes object. Either the argument passed in</span>
+<span class="sd">         or a new object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+
+    <span class="n">cmap</span> <span class="o">=</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">get_cmap</span><span class="p">(</span><span class="n">cmap</span><span class="p">)</span>
+
+    <span class="c1"># Setup edge color based on the health metric</span>
+    <span class="n">colors</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">edges_iter</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="s1">&#39;health&#39;</span><span class="p">):</span>
+            <span class="n">colors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cmap</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">health</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">colors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cmap</span><span class="p">(</span><span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">pos</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">spring_layout</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+    <span class="n">nx</span><span class="o">.</span><span class="n">draw_networkx_nodes</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+    <span class="n">nx</span><span class="o">.</span><span class="n">draw_networkx_edges</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">labels</span><span class="p">:</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">((</span><span class="n">i</span><span class="p">,</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;image_name&#39;</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes_iter</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+        <span class="n">nx</span><span class="o">.</span><span class="n">draw_networkx_labels</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">font_size</span><span class="o">=</span><span class="n">font_size</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ax</span></div>
+
+
+<div class="viewcode-block" id="plot_node"><a class="viewcode-back" href="../../../library/vis/graph_view.html#autocnet.vis.graph_view.plot_node">[docs]</a><span class="k">def</span> <span class="nf">plot_node</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">clean_keys</span><span class="o">=</span><span class="p">[],</span> <span class="n">index_mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">downsampling</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot the array and keypoints for a given node.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    node : object</span>
+<span class="sd">           A Node object from which data is extracted</span>
+
+<span class="sd">    ax : object</span>
+<span class="sd">         A MatPlotLIb axes object</span>
+
+<span class="sd">    clean_keys : list</span>
+<span class="sd">                 of strings of masking array names to apply</span>
+
+<span class="sd">    kwargs : dict</span>
+<span class="sd">             of MatPlotLib plotting options</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ax : object</span>
+<span class="sd">         A MatPlotLib axes object.  Either the argument passed in</span>
+<span class="sd">         or a new object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+
+    <span class="n">band</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="s1">&#39;band&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">band</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;band&#39;</span><span class="p">]</span>
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;band&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="n">array</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">get_array</span><span class="p">(</span><span class="n">band</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">downsampling</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="n">downsampling</span> <span class="o">=</span> <span class="n">node</span><span class="p">[</span><span class="s1">&#39;downsample_amount&#39;</span><span class="p">]</span>
+
+    <span class="n">array</span> <span class="o">=</span> <span class="n">downsample</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">downsampling</span><span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">node</span><span class="p">[</span><span class="s1">&#39;image_name&#39;</span><span class="p">])</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">margins</span><span class="p">(</span><span class="n">tight</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s1">&#39;cmap&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="n">cmap</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;cmap&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">cmap</span> <span class="o">=</span> <span class="s1">&#39;Greys&#39;</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">)</span>
+
+    <span class="n">keypoints</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">get_keypoints</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">index_mask</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">keypoints</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="n">marker</span> <span class="o">=</span> <span class="s1">&#39;.&#39;</span>
+        <span class="k">if</span> <span class="s1">&#39;marker&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">marker</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;marker&#39;</span><span class="p">]</span>
+            <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;marker&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">color</span> <span class="o">=</span> <span class="s1">&#39;r&#39;</span>
+        <span class="k">if</span> <span class="s1">&#39;color&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;color&#39;</span><span class="p">]</span>
+            <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;color&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">keypoints</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">],</span> <span class="n">keypoints</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">],</span> <span class="n">marker</span><span class="o">=</span><span class="n">marker</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ax</span></div>
+
+
+<span class="k">def</span> <span class="nf">plot_edge_decomposition</span><span class="p">(</span><span class="n">edge</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">clean_keys</span><span class="o">=</span><span class="p">[],</span> <span class="n">image_space</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+                            <span class="n">scatter_kwargs</span><span class="o">=</span><span class="p">{},</span> <span class="n">line_kwargs</span><span class="o">=</span><span class="p">{},</span> <span class="n">image_kwargs</span><span class="o">=</span><span class="p">{}):</span>
+
+    <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+
+    <span class="c1"># Plot setup</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Matching: </span><span class="si">{}</span><span class="s1"> to </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">edge</span><span class="o">.</span><span class="n">source</span><span class="p">[</span><span class="s1">&#39;image_name&#39;</span><span class="p">],</span>
+                                             <span class="n">edge</span><span class="o">.</span><span class="n">destination</span><span class="p">[</span><span class="s1">&#39;image_name&#39;</span><span class="p">]))</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">margins</span><span class="p">(</span><span class="n">tight</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Image plotting</span>
+    <span class="n">source_array</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">get_array</span><span class="p">()</span>
+    <span class="n">destination_array</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">destination</span><span class="o">.</span><span class="n">get_array</span><span class="p">()</span>
+
+    <span class="n">s_shape</span> <span class="o">=</span> <span class="n">source_array</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">d_shape</span> <span class="o">=</span> <span class="n">destination_array</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="n">y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">s_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">d_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">s_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">d_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">image_space</span>
+    <span class="n">composite</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">))</span>
+    <span class="n">composite_decomp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+
+    <span class="n">composite</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span> <span class="n">s_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">:</span><span class="n">s_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">source_array</span>
+    <span class="n">composite</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span> <span class="n">d_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">s_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">image_space</span><span class="p">:]</span> <span class="o">=</span> <span class="n">destination_array</span>
+
+    <span class="n">composite_decomp</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span> <span class="n">s_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">:</span><span class="n">s_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">smembership</span>
+    <span class="n">composite_decomp</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span> <span class="n">d_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">s_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">image_space</span><span class="p">:]</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">dmembership</span>
+
+    <span class="k">if</span> <span class="s1">&#39;cmap&#39;</span> <span class="ow">in</span> <span class="n">image_kwargs</span><span class="p">:</span>
+        <span class="n">cmap</span> <span class="o">=</span> <span class="n">image_kwargs</span><span class="p">[</span><span class="s1">&#39;cmap&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">cmap</span> <span class="o">=</span> <span class="s1">&#39;Greys&#39;</span>
+
+    <span class="n">matches</span><span class="p">,</span> <span class="n">mask</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">clean</span><span class="p">(</span><span class="n">clean_keys</span><span class="p">)</span>
+
+    <span class="n">source_keypoints</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">get_keypoints</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">matches</span><span class="p">[</span><span class="s1">&#39;source_idx&#39;</span><span class="p">])</span>
+    <span class="n">destination_keypoints</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">destination</span><span class="o">.</span><span class="n">get_keypoints</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">matches</span><span class="p">[</span><span class="s1">&#39;destination_idx&#39;</span><span class="p">])</span>
+
+    <span class="c1"># Plot the source</span>
+    <span class="n">source_idx</span> <span class="o">=</span> <span class="n">matches</span><span class="p">[</span><span class="s1">&#39;source_idx&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">s_kps</span> <span class="o">=</span> <span class="n">source_keypoints</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">source_idx</span><span class="p">]</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">s_kps</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">],</span> <span class="n">s_kps</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">],</span> <span class="o">**</span><span class="n">scatter_kwargs</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Plot the destination</span>
+    <span class="n">destination_idx</span> <span class="o">=</span> <span class="n">matches</span><span class="p">[</span><span class="s1">&#39;destination_idx&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">d_kps</span> <span class="o">=</span> <span class="n">destination_keypoints</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">destination_idx</span><span class="p">]</span>
+    <span class="n">x_offset</span> <span class="o">=</span> <span class="n">s_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">image_space</span>
+    <span class="n">newx</span> <span class="o">=</span> <span class="n">d_kps</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">x_offset</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">newx</span><span class="p">,</span> <span class="n">d_kps</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">],</span> <span class="o">**</span><span class="n">scatter_kwargs</span><span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">composite</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">composite_decomp</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;spectral&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.35</span><span class="p">)</span>
+    <span class="c1"># Draw the connecting lines</span>
+    <span class="n">color</span> <span class="o">=</span> <span class="s1">&#39;y&#39;</span>
+    <span class="k">if</span> <span class="s1">&#39;color&#39;</span> <span class="ow">in</span> <span class="n">line_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">color</span> <span class="o">=</span> <span class="n">line_kwargs</span><span class="p">[</span><span class="s1">&#39;color&#39;</span><span class="p">]</span>
+        <span class="n">line_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;color&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="n">s_kps</span> <span class="o">=</span> <span class="n">s_kps</span><span class="p">[[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">d_kps</span> <span class="o">=</span> <span class="n">d_kps</span><span class="p">[[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">d_kps</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">x_offset</span>
+
+    <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">s_kps</span><span class="p">,</span> <span class="n">d_kps</span><span class="p">):</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">((</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span> <span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="o">**</span><span class="n">line_kwargs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ax</span>
+
+<div class="viewcode-block" id="plot_edge"><a class="viewcode-back" href="../../../library/vis/graph_view.html#autocnet.vis.graph_view.plot_edge">[docs]</a><span class="k">def</span> <span class="nf">plot_edge</span><span class="p">(</span><span class="n">edge</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">clean_keys</span><span class="o">=</span><span class="p">[],</span> <span class="n">image_space</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">downsampling</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+              <span class="n">scatter_kwargs</span><span class="o">=</span><span class="p">{},</span> <span class="n">line_kwargs</span><span class="o">=</span><span class="p">{},</span> <span class="n">image_kwargs</span><span class="o">=</span><span class="p">{}):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot the correspondences for a given edge</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    edge : object</span>
+<span class="sd">           A graph edge object</span>
+
+<span class="sd">    ax : object</span>
+<span class="sd">         A MatPlotLIb axes object</span>
+
+<span class="sd">    clean_keys : list</span>
+<span class="sd">                 of strings of masking array names to apply</span>
+
+<span class="sd">    image_space : int</span>
+<span class="sd">                  The number of pixels to insert between the images</span>
+
+<span class="sd">    downsample : bool</span>
+
+<span class="sd">    scatter_kwargs : dict</span>
+<span class="sd">                     of MatPlotLib arguments to be applied to the scatter plots</span>
+
+<span class="sd">    line_kwargs : dict</span>
+<span class="sd">                  of MatPlotLib arguments to be applied to the lines connecting matches</span>
+
+<span class="sd">    image_kwargs : dict</span>
+<span class="sd">                   of MatPlotLib arguments to be applied to the image rendering</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ax : object</span>
+<span class="sd">         A MatPlotLib axes object.  Either the argument passed in</span>
+<span class="sd">         or a new object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+
+    <span class="c1"># Plot setup</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Matching: </span><span class="si">{}</span><span class="s1"> to </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">edge</span><span class="o">.</span><span class="n">source</span><span class="p">[</span><span class="s1">&#39;image_name&#39;</span><span class="p">],</span>
+                                             <span class="n">edge</span><span class="o">.</span><span class="n">destination</span><span class="p">[</span><span class="s1">&#39;image_name&#39;</span><span class="p">]))</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">margins</span><span class="p">(</span><span class="n">tight</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Image plotting</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">downsampling</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="n">downsample_source</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">source</span><span class="p">[</span><span class="s1">&#39;downsample_amount&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">downsample_source</span> <span class="o">=</span> <span class="n">downsampling</span>
+    <span class="n">source_array</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">get_array</span><span class="p">()</span>
+    <span class="n">source_array</span> <span class="o">=</span> <span class="n">downsample</span><span class="p">(</span><span class="n">source_array</span><span class="p">,</span> <span class="n">downsample_source</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">downsampling</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="n">downsample_destin</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">destination</span><span class="p">[</span><span class="s1">&#39;downsample_amount&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">downsample_destin</span> <span class="o">=</span> <span class="n">downsampling</span>
+    <span class="n">destination_array</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">destination</span><span class="o">.</span><span class="n">get_array</span><span class="p">()</span>
+    <span class="n">destination_array</span> <span class="o">=</span> <span class="n">downsample</span><span class="p">(</span><span class="n">destination_array</span><span class="p">,</span> <span class="n">downsample_destin</span><span class="p">)</span>
+
+    <span class="n">s_shape</span> <span class="o">=</span> <span class="n">source_array</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">d_shape</span> <span class="o">=</span> <span class="n">destination_array</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="n">y</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">s_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">d_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">s_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">d_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">image_space</span>
+    <span class="n">composite</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">))</span>
+
+    <span class="n">composite</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span> <span class="n">s_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">:</span><span class="n">s_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">source_array</span>
+    <span class="n">composite</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span> <span class="n">d_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">s_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">image_space</span><span class="p">:]</span> <span class="o">=</span> <span class="n">destination_array</span>
+
+    <span class="k">if</span> <span class="s1">&#39;cmap&#39;</span> <span class="ow">in</span> <span class="n">image_kwargs</span><span class="p">:</span>
+        <span class="n">image_cmap</span> <span class="o">=</span> <span class="n">image_kwargs</span><span class="p">[</span><span class="s1">&#39;cmap&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">image_cmap</span> <span class="o">=</span> <span class="s1">&#39;Greys&#39;</span>
+
+    <span class="n">matches</span><span class="p">,</span> <span class="n">mask</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">clean</span><span class="p">(</span><span class="n">clean_keys</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">matches</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="n">source_keypoints</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">get_keypoints</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">matches</span><span class="p">[</span><span class="s1">&#39;source_idx&#39;</span><span class="p">])</span>
+        <span class="n">destination_keypoints</span> <span class="o">=</span> <span class="n">edge</span><span class="o">.</span><span class="n">destination</span><span class="o">.</span><span class="n">get_keypoints</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">matches</span><span class="p">[</span><span class="s1">&#39;destination_idx&#39;</span><span class="p">])</span>
+
+        <span class="c1"># Plot the source</span>
+        <span class="n">source_idx</span> <span class="o">=</span> <span class="n">matches</span><span class="p">[</span><span class="s1">&#39;source_idx&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">s_kps</span> <span class="o">=</span> <span class="n">source_keypoints</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">source_idx</span><span class="p">]</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">s_kps</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">],</span> <span class="n">s_kps</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">],</span> <span class="o">**</span><span class="n">scatter_kwargs</span><span class="p">)</span>
+
+        <span class="c1"># Plot the destination</span>
+        <span class="n">destination_idx</span> <span class="o">=</span> <span class="n">matches</span><span class="p">[</span><span class="s1">&#39;destination_idx&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">d_kps</span> <span class="o">=</span> <span class="n">destination_keypoints</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">destination_idx</span><span class="p">]</span>
+        <span class="n">x_offset</span> <span class="o">=</span> <span class="n">s_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">image_space</span>
+        <span class="n">newx</span> <span class="o">=</span> <span class="n">d_kps</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">x_offset</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">newx</span><span class="p">,</span> <span class="n">d_kps</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">],</span> <span class="o">**</span><span class="n">scatter_kwargs</span><span class="p">)</span>
+
+        <span class="c1"># Draw the connecting lines</span>
+        <span class="n">color</span> <span class="o">=</span> <span class="s1">&#39;y&#39;</span>
+        <span class="k">if</span> <span class="s1">&#39;color&#39;</span> <span class="ow">in</span> <span class="n">line_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="n">line_kwargs</span><span class="p">[</span><span class="s1">&#39;color&#39;</span><span class="p">]</span>
+            <span class="n">line_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;color&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">s_kps</span> <span class="o">=</span> <span class="n">s_kps</span><span class="p">[[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">d_kps</span> <span class="o">=</span> <span class="n">d_kps</span><span class="p">[[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">d_kps</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">x_offset</span>
+
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">s_kps</span><span class="p">,</span> <span class="n">d_kps</span><span class="p">):</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">((</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span> <span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="o">**</span><span class="n">line_kwargs</span><span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">composite</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">image_cmap</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ax</span></div>
+
+<div class="viewcode-block" id="cluster_plot"><a class="viewcode-back" href="../../../library/vis/graph_view.html#autocnet.vis.graph_view.cluster_plot">[docs]</a><span class="k">def</span> <span class="nf">cluster_plot</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;Spectral&#39;</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    graph : object</span>
+<span class="sd">            A networkX or derived graph object</span>
+
+<span class="sd">    ax : object</span>
+<span class="sd">         A MatPlotLib axes object</span>
+
+<span class="sd">    cmap : str</span>
+<span class="sd">           A MatPlotLib color map string. Default &#39;Spectral&#39;</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ax : object</span>
+<span class="sd">         A MatPlotLib axes object that was either passed in</span>
+<span class="sd">         or a new axes object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="s1">&#39;clusters&#39;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;Clusters have not been computed.&#39;</span><span class="p">)</span>
+
+    <span class="n">cmap</span> <span class="o">=</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">get_cmap</span><span class="p">(</span><span class="n">cmap</span><span class="p">)</span>
+
+    <span class="n">colors</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes_iter</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">clusters</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">clusters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">j</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">colors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cmap</span><span class="p">(</span><span class="n">j</span><span class="p">[</span><span class="mi">1</span><span class="p">])[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">continue</span>
+
+    <span class="n">nx</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">node_color</span><span class="o">=</span><span class="n">colors</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ax</span></div>
+
+<span class="k">def</span> <span class="nf">plot_matches</span><span class="p">(</span><span class="n">matches</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">extent</span><span class="o">=</span><span class="mi">200</span><span class="p">):</span>
+    <span class="n">nsubplots</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span>
+    <span class="n">figs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">matches</span><span class="o">.</span><span class="n">iterrows</span><span class="p">()):</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">sx</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">source_x</span>
+        <span class="n">sy</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">source_y</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">destination_x</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">destination_y</span>
+
+        <span class="n">suba</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">read_array</span><span class="p">(</span><span class="n">pixels</span><span class="o">=</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">sx</span><span class="o">-</span><span class="n">extent</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">sy</span><span class="o">-</span><span class="n">extent</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">extent</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">extent</span><span class="p">)])</span>
+        <span class="n">subb</span> <span class="o">=</span> <span class="n">b</span><span class="o">.</span><span class="n">read_array</span><span class="p">(</span><span class="n">pixels</span><span class="o">=</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">dx</span><span class="o">-</span><span class="n">extent</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">dy</span><span class="o">-</span><span class="n">extent</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">extent</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">extent</span><span class="p">)])</span>
+
+        <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">suba</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;Greys&#39;</span><span class="p">)</span>
+        <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">subb</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;Greys&#39;</span><span class="p">)</span>
+        <span class="n">figs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">figs</span>
+</pre></div>
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

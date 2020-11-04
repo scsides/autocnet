@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>autocnet.spatial.isis &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../None"></script>
+    <script type="text/javascript" src="../../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" >
+    <link rel="search" title="Search" href="../../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../../index.html" >
+    <link rel="up" title="Module code" href="../../index.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../../index.html" accesskey="U">Module code</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <h1>Source code for autocnet.spatial.isis</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">pvl</span>
+<span class="kn">from</span> <span class="nn">pysis</span> <span class="kn">import</span> <span class="n">isis</span>
+<span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
+<span class="kn">from</span> <span class="nn">pysis.exceptions</span> <span class="kn">import</span> <span class="n">ProcessError</span>
+<span class="kn">from</span> <span class="nn">numbers</span> <span class="kn">import</span> <span class="n">Number</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+
+
+<div class="viewcode-block" id="point_info"><a class="viewcode-back" href="../../../library/spatial/isis.html#autocnet.spatial.isis.point_info">[docs]</a><span class="k">def</span> <span class="nf">point_info</span><span class="p">(</span><span class="n">cube_path</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">point_type</span><span class="p">,</span> <span class="n">allow_outside</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Use Isis&#39;s campt to get image/ground point info from an image</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cube_path : str</span>
+<span class="sd">                path to the input cube</span>
+
+<span class="sd">    x : float</span>
+<span class="sd">        point in the x direction. Either a sample or a longitude value</span>
+<span class="sd">        depending on the point_type flag</span>
+
+<span class="sd">    y : float</span>
+<span class="sd">        point in the y direction. Either a line or a latitude value</span>
+<span class="sd">        depending on the point_type flag</span>
+
+<span class="sd">    point_type : str</span>
+<span class="sd">                 Options: {&quot;image&quot;, &quot;ground&quot;}</span>
+<span class="sd">                 Pass &quot;image&quot; if  x,y are in image space (sample, line) or</span>
+<span class="sd">                 &quot;ground&quot; if in ground space (longitude, lattiude)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    : PvlObject</span>
+<span class="sd">      Pvl object containing campt returns</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">point_type</span> <span class="o">=</span> <span class="n">point_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">point_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;image&quot;</span><span class="p">,</span> <span class="s2">&quot;ground&quot;</span><span class="p">}:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">point_type</span><span class="si">}</span><span class="s1"> is not a valid point type, valid types are [&quot;image&quot;, &quot;ground&quot;]&#39;</span><span class="p">)</span>
+
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">Number</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">Number</span><span class="p">):</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">],</span> <span class="p">[</span><span class="n">y</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s2">&quot;image&quot;</span><span class="p">:</span>
+        <span class="c1"># convert to ISIS pixels</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">.</span><span class="mi">5</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="o">.</span><span class="mi">5</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">pvl</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">cube_path</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;IsisCube&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Mapping&quot;</span><span class="p">):</span>
+      <span class="n">pvlres</span> <span class="o">=</span> <span class="p">[]</span>
+      <span class="c1"># We have a projected image</span>
+      <span class="k">for</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+          <span class="k">if</span> <span class="n">point_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;ground&quot;</span><span class="p">:</span>
+            <span class="n">pvlres</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">isis</span><span class="o">.</span><span class="n">mappt</span><span class="p">(</span><span class="n">from_</span><span class="o">=</span><span class="n">cube_path</span><span class="p">,</span> <span class="n">longitude</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">latitude</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">allowoutside</span><span class="o">=</span><span class="n">allow_outside</span><span class="p">,</span> <span class="n">coordsys</span><span class="o">=</span><span class="s2">&quot;UNIVERSAL&quot;</span><span class="p">,</span> <span class="n">type_</span><span class="o">=</span><span class="n">point_type</span><span class="p">))</span>
+          <span class="k">elif</span> <span class="n">point_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;image&quot;</span><span class="p">:</span>
+            <span class="n">pvlres</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">isis</span><span class="o">.</span><span class="n">mappt</span><span class="p">(</span><span class="n">from_</span><span class="o">=</span><span class="n">cube_path</span><span class="p">,</span> <span class="n">sample</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">line</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">allowoutside</span><span class="o">=</span><span class="n">allow_outside</span><span class="p">,</span> <span class="n">type_</span><span class="o">=</span><span class="n">point_type</span><span class="p">))</span>
+        <span class="k">except</span> <span class="n">ProcessError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+          <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CAMPT call failed, image: </span><span class="si">{</span><span class="n">cube_path</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="n">stderr</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+          <span class="k">return</span>
+      <span class="n">dictres</span> <span class="o">=</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="n">pvl</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">res</span><span class="p">)[</span><span class="s2">&quot;Results&quot;</span><span class="p">])</span> <span class="k">for</span> <span class="n">res</span>  <span class="ow">in</span> <span class="n">pvlres</span><span class="p">]</span>
+      <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dictres</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">pvlres</span> <span class="o">=</span> <span class="n">dictres</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">else</span><span class="p">:</span>
+      <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">(</span><span class="s2">&quot;w+&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+         <span class="c1"># ISIS&#39;s campt wants points in a file, so write to a temp file</span>
+         <span class="k">if</span> <span class="n">point_type</span> <span class="o">==</span> <span class="s2">&quot;ground&quot;</span><span class="p">:</span>
+            <span class="c1"># campt uses lat, lon for ground but sample, line for image.</span>
+            <span class="c1"># So swap x,y for ground-to-image calls</span>
+            <span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">,</span><span class="n">x</span>
+
+
+         <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">, </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">xval</span><span class="p">,</span><span class="n">yval</span><span class="p">)</span> <span class="k">for</span> <span class="n">xval</span><span class="p">,</span><span class="n">yval</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)]))</span>
+         <span class="n">f</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+         <span class="k">try</span><span class="p">:</span>
+            <span class="n">pvlres</span> <span class="o">=</span> <span class="n">isis</span><span class="o">.</span><span class="n">campt</span><span class="p">(</span><span class="n">from_</span><span class="o">=</span><span class="n">cube_path</span><span class="p">,</span> <span class="n">coordlist</span><span class="o">=</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">allowoutside</span><span class="o">=</span><span class="n">allow_outside</span><span class="p">,</span> <span class="n">usecoordlist</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">coordtype</span><span class="o">=</span><span class="n">point_type</span><span class="p">)</span>
+         <span class="k">except</span> <span class="n">ProcessError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CAMPT call failed, image: </span><span class="si">{</span><span class="n">cube_path</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="n">stderr</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+         <span class="n">pvlres</span> <span class="o">=</span> <span class="n">pvl</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">pvlres</span><span class="p">)</span>
+         <span class="n">dictres</span> <span class="o">=</span> <span class="p">[]</span>
+         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">pvlres</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;GroundPoint&#39;</span><span class="p">][</span><span class="s1">&#39;Error&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">ProcessError</span><span class="p">(</span><span class="n">returncode</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">cmd</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;pysis.campt()&#39;</span><span class="p">],</span> <span class="n">stdout</span><span class="o">=</span><span class="n">r</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;GroundPoint&#39;</span><span class="p">][</span><span class="s1">&#39;Error&#39;</span><span class="p">])</span>
+                    <span class="k">return</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># convert all pixels to PLIO pixels from ISIS</span>
+                    <span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;Sample&quot;</span><span class="p">]</span> <span class="o">-=</span> <span class="o">.</span><span class="mi">5</span>
+                    <span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;Line&quot;</span><span class="p">]</span> <span class="o">-=</span> <span class="o">.</span><span class="mi">5</span>
+                    <span class="n">dictres</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+         <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">pvlres</span><span class="p">[</span><span class="s1">&#39;GroundPoint&#39;</span><span class="p">][</span><span class="s1">&#39;Error&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ProcessError</span><span class="p">(</span><span class="n">returncode</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">cmd</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;pysis.campt()&#39;</span><span class="p">],</span> <span class="n">stdout</span><span class="o">=</span><span class="n">pvlres</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">pvlres</span><span class="p">[</span><span class="s1">&#39;GroundPoint&#39;</span><span class="p">][</span><span class="s1">&#39;Error&#39;</span><span class="p">])</span>
+                <span class="k">return</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">pvlres</span><span class="p">[</span><span class="s2">&quot;GroundPoint&quot;</span><span class="p">][</span><span class="s2">&quot;Sample&quot;</span><span class="p">]</span> <span class="o">-=</span> <span class="o">.</span><span class="mi">5</span>
+                <span class="n">pvlres</span><span class="p">[</span><span class="s2">&quot;GroundPoint&quot;</span><span class="p">][</span><span class="s2">&quot;Line&quot;</span><span class="p">]</span> <span class="o">-=</span> <span class="o">.</span><span class="mi">5</span>
+                <span class="n">dictres</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">pvlres</span><span class="p">[</span><span class="s2">&quot;GroundPoint&quot;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">dictres</span></div>
+
+
+<div class="viewcode-block" id="image_to_ground"><a class="viewcode-back" href="../../../library/spatial/isis.html#autocnet.spatial.isis.image_to_ground">[docs]</a><span class="k">def</span> <span class="nf">image_to_ground</span><span class="p">(</span><span class="n">cube_path</span><span class="p">,</span> <span class="n">sample</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">lattype</span><span class="o">=</span><span class="s2">&quot;PlanetocentricLatitude&quot;</span><span class="p">,</span> <span class="n">lonttype</span><span class="o">=</span><span class="s2">&quot;PositiveEast360Longitude&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Use Isis&#39;s campt to convert a line sample point on an image to lat lon</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    lats : np.array, float</span>
+<span class="sd">           1-D array of latitudes or single floating point latitude</span>
+
+<span class="sd">    lons : np.array, float</span>
+<span class="sd">           1-D array of longitudes or single floating point longitude</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">point_info</span><span class="p">(</span><span class="n">cube_path</span><span class="p">,</span> <span class="n">sample</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="s2">&quot;image&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">ProcessError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ProcessError</span><span class="p">(</span><span class="n">returncode</span><span class="o">=</span><span class="n">e</span><span class="o">.</span><span class="n">returncode</span><span class="p">,</span> <span class="n">cmd</span><span class="o">=</span><span class="n">e</span><span class="o">.</span><span class="n">cmd</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">e</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">e</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">lats</span><span class="p">,</span> <span class="n">lons</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([[</span><span class="n">r</span><span class="p">[</span><span class="n">lattype</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="n">lonttype</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">res</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">lats</span><span class="p">,</span> <span class="n">lons</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="n">lattype</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">res</span><span class="p">[</span><span class="n">lonttype</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">lats</span><span class="p">,</span> <span class="n">lons</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([[</span><span class="n">r</span><span class="p">[</span><span class="n">lattype</span><span class="p">],</span> <span class="n">r</span><span class="p">[</span><span class="n">lonttype</span><span class="p">]]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">res</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">lats</span><span class="p">,</span> <span class="n">lons</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="n">lattype</span><span class="p">],</span> <span class="n">res</span><span class="p">[</span><span class="n">lonttype</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">lats</span><span class="p">,</span> <span class="n">lons</span></div>
+
+
+<div class="viewcode-block" id="ground_to_image"><a class="viewcode-back" href="../../../library/spatial/isis.html#autocnet.spatial.isis.ground_to_image">[docs]</a><span class="k">def</span> <span class="nf">ground_to_image</span><span class="p">(</span><span class="n">cube_path</span><span class="p">,</span> <span class="n">lon</span><span class="p">,</span> <span class="n">lat</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Use Isis&#39;s campt to convert a lat lon point to line sample in</span>
+<span class="sd">    an image</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    lines : np.array, float</span>
+<span class="sd">            array of lines or single floating point line</span>
+
+<span class="sd">    samples : np.array, float</span>
+<span class="sd">              array of samples or single dloating point sample</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">point_info</span><span class="p">(</span><span class="n">cube_path</span><span class="p">,</span> <span class="n">lon</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="s2">&quot;ground&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">ProcessError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ProcessError</span><span class="p">(</span><span class="n">returncode</span><span class="o">=</span><span class="n">e</span><span class="o">.</span><span class="n">returncode</span><span class="p">,</span> <span class="n">cmd</span><span class="o">=</span><span class="n">e</span><span class="o">.</span><span class="n">cmd</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">e</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">e</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">lines</span><span class="p">,</span> <span class="n">samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([[</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;Line&quot;</span><span class="p">],</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;Sample&quot;</span><span class="p">]]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">res</span><span class="p">])</span><span class="o">.</span><span class="n">T</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">lines</span><span class="p">,</span> <span class="n">samples</span> <span class="o">=</span>  <span class="n">res</span><span class="p">[</span><span class="s2">&quot;Line&quot;</span><span class="p">],</span> <span class="n">res</span><span class="p">[</span><span class="s2">&quot;Sample&quot;</span><span class="p">]</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">lines</span><span class="p">,</span> <span class="n">samples</span></div>
+
+
+</pre></div>
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

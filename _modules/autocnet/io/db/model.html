@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>autocnet.io.db.model &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../../None"></script>
+    <script type="text/javascript" src="../../../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" >
+    <link rel="search" title="Search" href="../../../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../../../index.html" >
+    <link rel="up" title="Module code" href="../../../index.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../../../index.html" accesskey="U">Module code</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <h1>Source code for autocnet.io.db.model</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">enum</span>
+<span class="kn">import</span> <span class="nn">json</span>
+
+<span class="kn">import</span> <span class="nn">sqlalchemy</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.ext.declarative</span> <span class="kn">import</span> <span class="n">declarative_base</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="p">(</span><span class="n">Column</span><span class="p">,</span> <span class="n">String</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">Float</span><span class="p">,</span> \
+                        <span class="n">ForeignKey</span><span class="p">,</span> <span class="n">Boolean</span><span class="p">,</span> <span class="n">LargeBinary</span><span class="p">,</span> \
+                        <span class="n">UniqueConstraint</span><span class="p">,</span> <span class="n">event</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.dialects.postgresql</span> <span class="kn">import</span> <span class="n">ARRAY</span><span class="p">,</span> <span class="n">JSONB</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="kn">import</span> <span class="n">relationship</span><span class="p">,</span> <span class="n">backref</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy_utils</span> <span class="kn">import</span> <span class="n">database_exists</span><span class="p">,</span> <span class="n">create_database</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.types</span> <span class="kn">import</span> <span class="n">TypeDecorator</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.ext.hybrid</span> <span class="kn">import</span> <span class="n">hybrid_property</span>
+
+<span class="kn">from</span> <span class="nn">geoalchemy2</span> <span class="kn">import</span> <span class="n">Geometry</span>
+<span class="kn">from</span> <span class="nn">geoalchemy2.shape</span> <span class="kn">import</span> <span class="n">from_shape</span><span class="p">,</span> <span class="n">to_shape</span>
+
+<span class="kn">import</span> <span class="nn">osgeo</span>
+<span class="kn">import</span> <span class="nn">shapely</span>
+<span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Point</span>
+<span class="kn">from</span> <span class="nn">autocnet.transformation.spatial</span> <span class="kn">import</span> <span class="n">reproject</span><span class="p">,</span> <span class="n">og2oc</span>
+<span class="kn">from</span> <span class="nn">autocnet.utils.serializers</span> <span class="kn">import</span> <span class="n">JsonEncoder</span>
+
+<span class="n">Base</span> <span class="o">=</span> <span class="n">declarative_base</span><span class="p">()</span>
+
+<span class="k">class</span> <span class="nc">BaseMixin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+        <span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+        <span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">obj</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">bulkadd</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">Session</span><span class="p">):</span>
+        <span class="n">session</span> <span class="o">=</span> <span class="n">Session</span><span class="p">()</span>
+        <span class="n">session</span><span class="o">.</span><span class="n">add_all</span><span class="p">(</span><span class="n">iterable</span><span class="p">)</span>
+        <span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        <span class="n">session</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<div class="viewcode-block" id="IntEnum"><a class="viewcode-back" href="../../../../library/io/db/model.html#autocnet.io.db.model.IntEnum">[docs]</a><span class="k">class</span> <span class="nc">IntEnum</span><span class="p">(</span><span class="n">TypeDecorator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Mapper for enum type to sqlalchemy and back again</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">impl</span> <span class="o">=</span> <span class="n">Integer</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enumtype</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_enumtype</span> <span class="o">=</span> <span class="n">enumtype</span>
+
+<div class="viewcode-block" id="IntEnum.process_bind_param"><a class="viewcode-back" href="../../../../library/io/db/model.html#autocnet.io.db.model.IntEnum.process_bind_param">[docs]</a>    <span class="k">def</span> <span class="nf">process_bind_param</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">dialect</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">):</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">return</span> <span class="n">value</span></div>
+
+<div class="viewcode-block" id="IntEnum.process_result_value"><a class="viewcode-back" href="../../../../library/io/db/model.html#autocnet.io.db.model.IntEnum.process_result_value">[docs]</a>    <span class="k">def</span> <span class="nf">process_result_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">dialect</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_enumtype</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="ArrayType"><a class="viewcode-back" href="../../../../library/io/db/model.html#autocnet.io.db.model.ArrayType">[docs]</a><span class="k">class</span> <span class="nc">ArrayType</span><span class="p">(</span><span class="n">TypeDecorator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sqlite does not support arrays. Therefore, use a custom type decorator.</span>
+
+<span class="sd">    See http://docs.sqlalchemy.org/en/latest/core/types.html#sqlalchemy.types.TypeDecorator</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">impl</span> <span class="o">=</span> <span class="n">String</span>
+
+<div class="viewcode-block" id="ArrayType.process_bind_param"><a class="viewcode-back" href="../../../../library/io/db/model.html#autocnet.io.db.model.ArrayType.process_bind_param">[docs]</a>    <span class="k">def</span> <span class="nf">process_bind_param</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">dialect</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">JsonEncoder</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ArrayType.process_result_value"><a class="viewcode-back" href="../../../../library/io/db/model.html#autocnet.io.db.model.ArrayType.process_result_value">[docs]</a>    <span class="k">def</span> <span class="nf">process_result_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">dialect</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ArrayType.copy"><a class="viewcode-back" href="../../../../library/io/db/model.html#autocnet.io.db.model.ArrayType.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">ArrayType</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">impl</span><span class="o">.</span><span class="n">length</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="Json"><a class="viewcode-back" href="../../../../library/io/db/model.html#autocnet.io.db.model.Json">[docs]</a><span class="k">class</span> <span class="nc">Json</span><span class="p">(</span><span class="n">TypeDecorator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sqlite does not have native JSON support. Therefore, use a custom type decorator.</span>
+
+<span class="sd">    See http://docs.sqlalchemy.org/en/latest/core/types.html#sqlalchemy.types.TypeDecorator</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">impl</span> <span class="o">=</span> <span class="n">String</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">python_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">object</span>
+
+<div class="viewcode-block" id="Json.process_bind_param"><a class="viewcode-back" href="../../../../library/io/db/model.html#autocnet.io.db.model.Json.process_bind_param">[docs]</a>    <span class="k">def</span> <span class="nf">process_bind_param</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">dialect</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">JsonEncoder</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Json.process_literal_param"><a class="viewcode-back" href="../../../../library/io/db/model.html#autocnet.io.db.model.Json.process_literal_param">[docs]</a>    <span class="k">def</span> <span class="nf">process_literal_param</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">dialect</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">value</span></div>
+
+<div class="viewcode-block" id="Json.process_result_value"><a class="viewcode-back" href="../../../../library/io/db/model.html#autocnet.io.db.model.Json.process_result_value">[docs]</a>    <span class="k">def</span> <span class="nf">process_result_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">dialect</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span></div></div>
+
+
+<div class="viewcode-block" id="Keypoints"><a class="viewcode-back" href="../../../../library/io/db/model.html#autocnet.io.db.model.Keypoints">[docs]</a><span class="k">class</span> <span class="nc">Keypoints</span><span class="p">(</span><span class="n">BaseMixin</span><span class="p">,</span> <span class="n">Base</span><span class="p">):</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;keypoints&#39;</span>
+    <span class="n">latitudinal_srid</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoincrement</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">image_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s2">&quot;images.id&quot;</span><span class="p">,</span> <span class="n">ondelete</span><span class="o">=</span><span class="s2">&quot;CASCADE&quot;</span><span class="p">))</span>
+    <span class="n">convex_hull_image</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Geometry</span><span class="p">(</span><span class="s1">&#39;POLYGON&#39;</span><span class="p">))</span>
+    <span class="n">convex_hull_latlon</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Geometry</span><span class="p">(</span><span class="s1">&#39;POLYGON&#39;</span><span class="p">,</span> <span class="n">srid</span><span class="o">=</span><span class="n">latitudinal_srid</span><span class="p">))</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">)</span>
+    <span class="n">nkeypoints</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">chll</span> <span class="o">=</span> <span class="n">to_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">convex_hull_latlon</span><span class="p">)</span><span class="o">.</span><span class="n">__geo_interface__</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">chll</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;id&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                           <span class="s1">&#39;image_id&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">image_id</span><span class="p">,</span>
+                           <span class="s1">&#39;convex_hull&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">convex_hull_image</span><span class="p">,</span>
+                           <span class="s1">&#39;convex_hull_latlon&#39;</span><span class="p">:</span><span class="n">chll</span><span class="p">,</span>
+                           <span class="s1">&#39;path&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span>
+                           <span class="s1">&#39;nkeypoints&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">nkeypoints</span><span class="p">})</span></div>
+
+<div class="viewcode-block" id="Edges"><a class="viewcode-back" href="../../../../library/io/db/model.html#autocnet.io.db.model.Edges">[docs]</a><span class="k">class</span> <span class="nc">Edges</span><span class="p">(</span><span class="n">BaseMixin</span><span class="p">,</span> <span class="n">Base</span><span class="p">):</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;edges&#39;</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoincrement</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">)</span>
+    <span class="n">destination</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">)</span>
+    <span class="n">ring</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">ArrayType</span><span class="p">())</span>
+    <span class="n">fundamental</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">ArrayType</span><span class="p">())</span>
+    <span class="n">ignore</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Boolean</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">masks</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Json</span><span class="p">())</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Json</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="Costs"><a class="viewcode-back" href="../../../../library/io/db/model.html#autocnet.io.db.model.Costs">[docs]</a><span class="k">class</span> <span class="nc">Costs</span><span class="p">(</span><span class="n">BaseMixin</span><span class="p">,</span> <span class="n">Base</span><span class="p">):</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;costs&#39;</span>
+    <span class="n">match_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s2">&quot;matches.id&quot;</span><span class="p">,</span> <span class="n">ondelete</span><span class="o">=</span><span class="s2">&quot;CASCADE&quot;</span><span class="p">),</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_cost</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">JSONB</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Matches"><a class="viewcode-back" href="../../../../library/io/db/model.html#autocnet.io.db.model.Matches">[docs]</a><span class="k">class</span> <span class="nc">Matches</span><span class="p">(</span><span class="n">BaseMixin</span><span class="p">,</span> <span class="n">Base</span><span class="p">):</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;matches&#39;</span>
+    <span class="n">latitudinal_srid</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoincrement</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">point_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">)</span>
+    <span class="n">source_measure_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">)</span>
+    <span class="n">destin_measure_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">)</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">source_idx</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">destination</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">destination_idx</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">lat</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">)</span>
+    <span class="n">lon</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">)</span>
+    <span class="n">_geom</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s2">&quot;geom&quot;</span><span class="p">,</span> <span class="n">Geometry</span><span class="p">(</span><span class="s1">&#39;POINT&#39;</span><span class="p">,</span> <span class="n">dimension</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">srid</span><span class="o">=</span><span class="n">latitudinal_srid</span><span class="p">,</span> <span class="n">spatial_index</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+    <span class="n">source_x</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">)</span>
+    <span class="n">source_y</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">)</span>
+    <span class="n">source_apriori_x</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">)</span>
+    <span class="n">source_apriori_y</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">)</span>
+    <span class="n">destination_x</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">)</span>
+    <span class="n">destination_y</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">)</span>
+    <span class="n">destination_apriori_x</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">)</span>
+    <span class="n">destination_apriori_y</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">)</span>
+    <span class="n">shift_x</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">)</span>
+    <span class="n">shift_y</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">)</span>
+    <span class="n">original_destination_x</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">)</span>
+    <span class="n">original_destination_y</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">)</span>
+
+    <span class="nd">@hybrid_property</span>
+    <span class="k">def</span> <span class="nf">geom</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">to_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_geom</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_geom</span>
+
+    <span class="nd">@geom</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">geom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">geom</span><span class="p">:</span>  <span class="c1"># Supports instances where geom is explicitly set to None.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_geom</span> <span class="o">=</span> <span class="n">from_shape</span><span class="p">(</span><span class="n">geom</span><span class="p">,</span> <span class="n">srid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">latitudinal_srid</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Cameras"><a class="viewcode-back" href="../../../../library/io/db/model.html#autocnet.io.db.model.Cameras">[docs]</a><span class="k">class</span> <span class="nc">Cameras</span><span class="p">(</span><span class="n">BaseMixin</span><span class="p">,</span> <span class="n">Base</span><span class="p">):</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;cameras&#39;</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoincrement</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">image_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s2">&quot;images.id&quot;</span><span class="p">,</span> <span class="n">ondelete</span><span class="o">=</span><span class="s2">&quot;CASCADE&quot;</span><span class="p">),</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">camera</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Json</span><span class="p">())</span>
+    <span class="n">camtype</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Images"><a class="viewcode-back" href="../../../../library/io/db/model.html#autocnet.io.db.model.Images">[docs]</a><span class="k">class</span> <span class="nc">Images</span><span class="p">(</span><span class="n">BaseMixin</span><span class="p">,</span> <span class="n">Base</span><span class="p">):</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;images&#39;</span>
+    <span class="n">latitudinal_srid</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoincrement</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">)</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">)</span>
+    <span class="n">serial</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">ignore</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Boolean</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">_geom</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s2">&quot;geom&quot;</span><span class="p">,</span> <span class="n">Geometry</span><span class="p">(</span><span class="s1">&#39;MultiPolygon&#39;</span><span class="p">,</span> <span class="n">srid</span><span class="o">=</span><span class="n">latitudinal_srid</span><span class="p">,</span> <span class="n">dimension</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">spatial_index</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+    <span class="n">footprint_bodyfixed</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Geometry</span><span class="p">(</span><span class="s1">&#39;MULTIPOLYGON&#39;</span><span class="p">,</span> <span class="n">dimension</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+    <span class="n">cam_type</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">)</span>
+    <span class="c1">#footprint_bodyfixed = Column(Geometry(&#39;POLYGON&#39;,dimension=3))</span>
+
+    <span class="c1"># Relationships</span>
+    <span class="n">keypoints</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span><span class="n">Keypoints</span><span class="p">,</span> <span class="n">passive_deletes</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s2">&quot;images&quot;</span><span class="p">,</span> <span class="n">uselist</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">cameras</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span><span class="n">Cameras</span><span class="p">,</span> <span class="n">passive_deletes</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="n">backref</span><span class="o">=</span><span class="s1">&#39;images&#39;</span><span class="p">,</span> <span class="n">uselist</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">measures</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span><span class="s2">&quot;Measures&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;id&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="s1">&#39;name&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="s1">&#39;path&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span>
+                <span class="s1">&#39;geom&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">geom</span><span class="o">.</span><span class="n">wkt</span><span class="p">})</span>
+
+    <span class="nd">@hybrid_property</span>
+    <span class="k">def</span> <span class="nf">geom</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">to_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_geom</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_geom</span>
+
+    <span class="nd">@geom</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">geom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newgeom</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">newgeom</span><span class="p">,</span> <span class="n">osgeo</span><span class="o">.</span><span class="n">ogr</span><span class="o">.</span><span class="n">Geometry</span><span class="p">):</span>
+            <span class="c1"># If an OGR geom, convert to shapely</span>
+            <span class="n">newgeom</span> <span class="o">=</span> <span class="n">shapely</span><span class="o">.</span><span class="n">wkt</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">newgeom</span><span class="o">.</span><span class="n">ExportToWkt</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">newgeom</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_geom</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_geom</span> <span class="o">=</span> <span class="n">from_shape</span><span class="p">(</span><span class="n">newgeom</span><span class="p">,</span> <span class="n">srid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">latitudinal_srid</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Overlay"><a class="viewcode-back" href="../../../../library/io/db/model.html#autocnet.io.db.model.Overlay">[docs]</a><span class="k">class</span> <span class="nc">Overlay</span><span class="p">(</span><span class="n">BaseMixin</span><span class="p">,</span> <span class="n">Base</span><span class="p">):</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;overlay&#39;</span>
+    <span class="n">latitudinal_srid</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoincrement</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">intersections</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">ARRAY</span><span class="p">(</span><span class="n">Integer</span><span class="p">))</span>
+    <span class="c1">#geom = Column(Geometry(geometry_type=&#39;POLYGON&#39;, management=True))  # sqlite</span>
+    <span class="n">_geom</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s2">&quot;geom&quot;</span><span class="p">,</span> <span class="n">Geometry</span><span class="p">(</span><span class="s1">&#39;POLYGON&#39;</span><span class="p">,</span> <span class="n">srid</span><span class="o">=</span><span class="n">latitudinal_srid</span><span class="p">,</span> <span class="n">dimension</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">spatial_index</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>  <span class="c1"># postgresql</span>
+    <span class="n">points</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;Points&#39;</span><span class="p">,</span>
+                          <span class="n">primaryjoin</span><span class="o">=</span><span class="s1">&#39;func.ST_Contains(foreign(Overlay.geom), Points.geom).as_comparison(1,2)&#39;</span><span class="p">,</span>
+                          <span class="n">backref</span><span class="o">=</span><span class="n">backref</span><span class="p">(</span><span class="s1">&#39;overlay&#39;</span><span class="p">,</span> <span class="n">uselist</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+                          <span class="n">viewonly</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                          <span class="n">uselist</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+    <span class="nd">@hybrid_property</span>
+    <span class="k">def</span> <span class="nf">geom</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">to_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_geom</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_geom</span>
+    <span class="nd">@geom</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">geom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_geom</span> <span class="o">=</span> <span class="n">from_shape</span><span class="p">(</span><span class="n">geom</span><span class="p">,</span> <span class="n">srid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">latitudinal_srid</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Overlay.overlapping_larger_than"><a class="viewcode-back" href="../../../../library/io/db/model.html#autocnet.io.db.model.Overlay.overlapping_larger_than">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">overlapping_larger_than</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">size_threshold</span><span class="p">,</span> <span class="n">Session</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Query the Overlay table for an iterable of responses where the objects</span>
+<span class="sd">        in the iterable have an area greater than a given size.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        size_threshold : Number</span>
+<span class="sd">                        area &gt;= this arg are returned</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">session</span> <span class="o">=</span> <span class="n">Session</span><span class="p">()</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span><span class="o">.</span>\
+                <span class="nb">filter</span><span class="p">(</span><span class="n">sqlalchemy</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">ST_Area</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">geom</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">size_threshold</span><span class="p">)</span><span class="o">.</span>\
+                <span class="nb">filter</span><span class="p">(</span><span class="n">sqlalchemy</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">array_length</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">intersections</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">session</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">res</span></div></div>
+
+
+<div class="viewcode-block" id="PointType"><a class="viewcode-back" href="../../../../library/io/db/model.html#autocnet.io.db.model.PointType">[docs]</a><span class="k">class</span> <span class="nc">PointType</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Enum to enforce point type for ISIS control networks</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">free</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">constrained</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">fixed</span> <span class="o">=</span> <span class="mi">4</span></div>
+
+<div class="viewcode-block" id="Points"><a class="viewcode-back" href="../../../../library/io/db/model.html#autocnet.io.db.model.Points">[docs]</a><span class="k">class</span> <span class="nc">Points</span><span class="p">(</span><span class="n">BaseMixin</span><span class="p">,</span> <span class="n">Base</span><span class="p">):</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;points&#39;</span>
+    <span class="n">latitudinal_srid</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">rectangular_srid</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">semimajor_rad</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">semiminor_rad</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoincrement</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">_pointtype</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s2">&quot;pointType&quot;</span><span class="p">,</span> <span class="n">IntEnum</span><span class="p">(</span><span class="n">PointType</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># 2, 3, 4 - Could be an enum in the future, map str to int in a decorator</span>
+    <span class="n">identifier</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">overlapid</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;overlay.id&#39;</span><span class="p">))</span>
+    <span class="n">_geom</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s2">&quot;geom&quot;</span><span class="p">,</span> <span class="n">Geometry</span><span class="p">(</span><span class="s1">&#39;POINT&#39;</span><span class="p">,</span> <span class="n">srid</span><span class="o">=</span><span class="n">latitudinal_srid</span><span class="p">,</span> <span class="n">dimension</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">spatial_index</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+    <span class="n">cam_type</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">)</span>
+    <span class="n">ignore</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s2">&quot;pointIgnore&quot;</span><span class="p">,</span> <span class="n">Boolean</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">_apriori</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s2">&quot;apriori&quot;</span><span class="p">,</span> <span class="n">Geometry</span><span class="p">(</span><span class="s1">&#39;POINTZ&#39;</span><span class="p">,</span> <span class="n">srid</span><span class="o">=</span><span class="n">rectangular_srid</span><span class="p">,</span> <span class="n">dimension</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">spatial_index</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+    <span class="n">_adjusted</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s2">&quot;adjusted&quot;</span><span class="p">,</span> <span class="n">Geometry</span><span class="p">(</span><span class="s1">&#39;POINTZ&#39;</span><span class="p">,</span> <span class="n">srid</span><span class="o">=</span><span class="n">rectangular_srid</span><span class="p">,</span> <span class="n">dimension</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">spatial_index</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+    <span class="n">measures</span> <span class="o">=</span> <span class="n">relationship</span><span class="p">(</span><span class="s1">&#39;Measures&#39;</span><span class="p">)</span>
+
+    <span class="nd">@hybrid_property</span>
+    <span class="k">def</span> <span class="nf">geom</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">to_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_geom</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_geom</span>
+
+    <span class="nd">@geom</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">geom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">geom</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;The geom column for Points cannot be set.&quot;</span> \
+                        <span class="s2">&quot; Set the adjusted column to update the geom.&quot;</span><span class="p">)</span>
+
+    <span class="nd">@hybrid_property</span>
+    <span class="k">def</span> <span class="nf">apriori</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">to_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_apriori</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apriori</span>
+
+    <span class="nd">@apriori</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">apriori</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">apriori</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">apriori</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_apriori</span> <span class="o">=</span> <span class="n">from_shape</span><span class="p">(</span><span class="n">apriori</span><span class="p">,</span> <span class="n">srid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rectangular_srid</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_apriori</span> <span class="o">=</span> <span class="n">apriori</span>
+
+    <span class="nd">@hybrid_property</span>
+    <span class="k">def</span> <span class="nf">adjusted</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">to_shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_adjusted</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adjusted</span>
+
+    <span class="nd">@adjusted</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">adjusted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adjusted</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">adjusted</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_adjusted</span> <span class="o">=</span> <span class="n">from_shape</span><span class="p">(</span><span class="n">adjusted</span><span class="p">,</span> <span class="n">srid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rectangular_srid</span><span class="p">)</span>
+            <span class="n">lon_og</span><span class="p">,</span> <span class="n">lat_og</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">reproject</span><span class="p">([</span><span class="n">adjusted</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">adjusted</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">adjusted</span><span class="o">.</span><span class="n">z</span><span class="p">],</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">semimajor_rad</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">semiminor_rad</span><span class="p">,</span>
+                                    <span class="s1">&#39;geocent&#39;</span><span class="p">,</span> <span class="s1">&#39;latlon&#39;</span><span class="p">)</span>
+            <span class="n">lon</span><span class="p">,</span> <span class="n">lat</span> <span class="o">=</span> <span class="n">og2oc</span><span class="p">(</span><span class="n">lon_og</span><span class="p">,</span> <span class="n">lat_og</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">semimajor_rad</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">semiminor_rad</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_geom</span> <span class="o">=</span> <span class="n">from_shape</span><span class="p">(</span><span class="n">Point</span><span class="p">(</span><span class="n">lon</span><span class="p">,</span> <span class="n">lat</span><span class="p">),</span> <span class="n">srid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">latitudinal_srid</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_adjusted</span> <span class="o">=</span> <span class="n">adjusted</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_geom</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@hybrid_property</span>
+    <span class="k">def</span> <span class="nf">pointtype</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pointtype</span>
+
+    <span class="nd">@pointtype</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">pointtype</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="n">PointType</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pointtype</span> <span class="o">=</span> <span class="n">v</span></div>
+
+    <span class="c1">#def subpixel_register(self, Session, pointid, **kwargs):</span>
+    <span class="c1">#    subpixel.subpixel_register_point(args=(Session, pointid), **kwargs)</span>
+
+<div class="viewcode-block" id="MeasureType"><a class="viewcode-back" href="../../../../library/io/db/model.html#autocnet.io.db.model.MeasureType">[docs]</a><span class="k">class</span> <span class="nc">MeasureType</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Enum to enforce measure type for ISIS control networks</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">candidate</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">manual</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">pixelregistered</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">subpixelregistered</span> <span class="o">=</span> <span class="mi">3</span></div>
+
+<div class="viewcode-block" id="Measures"><a class="viewcode-back" href="../../../../library/io/db/model.html#autocnet.io.db.model.Measures">[docs]</a><span class="k">class</span> <span class="nc">Measures</span><span class="p">(</span><span class="n">BaseMixin</span><span class="p">,</span> <span class="n">Base</span><span class="p">):</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s1">&#39;measures&#39;</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span><span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoincrement</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">pointid</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;points.id&#39;</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">imageid</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="s1">&#39;images.id&#39;</span><span class="p">))</span>
+    <span class="n">serial</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s2">&quot;serialnumber&quot;</span><span class="p">,</span> <span class="n">String</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">_measuretype</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s2">&quot;measureType&quot;</span><span class="p">,</span> <span class="n">IntEnum</span><span class="p">(</span><span class="n">MeasureType</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># [0,3]  # Enum as above</span>
+    <span class="n">ignore</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s2">&quot;measureIgnore&quot;</span><span class="p">,</span> <span class="n">Boolean</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">sample</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">line</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">template_metric</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s2">&quot;templateMetric&quot;</span><span class="p">,</span> <span class="n">Float</span><span class="p">)</span>
+    <span class="n">template_shift</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s2">&quot;templateShift&quot;</span><span class="p">,</span> <span class="n">Float</span><span class="p">)</span>
+    <span class="n">phase_error</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s2">&quot;phaseError&quot;</span><span class="p">,</span> <span class="n">Float</span><span class="p">)</span>
+    <span class="n">phase_diff</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s2">&quot;phaseDiff&quot;</span><span class="p">,</span> <span class="n">Float</span><span class="p">)</span>
+    <span class="n">phase_shift</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s2">&quot;phaseShift&quot;</span><span class="p">,</span> <span class="n">Float</span><span class="p">)</span>
+    <span class="n">choosername</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s2">&quot;ChooserName&quot;</span><span class="p">,</span> <span class="n">String</span><span class="p">)</span>
+    <span class="n">apriorisample</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">)</span>
+    <span class="n">aprioriline</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">)</span>
+    <span class="n">sampler</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">)</span>  <span class="c1"># Sample Residual</span>
+    <span class="n">liner</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">)</span>  <span class="c1"># Line Residual</span>
+    <span class="n">residual</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">)</span>
+    <span class="n">jigreject</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="s2">&quot;measureJigsawRejected&quot;</span><span class="p">,</span> <span class="n">Boolean</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># jigsaw rejected</span>
+    <span class="n">samplesigma</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">)</span>
+    <span class="n">linesigma</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">)</span>
+    <span class="n">weight</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">rms</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">)</span>
+
+    <span class="nd">@hybrid_property</span>
+    <span class="k">def</span> <span class="nf">measuretype</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_measuretype</span>
+
+    <span class="nd">@measuretype</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">measuretype</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="n">MeasureType</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_measuretype</span> <span class="o">=</span> <span class="n">v</span></div>
+
+<span class="k">def</span> <span class="nf">try_db_creation</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">autocnet.io.db.triggers</span> <span class="kn">import</span> <span class="n">valid_point_function</span><span class="p">,</span> <span class="n">valid_point_trigger</span><span class="p">,</span> <span class="n">valid_geom_function</span><span class="p">,</span> <span class="n">valid_geom_trigger</span><span class="p">,</span> <span class="n">ignore_image_function</span><span class="p">,</span> <span class="n">ignore_image_trigger</span>
+
+    <span class="c1"># Create the database</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">database_exists</span><span class="p">(</span><span class="n">engine</span><span class="o">.</span><span class="n">url</span><span class="p">):</span>
+        <span class="n">create_database</span><span class="p">(</span><span class="n">engine</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="n">template</span><span class="o">=</span><span class="s1">&#39;template_postgis&#39;</span><span class="p">)</span>  <span class="c1"># This is a hardcode to the local template</span>
+
+    <span class="c1"># Trigger that watches for points that should be active/inactive</span>
+    <span class="c1"># based on the point count.</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">engine</span><span class="o">.</span><span class="n">dialect</span><span class="o">.</span><span class="n">has_table</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="s2">&quot;points&quot;</span><span class="p">):</span>
+        <span class="n">event</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="s1">&#39;before_create&#39;</span><span class="p">,</span> <span class="n">valid_point_function</span><span class="p">)</span>
+        <span class="n">event</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="n">Measures</span><span class="o">.</span><span class="n">__table__</span><span class="p">,</span> <span class="s1">&#39;after_create&#39;</span><span class="p">,</span> <span class="n">valid_point_trigger</span><span class="p">)</span>
+        <span class="n">event</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="s1">&#39;before_create&#39;</span><span class="p">,</span> <span class="n">valid_geom_function</span><span class="p">)</span>
+        <span class="n">event</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="n">Images</span><span class="o">.</span><span class="n">__table__</span><span class="p">,</span> <span class="s1">&#39;after_create&#39;</span><span class="p">,</span> <span class="n">valid_geom_trigger</span><span class="p">)</span>
+        <span class="n">event</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="s1">&#39;before_create&#39;</span><span class="p">,</span> <span class="n">ignore_image_function</span><span class="p">)</span>
+        <span class="n">event</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="n">Images</span><span class="o">.</span><span class="n">__table__</span><span class="p">,</span> <span class="s1">&#39;after_create&#39;</span><span class="p">,</span> <span class="n">ignore_image_trigger</span><span class="p">)</span>
+
+    <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">bind</span> <span class="o">=</span> <span class="n">engine</span>
+
+    <span class="c1"># Set the class attributes for the SRIDs</span>
+    <span class="n">spatial</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s1">&#39;spatial&#39;</span><span class="p">]</span>
+    <span class="n">latitudinal_srid</span> <span class="o">=</span> <span class="n">spatial</span><span class="p">[</span><span class="s1">&#39;latitudinal_srid&#39;</span><span class="p">]</span>
+    <span class="n">rectangular_srid</span> <span class="o">=</span> <span class="n">spatial</span><span class="p">[</span><span class="s1">&#39;rectangular_srid&#39;</span><span class="p">]</span>
+
+    <span class="n">Points</span><span class="o">.</span><span class="n">rectangular_srid</span> <span class="o">=</span> <span class="n">rectangular_srid</span>
+    <span class="n">Points</span><span class="o">.</span><span class="n">semimajor_rad</span> <span class="o">=</span> <span class="n">spatial</span><span class="p">[</span><span class="s1">&#39;semimajor_rad&#39;</span><span class="p">]</span>
+    <span class="n">Points</span><span class="o">.</span><span class="n">semiminor_rad</span> <span class="o">=</span> <span class="n">spatial</span><span class="p">[</span><span class="s1">&#39;semiminor_rad&#39;</span><span class="p">]</span>
+    <span class="k">for</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="p">[</span><span class="n">Points</span><span class="p">,</span> <span class="n">Overlay</span><span class="p">,</span> <span class="n">Images</span><span class="p">,</span> <span class="n">Keypoints</span><span class="p">,</span> <span class="n">Matches</span><span class="p">]:</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="s1">&#39;latitudinal_srid&#39;</span><span class="p">,</span> <span class="n">latitudinal_srid</span><span class="p">)</span>
+
+    <span class="c1"># If the table does not exist, this will create it. This is used in case a</span>
+    <span class="c1"># user has manually dropped a table so that the project is not wrecked.</span>
+    <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">create_all</span><span class="p">(</span><span class="n">tables</span><span class="o">=</span><span class="p">[</span><span class="n">Overlay</span><span class="o">.</span><span class="n">__table__</span><span class="p">,</span>
+                                     <span class="n">Edges</span><span class="o">.</span><span class="n">__table__</span><span class="p">,</span> <span class="n">Costs</span><span class="o">.</span><span class="n">__table__</span><span class="p">,</span> <span class="n">Matches</span><span class="o">.</span><span class="n">__table__</span><span class="p">,</span>
+                                     <span class="n">Cameras</span><span class="o">.</span><span class="n">__table__</span><span class="p">,</span> <span class="n">Points</span><span class="o">.</span><span class="n">__table__</span><span class="p">,</span>
+                                     <span class="n">Measures</span><span class="o">.</span><span class="n">__table__</span><span class="p">,</span> <span class="n">Images</span><span class="o">.</span><span class="n">__table__</span><span class="p">,</span>
+                                     <span class="n">Keypoints</span><span class="o">.</span><span class="n">__table__</span><span class="p">])</span>
+
+</pre></div>
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

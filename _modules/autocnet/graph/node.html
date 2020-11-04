@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>autocnet.graph.node &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../None"></script>
+    <script type="text/javascript" src="../../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" >
+    <link rel="search" title="Search" href="../../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../../index.html" >
+    <link rel="up" title="Module code" href="../../index.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../../index.html" accesskey="U">Module code</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <h1>Source code for autocnet.graph.node</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span><span class="p">,</span> <span class="n">MutableMapping</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">from</span> <span class="nn">csmapi</span> <span class="kn">import</span> <span class="n">csmapi</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">plio.io.io_gdal</span> <span class="kn">import</span> <span class="n">GeoDataset</span>
+<span class="kn">from</span> <span class="nn">plio.io.isis_serial_number</span> <span class="kn">import</span> <span class="n">generate_serial_number</span>
+<span class="kn">from</span> <span class="nn">skimage.transform</span> <span class="kn">import</span> <span class="n">resize</span>
+<span class="kn">import</span> <span class="nn">shapely</span>
+<span class="kn">from</span> <span class="nn">knoten.csm</span> <span class="kn">import</span> <span class="n">generate_latlon_footprint</span><span class="p">,</span> <span class="n">generate_vrt</span><span class="p">,</span> <span class="n">create_camera</span><span class="p">,</span> <span class="n">generate_boundary</span>
+
+<span class="kn">from</span> <span class="nn">autocnet.matcher</span> <span class="kn">import</span> <span class="n">cpu_extractor</span> <span class="k">as</span> <span class="n">fe</span>
+<span class="kn">from</span> <span class="nn">autocnet.matcher</span> <span class="kn">import</span> <span class="n">cpu_outlier_detector</span> <span class="k">as</span> <span class="n">od</span>
+<span class="kn">from</span> <span class="nn">autocnet.cg</span> <span class="kn">import</span> <span class="n">cg</span>
+<span class="kn">from</span> <span class="nn">autocnet.io.db.model</span> <span class="kn">import</span> <span class="n">Images</span><span class="p">,</span> <span class="n">Keypoints</span><span class="p">,</span> <span class="n">Matches</span><span class="p">,</span> <span class="n">Cameras</span><span class="p">,</span>  <span class="n">Base</span><span class="p">,</span> <span class="n">Overlay</span><span class="p">,</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">Costs</span><span class="p">,</span> <span class="n">Points</span><span class="p">,</span> <span class="n">Measures</span>
+<span class="kn">from</span> <span class="nn">autocnet.io.db.connection</span> <span class="kn">import</span> <span class="n">Parent</span>
+<span class="kn">from</span> <span class="nn">autocnet.io</span> <span class="kn">import</span> <span class="n">keypoints</span> <span class="k">as</span> <span class="n">io_keypoints</span>
+<span class="kn">from</span> <span class="nn">autocnet.vis.graph_view</span> <span class="kn">import</span> <span class="n">plot_node</span>
+<span class="kn">from</span> <span class="nn">autocnet.utils</span> <span class="kn">import</span> <span class="n">utils</span>
+
+
+<div class="viewcode-block" id="Node"><a class="viewcode-back" href="../../../library/graph/node.html#autocnet.graph.network.Node">[docs]</a><span class="k">class</span> <span class="nc">Node</span><span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="n">MutableMapping</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class represents a node in a graph and is synonymous with an</span>
+<span class="sd">    image.  The node (image) stores PATH information, an accessor to the</span>
+<span class="sd">    on-disk data set, and correspondences information that references the image.</span>
+
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    image_name : str</span>
+<span class="sd">                 Name of the image, with extension</span>
+
+<span class="sd">    image_path : str</span>
+<span class="sd">                 Relative or absolute PATH to the image</span>
+
+<span class="sd">    geodata : object</span>
+<span class="sd">             File handle to the object</span>
+
+<span class="sd">    keypoints : dataframe</span>
+<span class="sd">                With columns, x, y, and response</span>
+
+<span class="sd">    nkeypoints : int</span>
+<span class="sd">                 The number of keypoints found for this image</span>
+
+<span class="sd">    descriptors : ndarray</span>
+<span class="sd">                  32-bit array of feature descriptors returned by OpenCV</span>
+
+<span class="sd">    masks : set</span>
+<span class="sd">            A list of the available masking arrays</span>
+
+<span class="sd">    ignore : bool</span>
+<span class="sd">             If the image is flagged as ignored and will be skipped in processing</span>
+
+<span class="sd">    isis_serial : str</span>
+<span class="sd">                  If the input images have PVL headers, generate an</span>
+<span class="sd">                  ISIS compatible serial number</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">image_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">node_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;image_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">image_name</span>
+        <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;image_path&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">image_path</span>
+        <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;node_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">node_id</span>
+        <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;hash&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">image_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">masks</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">camera</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_camera&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_camera</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_camera</span>
+
+    <span class="nd">@camera</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">camera</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">camera</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_camera</span> <span class="o">=</span> <span class="n">camera</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">descriptors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_descriptors&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_descriptors</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_descriptors</span>
+
+    <span class="nd">@descriptors</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">descriptors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">desc</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_descriptors</span> <span class="o">=</span> <span class="n">desc</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">keypoints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_keypoints&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_keypoints</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_keypoints</span>
+
+    <span class="nd">@keypoints</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">keypoints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kps</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_keypoints</span> <span class="o">=</span> <span class="n">kps</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">ignore</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_ignore&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ignore</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ignore</span>
+
+    <span class="nd">@ignore</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">ignore</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ignore</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ignore</span> <span class="o">=</span> <span class="n">ignore</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        NodeID: </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">        Image Name: </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">        Image PATH: </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">        Number Keypoints: </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">        Available Masks : </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">        Type: </span><span class="si">{}</span><span class="s2"></span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="s1">&#39;node_id&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;image_name&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;image_path&#39;</span><span class="p">],</span>
+                   <span class="bp">self</span><span class="o">.</span><span class="n">nkeypoints</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">masks</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="c1">#pragma: no cover</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="s1">&#39;node_id&#39;</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="fm">__gt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="n">myid</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;node_id&#39;</span><span class="p">]</span>
+        <span class="n">oid</span> <span class="o">=</span> <span class="n">other</span><span class="p">[</span><span class="s1">&#39;node_id&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">myid</span> <span class="o">&gt;</span> <span class="n">oid</span>
+
+    <span class="k">def</span> <span class="fm">__ge__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="n">myid</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;node_id&#39;</span><span class="p">]</span>
+        <span class="n">oid</span> <span class="o">=</span> <span class="n">other</span><span class="p">[</span><span class="s1">&#39;node_id&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">myid</span> <span class="o">&gt;=</span> <span class="n">oid</span>
+
+    <span class="k">def</span> <span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="n">myid</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;node_id&#39;</span><span class="p">]</span>
+        <span class="n">oid</span> <span class="o">=</span> <span class="n">other</span><span class="p">[</span><span class="s1">&#39;node_id&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">myid</span> <span class="o">&lt;</span> <span class="n">oid</span>
+
+    <span class="k">def</span> <span class="fm">__le__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="n">myid</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;node_id&#39;</span><span class="p">]</span>
+        <span class="n">oid</span> <span class="o">=</span> <span class="n">other</span><span class="p">[</span><span class="s1">&#39;node_id&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">myid</span> <span class="o">&lt;=</span> <span class="n">oid</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="s1">&#39;node_id&#39;</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;node_id&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">other</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">image_name</span><span class="p">,</span> <span class="n">node_id</span><span class="p">,</span> <span class="n">basepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">image_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">image_name</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span> <span class="k">pass</span>  <span class="c1"># Use the input name even if not a valid PATH</span>
+        <span class="k">if</span> <span class="n">basepath</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">image_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">basepath</span><span class="p">,</span> <span class="n">image_name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">image_path</span> <span class="o">=</span> <span class="n">image_name</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">image_name</span><span class="p">,</span> <span class="n">image_path</span><span class="p">,</span> <span class="n">node_id</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">geodata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_geodata&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;image_path&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_geodata</span> <span class="o">=</span> <span class="n">GeoDataset</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="s1">&#39;image_path&#39;</span><span class="p">])</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_geodata</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;node_id&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_geodata&#39;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_geodata</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">footprint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_footprint&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_footprint</span> <span class="o">=</span> <span class="n">shapely</span><span class="o">.</span><span class="n">wkt</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geodata</span><span class="o">.</span><span class="n">footprint</span><span class="o">.</span><span class="n">GetGeometryRef</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">ExportToWkt</span><span class="p">())</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_footprint</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">isis_serial</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate an ISIS compatible serial number using the data file</span>
+<span class="sd">        associated with this node.  This assumes that the data file</span>
+<span class="sd">        has a PVL header.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_isis_serial&#39;</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_isis_serial</span> <span class="o">=</span> <span class="n">generate_serial_number</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="s1">&#39;image_path&#39;</span><span class="p">])</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_isis_serial</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isis_serial</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">nkeypoints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keypoints</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="Node.coverage"><a class="viewcode-back" href="../../../library/graph/node.html#autocnet.graph.network.Node.coverage">[docs]</a>    <span class="k">def</span> <span class="nf">coverage</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Determines the area of keypoint coverage</span>
+<span class="sd">        using the unprojected image, resulting</span>
+<span class="sd">        in a rough estimation of the percentage area</span>
+<span class="sd">        being covered.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        coverage_area :  float</span>
+<span class="sd">                         percentage area covered by the generated</span>
+<span class="sd">                         keypoints</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_keypoint_coordinates</span><span class="p">()</span>
+        <span class="n">hull</span> <span class="o">=</span> <span class="n">cg</span><span class="o">.</span><span class="n">convex_hull</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+        <span class="n">hull_area</span> <span class="o">=</span> <span class="n">hull</span><span class="o">.</span><span class="n">volume</span>
+
+        <span class="n">max_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geodata</span><span class="o">.</span><span class="n">raster_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">max_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geodata</span><span class="o">.</span><span class="n">raster_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">total_area</span> <span class="o">=</span> <span class="n">max_x</span> <span class="o">*</span> <span class="n">max_y</span>
+
+        <span class="k">return</span> <span class="n">hull_area</span> <span class="o">/</span> <span class="n">total_area</span></div>
+
+<div class="viewcode-block" id="Node.get_byte_array"><a class="viewcode-back" href="../../../library/graph/node.html#autocnet.graph.network.Node.get_byte_array">[docs]</a>    <span class="k">def</span> <span class="nf">get_byte_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">band</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a band as a 32-bit numpy array</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        band : int</span>
+<span class="sd">               The band to read, default 1</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geodata</span><span class="o">.</span><span class="n">read_array</span><span class="p">(</span><span class="n">band</span><span class="o">=</span><span class="n">band</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">bytescale</span><span class="p">(</span><span class="n">array</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Node.get_array"><a class="viewcode-back" href="../../../library/graph/node.html#autocnet.graph.network.Node.get_array">[docs]</a>    <span class="k">def</span> <span class="nf">get_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">band</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a band as a 32-bit numpy array</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        band : int</span>
+<span class="sd">               The band to read, default 1</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geodata</span><span class="o">.</span><span class="n">read_array</span><span class="p">(</span><span class="n">band</span><span class="o">=</span><span class="n">band</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">array</span></div>
+
+<div class="viewcode-block" id="Node.get_keypoints"><a class="viewcode-back" href="../../../library/graph/node.html#autocnet.graph.network.Node.get_keypoints">[docs]</a>    <span class="k">def</span> <span class="nf">get_keypoints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the keypoints for the node.  If index is passed, return</span>
+<span class="sd">        the appropriate subset.</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        index : iterable</span>
+<span class="sd">                indices for of the keypoints to return</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">         : dataframe</span>
+<span class="sd">           A pandas dataframe of keypoints</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">keypoints</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">keypoints</span></div>
+
+<div class="viewcode-block" id="Node.get_keypoint_coordinates"><a class="viewcode-back" href="../../../library/graph/node.html#autocnet.graph.network.Node.get_keypoint_coordinates">[docs]</a>    <span class="k">def</span> <span class="nf">get_keypoint_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">homogeneous</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the coordinates of the keypoints without any ancillary data</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        index : iterable</span>
+<span class="sd">                indices for of the keypoints to return</span>
+
+<span class="sd">        homogeneous : bool</span>
+<span class="sd">                      If True, return homogeneous coordinates in the form</span>
+<span class="sd">                      [x, y, 1]. Default: False</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">         : dataframe</span>
+<span class="sd">           A pandas dataframe of keypoint coordinates</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">keypoints</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">keypoints</span><span class="p">[[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">]]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">keypoints</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">keypoints</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">index</span><span class="p">][[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">]]</span>
+
+        <span class="k">if</span> <span class="n">homogeneous</span><span class="p">:</span>
+            <span class="n">keypoints</span> <span class="o">=</span> <span class="n">keypoints</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">homogeneous</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">keypoints</span></div>
+
+<div class="viewcode-block" id="Node.get_raw_keypoint_coordinates"><a class="viewcode-back" href="../../../library/graph/node.html#autocnet.graph.network.Node.get_raw_keypoint_coordinates">[docs]</a>    <span class="k">def</span> <span class="nf">get_raw_keypoint_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The performance of get_keypoint_coordinates can be slow</span>
+<span class="sd">        due to the ability for fancier indexing.  This method</span>
+<span class="sd">        returns coordinates using numpy array accessors.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        index : iterable</span>
+<span class="sd">                positional indices to return from the global keypoints dataframe</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">keypoints</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">index</span><span class="p">,:</span><span class="mi">2</span><span class="p">]</span></div>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_extract_features</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extract features for the node</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        array : ndarray</span>
+
+<span class="sd">        kwargs : dict</span>
+<span class="sd">                 kwargs passed to autocnet.cpu_extractor.extract_features</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">extract_features</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">array</span><span class="p">,</span> <span class="n">xystart</span><span class="o">=</span><span class="p">[],</span> <span class="n">camera</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="n">new_keypoints</span><span class="p">,</span> <span class="n">new_descriptors</span> <span class="o">=</span> <span class="n">Node</span><span class="o">.</span><span class="n">_extract_features</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keypoints</span><span class="p">)</span>
+
+        <span class="c1"># If this is a tile, push the keypoints to the correct start xy</span>
+        <span class="k">if</span> <span class="n">xystart</span><span class="p">:</span>
+            <span class="n">new_keypoints</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">xystart</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">new_keypoints</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">xystart</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">concat_kps</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">keypoints</span><span class="p">,</span> <span class="n">new_keypoints</span><span class="p">))</span>
+        <span class="n">concat_kps</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">concat_kps</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># Removed duplicated and re-index the merged keypoints</span>
+
+        <span class="c1"># Update the descriptors to be the same size as the keypoints, maintaining alignment</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">descriptors</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">concat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">descriptors</span><span class="p">,</span> <span class="n">new_descriptors</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">concat</span> <span class="o">=</span> <span class="n">new_descriptors</span>
+        <span class="n">new_descriptors</span> <span class="o">=</span> <span class="n">concat</span><span class="p">[</span><span class="n">concat_kps</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">descriptors</span> <span class="o">=</span> <span class="n">new_descriptors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">keypoints</span> <span class="o">=</span> <span class="n">concat_kps</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">lkps</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keypoints</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="n">lkps</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">descriptors</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">lkps</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">extract_features_from_overlaps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">overlaps</span><span class="o">=</span><span class="p">[],</span> <span class="n">downsampling</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">tiling</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># iterate through the overlaps</span>
+        <span class="c1"># check for downsampling or tiling and dispatch as needed to that func</span>
+        <span class="c1"># that should then dispatch to the extract features func</span>
+        <span class="k">pass</span>
+
+<div class="viewcode-block" id="Node.extract_features_with_downsampling"><a class="viewcode-back" href="../../../library/graph/node.html#autocnet.graph.network.Node.extract_features_with_downsampling">[docs]</a>    <span class="k">def</span> <span class="nf">extract_features_with_downsampling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">downsample_amount</span><span class="p">,</span>
+                                           <span class="n">array_read_args</span><span class="o">=</span><span class="p">{},</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extract interest points for the this node (image) by first downsampling,</span>
+<span class="sd">        then applying the extractor, and then upsampling the results backin to</span>
+<span class="sd">        true image space.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        downsample_amount : int</span>
+<span class="sd">                            The amount to downsample by</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">array_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geodata</span><span class="o">.</span><span class="n">raster_size</span>
+        <span class="n">total_size</span> <span class="o">=</span> <span class="n">array_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">array_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">array_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">downsample_amount</span><span class="p">),</span>
+                 <span class="nb">int</span><span class="p">(</span><span class="n">array_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">downsample_amount</span><span class="p">))</span>
+        <span class="n">array</span> <span class="o">=</span> <span class="n">resize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geodata</span><span class="o">.</span><span class="n">read_array</span><span class="p">(</span><span class="o">**</span><span class="n">array_read_args</span><span class="p">),</span> <span class="n">shape</span><span class="p">,</span> <span class="n">preserve_range</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extract_features</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">keypoints</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">downsample_amount</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">keypoints</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">downsample_amount</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keypoints</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span></div>
+
+    <span class="k">def</span> <span class="nf">extract_features_with_tiling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tilesize</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">overlap</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">array_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geodata</span><span class="o">.</span><span class="n">raster_size</span>
+        <span class="n">slices</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">array_size</span><span class="p">,</span> <span class="n">tilesize</span><span class="o">=</span><span class="n">tilesize</span><span class="p">,</span> <span class="n">overlap</span><span class="o">=</span><span class="n">overlap</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">slices</span><span class="p">:</span>
+            <span class="n">xystart</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+            <span class="n">array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geodata</span><span class="o">.</span><span class="n">read_array</span><span class="p">(</span><span class="n">pixels</span><span class="o">=</span><span class="n">s</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">extract_features</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">xystart</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keypoints</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">project_keypoints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">camera</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Without a camera, it is not possible to project</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Unable to project points, no camera available.&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="c1"># Project the sift keypoints to the ground</span>
+        <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+            <span class="n">camera</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">imagecoord</span> <span class="o">=</span> <span class="n">csmapi</span><span class="o">.</span><span class="n">ImageCoord</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+            <span class="c1"># An elevation at the ellipsoid is plenty accurate for this work</span>
+            <span class="n">gnd</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">camera</span><span class="p">,</span> <span class="s1">&#39;imageToGround&#39;</span><span class="p">)(</span><span class="n">imagecoord</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">gnd</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">gnd</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">gnd</span><span class="o">.</span><span class="n">z</span><span class="p">]</span>
+        <span class="n">feats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">keypoints</span><span class="p">[[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">gnd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">apply_along_axis</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">feats</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">camera</span><span class="p">,</span> <span class="p">))</span>
+        <span class="n">gnd</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">gnd</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;xm&#39;</span><span class="p">,</span> <span class="s1">&#39;ym&#39;</span><span class="p">,</span> <span class="s1">&#39;zm&#39;</span><span class="p">],</span> <span class="n">index</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">keypoints</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">keypoints</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">keypoints</span><span class="p">,</span> <span class="n">gnd</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">True</span>
+
+<div class="viewcode-block" id="Node.load_features"><a class="viewcode-back" href="../../../library/graph/node.html#autocnet.graph.network.Node.load_features">[docs]</a>    <span class="k">def</span> <span class="nf">load_features</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_path</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;npy&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load keypoints and descriptors for the given image</span>
+<span class="sd">        from a HDF file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        in_path : str or object</span>
+<span class="sd">                  PATH to the hdf file or a HDFDataset object handle</span>
+
+<span class="sd">        format : {&#39;npy&#39;, &#39;hdf&#39;}</span>
+<span class="sd">                 The format that the features are stored in.  Default: npy.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">format</span> <span class="o">==</span> <span class="s1">&#39;npy&#39;</span><span class="p">:</span>
+            <span class="n">keypoints</span><span class="p">,</span> <span class="n">descriptors</span> <span class="o">=</span> <span class="n">io_keypoints</span><span class="o">.</span><span class="n">from_npy</span><span class="p">(</span><span class="n">in_path</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">format</span> <span class="o">==</span> <span class="s1">&#39;hdf&#39;</span><span class="p">:</span>
+            <span class="n">keypoints</span><span class="p">,</span> <span class="n">descriptors</span> <span class="o">=</span> <span class="n">io_keypoints</span><span class="o">.</span><span class="n">from_hdf</span><span class="p">(</span><span class="n">in_path</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">keypoints</span> <span class="o">=</span> <span class="n">keypoints</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">descriptors</span> <span class="o">=</span> <span class="n">descriptors</span></div>
+
+<div class="viewcode-block" id="Node.save_features"><a class="viewcode-back" href="../../../library/graph/node.html#autocnet.graph.network.Node.save_features">[docs]</a>    <span class="k">def</span> <span class="nf">save_features</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out_path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Save the extracted keypoints and descriptors to</span>
+<span class="sd">        the given file.  By default, the .npz files are saved</span>
+<span class="sd">        along side the image, e.g. in the same folder as the image.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        out_path : str or object</span>
+<span class="sd">                   PATH to the directory for output and base file name</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">keypoints</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Node </span><span class="si">{}</span><span class="s1"> has not had features extracted.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="s1">&#39;node_id&#39;</span><span class="p">]))</span>
+            <span class="k">return</span>
+
+        <span class="n">io_keypoints</span><span class="o">.</span><span class="n">to_npy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keypoints</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">descriptors</span><span class="p">,</span>
+                            <span class="n">out_path</span> <span class="o">+</span> <span class="s1">&#39;_</span><span class="si">{}</span><span class="s1">.npz&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="s1">&#39;node_id&#39;</span><span class="p">]))</span></div>
+
+    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clean_keys</span><span class="o">=</span><span class="p">[],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+        <span class="k">return</span> <span class="n">plot_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clean_keys</span><span class="o">=</span><span class="n">clean_keys</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_clean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clean_keys</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Given a list of clean keys compute the</span>
+<span class="sd">        mask of valid matches</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        clean_keys : list</span>
+<span class="sd">                     of columns names (clean keys)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        matches : dataframe</span>
+<span class="sd">                  A masked view of the matches dataframe</span>
+
+<span class="sd">        mask : series</span>
+<span class="sd">                    A boolean series to inflate back to the full match set</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">keypoints</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;Keypoints have not been extracted for this node.&#39;</span><span class="p">)</span>
+        <span class="n">panel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">masks</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">panel</span><span class="p">[</span><span class="n">clean_keys</span><span class="p">]</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">matches</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">keypoints</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">matches</span><span class="p">,</span> <span class="n">mask</span>
+
+<div class="viewcode-block" id="Node.reproject_geom"><a class="viewcode-back" href="../../../library/graph/node.html#autocnet.graph.network.Node.reproject_geom">[docs]</a>    <span class="k">def</span> <span class="nf">reproject_geom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">):</span>   <span class="c1"># pragma: no cover</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Reprojects a set of latlon coordinates into pixel space using the nodes</span>
+<span class="sd">        geodata. These are then returned as a shapely polygon</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        coords : ndarray</span>
+<span class="sd">                      (n, 2) array of latlon coordinates</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ----------</span>
+<span class="sd">        : object</span>
+<span class="sd">          A shapely polygon object made using the reprojected coordinates</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">reproj</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">coords</span><span class="p">:</span>
+            <span class="n">reproj</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geodata</span><span class="o">.</span><span class="n">latlon_to_pixel</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">shapely</span><span class="o">.</span><span class="n">geometryPolygon</span><span class="p">(</span><span class="n">reproj</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="NetworkNode"><a class="viewcode-back" href="../../../library/graph/node.html#autocnet.graph.network.NetworkNode">[docs]</a><span class="k">class</span> <span class="nc">NetworkNode</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">NetworkNode</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c1"># If this is the first time that the image is seen, add it to the DB</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">job_status</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">populate_db</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">session_scope</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Images</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Images</span><span class="o">.</span><span class="n">path</span> <span class="o">==</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;image_path&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">res</span><span class="p">:</span>
+                <span class="c1"># Image already exists</span>
+                <span class="k">return</span>
+
+        <span class="c1"># If the geodata is not valid, do no create an assocaited keypoints file</span>
+        <span class="c1">#  One instance when invalid is during testing.</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geodata</span><span class="p">,</span> <span class="s1">&#39;file_name&#39;</span><span class="p">):</span>
+            <span class="n">kpspath</span> <span class="o">=</span> <span class="n">io_keypoints</span><span class="o">.</span><span class="n">create_output_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geodata</span><span class="o">.</span><span class="n">file_name</span><span class="p">)</span>
+            <span class="c1"># Create the keypoints entry</span>
+            <span class="n">kps</span> <span class="o">=</span> <span class="n">Keypoints</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">kpspath</span><span class="p">,</span> <span class="n">nkeypoints</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">kps</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">fp</span><span class="p">,</span> <span class="n">cam_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">footprint</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Unable to generate image footprint.</span><span class="se">\n</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+            <span class="n">fp</span> <span class="o">=</span> <span class="n">cam_type</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># Create the image</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">Images</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="p">[</span><span class="s1">&#39;image_name&#39;</span><span class="p">],</span>
+                   <span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="p">[</span><span class="s1">&#39;image_path&#39;</span><span class="p">],</span>
+                   <span class="n">geom</span><span class="o">=</span><span class="n">fp</span><span class="p">,</span>
+                   <span class="n">keypoints</span><span class="o">=</span><span class="n">kps</span><span class="p">,</span>
+                   <span class="c1">#cameras=cam,</span>
+                   <span class="n">serial</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">isis_serial</span><span class="p">,</span>
+                   <span class="n">cam_type</span><span class="o">=</span><span class="n">cam_type</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">session_scope</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+            <span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_from_db</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table_obj</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;image_id&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generic database query to pull the row associated with this node</span>
+<span class="sd">        from an arbitrary table. We assume that the row id matches the node_id.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        table_obj : object</span>
+<span class="sd">                    The declared table class (from db.model)</span>
+
+<span class="sd">        key : str</span>
+<span class="sd">              The name of the column to compare this object&#39;s node_id with. For</span>
+<span class="sd">              most tables this will be the default, &#39;image_id&#39; because &#39;image_id&#39;</span>
+<span class="sd">              is the foreign key in the DB. For the Images table (the parent table),</span>
+<span class="sd">              the key is simply &#39;id&#39;.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;node_id&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">return</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">session_scope</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">table_obj</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">table_obj</span><span class="p">,</span><span class="n">key</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;node_id&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+            <span class="n">session</span><span class="o">.</span><span class="n">expunge_all</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">res</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">parent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_parent&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="nd">@parent</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">parent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span> <span class="o">=</span> <span class="n">parent</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">keypoint_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_from_db</span><span class="p">(</span><span class="n">Keypoints</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">res</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">return</span> <span class="n">res</span><span class="o">.</span><span class="n">path</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">keypoints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">io_keypoints</span><span class="o">.</span><span class="n">from_hdf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keypoint_file</span><span class="p">,</span> <span class="n">descriptors</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+
+    <span class="nd">@keypoints</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">keypoints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kps</span><span class="p">):</span>
+        <span class="n">session</span> <span class="o">=</span> <span class="n">Session</span><span class="p">()</span>
+        <span class="n">io_keypoints</span><span class="o">.</span><span class="n">to_hdf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keypoint_file</span><span class="p">,</span> <span class="n">keypoints</span><span class="o">=</span><span class="n">kps</span><span class="p">)</span>
+
+
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_from_db</span><span class="p">(</span><span class="n">Keypoints</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">session_scope</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">nkeypoints</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">kps</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">descriptors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">io_keypoints</span><span class="o">.</span><span class="n">from_hdf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keypoint_file</span><span class="p">,</span> <span class="n">keypoints</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span>
+
+    <span class="nd">@descriptors</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">descriptors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">desc</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">desc</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">):</span>
+            <span class="n">io_keypoints</span><span class="o">.</span><span class="n">to_hdf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keypoint_file</span><span class="p">,</span> <span class="n">descriptors</span><span class="o">=</span><span class="n">desc</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">nkeypoints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the number of keypoints from the database</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_from_db</span><span class="p">(</span><span class="n">Keypoints</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span><span class="o">.</span><span class="n">nkeypoints</span> <span class="k">if</span> <span class="n">res</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="NetworkNode.create_camera"><a class="viewcode-back" href="../../../library/graph/node.html#autocnet.graph.network.NetworkNode.create_camera">[docs]</a>    <span class="k">def</span> <span class="nf">create_camera</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a CSM sensor for the node and serializes the state</span>
+<span class="sd">        to the DB,</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        url : str</span>
+<span class="sd">              The URI to a service that can create an ISD to instantiate</span>
+<span class="sd">              a sensor.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Create the camera entry</span>
+        <span class="kn">import</span> <span class="nn">pvl</span>
+        <span class="kn">import</span> <span class="nn">requests</span>
+        <span class="kn">import</span> <span class="nn">json</span>
+
+        <span class="n">label</span> <span class="o">=</span> <span class="n">pvl</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geodata</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;label&#39;</span><span class="p">:</span><span class="n">label</span><span class="p">})</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+        <span class="n">model_name</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;name_model&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">model_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">isdpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="s1">&#39;image_path&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.json&#39;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">isdpath</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Failed to write JSON ISD for image </span><span class="si">{}</span><span class="s1">.</span><span class="se">\n</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="s1">&#39;image_path&#39;</span><span class="p">],</span> <span class="n">e</span><span class="p">))</span>
+        <span class="n">isd</span> <span class="o">=</span> <span class="n">csmapi</span><span class="o">.</span><span class="n">Isd</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="s1">&#39;image_path&#39;</span><span class="p">])</span>
+        <span class="n">plugin</span> <span class="o">=</span> <span class="n">csmapi</span><span class="o">.</span><span class="n">Plugin</span><span class="o">.</span><span class="n">findPlugin</span><span class="p">(</span><span class="s1">&#39;UsgsAstroPluginCSM&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_camera</span> <span class="o">=</span> <span class="n">plugin</span><span class="o">.</span><span class="n">constructModelFromISD</span><span class="p">(</span><span class="n">isd</span><span class="p">,</span> <span class="n">model_name</span><span class="p">)</span>
+        <span class="n">serialized_camera</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_camera</span><span class="o">.</span><span class="n">getModelState</span><span class="p">()</span>
+
+        <span class="n">cam</span> <span class="o">=</span> <span class="n">Cameras</span><span class="p">(</span><span class="n">camera</span><span class="o">=</span><span class="n">serialized_camera</span><span class="p">,</span> <span class="n">image_id</span><span class="o">=</span><span class="bp">self</span><span class="p">[</span><span class="s1">&#39;node_id&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">cam</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">camera</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the camera object from the database.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO: This should use knoten once it is stable.</span>
+        <span class="kn">import</span> <span class="nn">csmapi</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_camera&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_from_db</span><span class="p">(</span><span class="n">Cameras</span><span class="p">)</span>
+            <span class="n">plugin</span> <span class="o">=</span> <span class="n">csmapi</span><span class="o">.</span><span class="n">Plugin</span><span class="o">.</span><span class="n">findPlugin</span><span class="p">(</span><span class="s1">&#39;UsgsAstroPluginCSM&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">res</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_camera</span> <span class="o">=</span> <span class="n">plugin</span><span class="o">.</span><span class="n">constructModelFromState</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">camera</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_camera</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">footprint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">session_scope</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Images</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Images</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;node_id&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+
+        <span class="c1"># not in database, create footprint</span>
+        <span class="k">if</span> <span class="n">res</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># get ISIS footprint if possible</span>
+            <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">find_in_dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geodata</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="s2">&quot;Polygon&quot;</span><span class="p">):</span>
+                <span class="n">footprint_latlon</span> <span class="o">=</span>  <span class="n">shapely</span><span class="o">.</span><span class="n">wkt</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geodata</span><span class="o">.</span><span class="n">footprint</span><span class="o">.</span><span class="n">ExportToWkt</span><span class="p">())</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">footprint_latlon</span><span class="p">,</span> <span class="n">shapely</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">Polygon</span><span class="p">):</span>
+                    <span class="n">footprint_latlon</span> <span class="o">=</span> <span class="n">shapely</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">MultiPolygon</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">footprint_latlon</span><span class="p">))</span>
+                <span class="n">cam_type</span> <span class="o">=</span> <span class="s1">&#39;isis&#39;</span>
+                <span class="k">return</span> <span class="n">footprint_latlon</span><span class="p">,</span> <span class="n">cam_type</span>
+            <span class="c1"># Get CSM footprint</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">boundary</span> <span class="o">=</span> <span class="n">generate_boundary</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geodata</span><span class="o">.</span><span class="n">raster_size</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>  <span class="c1"># yx to xy</span>
+                <span class="n">footprint_latlon</span> <span class="o">=</span> <span class="n">generate_latlon_footprint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">camera</span><span class="p">,</span>
+                                                             <span class="n">boundary</span><span class="p">,</span>
+                                                             <span class="n">dem</span><span class="o">=</span><span class="n">parent</span><span class="o">.</span><span class="n">dem</span><span class="p">)</span>
+                <span class="n">footprint_latlon</span><span class="o">.</span><span class="n">FlattenTo2D</span><span class="p">()</span>
+                <span class="n">cam_type</span> <span class="o">=</span> <span class="s1">&#39;csm&#39;</span>
+                <span class="k">return</span> <span class="n">footprint_latlon</span><span class="p">,</span> <span class="n">cam_type</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># in database, return footprint</span>
+            <span class="n">footprint_latlon</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">footprint_latlon</span>
+            <span class="k">return</span> <span class="n">footprint_latlon</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">points</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">session_scope</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+            <span class="n">pids</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Measures</span><span class="o">.</span><span class="n">pointid</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Measures</span><span class="o">.</span><span class="n">imageid</span> <span class="o">==</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;node_id&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Points</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Points</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">in_</span><span class="p">(</span><span class="n">pids</span><span class="p">))</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">res</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">measures</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">session_scope</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Measures</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">Measures</span><span class="o">.</span><span class="n">imageid</span> <span class="o">==</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;node_id&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">res</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">ignore</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the ignore flag from the Images table</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_from_db</span><span class="p">(</span><span class="n">Images</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;id&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span><span class="o">.</span><span class="n">ignore</span>
+
+    <span class="nd">@ignore</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">ignore</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ignore</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the ignore flag in the Images table</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">session_scope</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">Images</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">Images</span><span class="p">,</span><span class="s1">&#39;id&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="p">[</span><span class="s1">&#39;node_id&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">one</span><span class="p">()</span>
+            <span class="n">res</span><span class="o">.</span><span class="n">ignore</span> <span class="o">=</span> <span class="n">ignore</span></div>
+
+</pre></div>
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

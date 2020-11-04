@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>utils.utils — Utility Functions &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../None"></script>
+    <script type="text/javascript" src="../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" >
+    <link rel="search" title="Search" href="../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../index.html" >
+    <link rel="up" title="utils — Utility Functions" href="index.html" >
+    <link rel="next" title="vis — Data Visualization" href="../vis/index.html" >
+    <link rel="prev" title="utils — Utility Functions" href="index.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../index.html" >Library Reference</a></li>
+          <li class="active"><a href="index.html" accesskey="U"><code class="xref py py-mod docutils literal notranslate"><span class="pre">utils</span></code> — Utility Functions</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+      <li class="active">
+        <a href="../vis/index.html" title="vis — Data Visualization"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="index.html" title="utils — Utility Functions"
+           accesskey="P">previous</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">utils</span></code> — Utility Functions</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../vis/index.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vis</span></code> — Data Visualization</a></p>
+  <h3>This Page</h3>
+  <div>
+    <a href="../../_sources/library/utils/utils.rst.txt"
+       rel="nofollow">Show Source</a>
+  </div>
+<div class="this-page-menu">
+  <a href="/scipy/docs/scipy-docs/library/utils/utils.rst.rst">Edit page</a>
+</div>
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <div class="section" id="utils-utils-utility-functions">
+<h1><code class="xref py py-mod docutils literal notranslate"><span class="pre">utils.utils</span></code> — Utility Functions<a class="headerlink" href="#utils-utils-utility-functions" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="xref py py-mod docutils literal notranslate"><span class="pre">utils.utils</span></code> module includes a collection of utility functions</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 0.1.0.</span></p>
+</div>
+<span class="target" id="module-autocnet.utils.utils"></span><dl class="py function">
+<dt id="autocnet.utils.utils.array_to_poly">
+<code class="sig-prename descclassname">autocnet.utils.utils.</code><code class="sig-name descname">array_to_poly</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">array</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/utils/utils.html#array_to_poly"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.utils.utils.array_to_poly" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a geojson geom
+:param array: 2-D array of size (n, 2) of x, y coordinates
+:type array: array-like</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>geom</strong> – geojson containing the necessary data to construct
+a poly gon</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>GeoJson</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.utils.utils.bytescale">
+<code class="sig-prename descclassname">autocnet.utils.utils.</code><code class="sig-name descname">bytescale</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">cmin</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cmax</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">high</span><span class="o">=</span><span class="default_value">255</span></em>, <em class="sig-param"><span class="n">low</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/utils/utils.html#bytescale"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.utils.utils.bytescale" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is pulled directly from scipy.misc as they are deprecating bytescale.</p>
+<p>Byte scales an array (image).
+Byte scaling means converting the input image to uint8 dtype and scaling
+the range to <code class="docutils literal notranslate"><span class="pre">(low,</span> <span class="pre">high)</span></code> (default 0-255).
+If the input image already has dtype uint8, no scaling is done.
+This function is only available if Python Imaging Library (PIL) is installed.
+:param data: PIL image data array.
+:type data: ndarray
+:param cmin: Bias scaling of small values. Default is <code class="docutils literal notranslate"><span class="pre">data.min()</span></code>.
+:type cmin: scalar, optional
+:param cmax: Bias scaling of large values. Default is <code class="docutils literal notranslate"><span class="pre">data.max()</span></code>.
+:type cmax: scalar, optional
+:param high: Scale max value to <cite>high</cite>.  Default is 255.
+:type high: scalar, optional
+:param low: Scale min value to <cite>low</cite>.  Default is 0.
+:type low: scalar, optional</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>img_array</strong> – The byte-scaled array.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>uint8 ndarray</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">scipy.misc</span> <span class="kn">import</span> <span class="n">bytescale</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">img</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span> <span class="mf">91.06794177</span><span class="p">,</span>   <span class="mf">3.39058326</span><span class="p">,</span>  <span class="mf">84.4221549</span> <span class="p">],</span>
+<span class="gp">... </span>                <span class="p">[</span> <span class="mf">73.88003259</span><span class="p">,</span>  <span class="mf">80.91433048</span><span class="p">,</span>   <span class="mf">4.88878881</span><span class="p">],</span>
+<span class="gp">... </span>                <span class="p">[</span> <span class="mf">51.53875334</span><span class="p">,</span>  <span class="mf">34.45808177</span><span class="p">,</span>  <span class="mf">27.5873488</span> <span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bytescale</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+<span class="go">array([[255,   0, 236],</span>
+<span class="go">       [205, 225,   4],</span>
+<span class="go">       [140,  90,  70]], dtype=uint8)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bytescale</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">low</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="go">array([[200, 100, 192],</span>
+<span class="go">       [180, 188, 102],</span>
+<span class="go">       [155, 135, 128]], dtype=uint8)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bytescale</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">cmin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">cmax</span><span class="o">=</span><span class="mi">255</span><span class="p">)</span>
+<span class="go">array([[91,  3, 84],</span>
+<span class="go">       [74, 81,  5],</span>
+<span class="go">       [52, 34, 28]], dtype=uint8)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.utils.utils.calculate_slope">
+<code class="sig-prename descclassname">autocnet.utils.utils.</code><code class="sig-name descname">calculate_slope</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x1</span></em>, <em class="sig-param"><span class="n">x2</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/utils/utils.html#calculate_slope"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.utils.utils.calculate_slope" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the 2-dimensional slope between the points in two dataframes each containing two columns [‘x’, ‘y’]
+The slope is calculated from x1 to x2.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x1</strong> (<em>dataframe</em>) – Each row is a point with columns [‘x’, ‘y’]</p></li>
+<li><p><strong>x2</strong> (<em>dataframe</em>) – Each row is a point with columns [‘x’, ‘y’]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dataframe with the slope between the points in x1 and x2 for each row.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dataframe</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.utils.utils.cartesian">
+<code class="sig-prename descclassname">autocnet.utils.utils.</code><code class="sig-name descname">cartesian</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">arrays</span></em>, <em class="sig-param"><span class="n">out</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/utils/utils.html#cartesian"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.utils.utils.cartesian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a cartesian product of input arrays.
+:param arrays: 1-D arrays to form the cartesian product of.
+:type arrays: list of array-like
+:param out: Array to place the cartesian product in.
+:type out: ndarray</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>out</strong> (<em>ndarray</em>) – 2-D array of shape (M, len(arrays)) containing cartesian products
+formed of input arrays.</p></li>
+<li><p><em>from scikit-learn</em></p></li>
+<li><p><strong>https</strong> (<em>//github.com/scikit-learn/scikit-learn/blob/master/sklearn/utils/extmath.py</em>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.utils.utils.checkbandnumbers">
+<code class="sig-prename descclassname">autocnet.utils.utils.</code><code class="sig-name descname">checkbandnumbers</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">bands</span></em>, <em class="sig-param"><span class="n">checkbands</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/utils/utils.html#checkbandnumbers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.utils.utils.checkbandnumbers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a list of input bands, check that the passed
+tuple contains those bands.</p>
+<p>In case of THEMIS, we check for band 9 as band 9 is the temperature
+band required to derive thermal temperature.  We also check for band 10
+which is required for TES atmosphere calculations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bands</strong> (<em>tuple</em>) – of bands in the input image</p></li>
+<li><p><strong>checkbands</strong> (<em>list</em>) – of bands to check against</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if the bands are present, else False</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.utils.utils.checkdeplaid">
+<code class="sig-prename descclassname">autocnet.utils.utils.</code><code class="sig-name descname">checkdeplaid</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">incidence</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/utils/utils.html#checkdeplaid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.utils.utils.checkdeplaid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an incidence angle, select the appropriate deplaid method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>incidence</strong> (<em>float</em>) – incidence angle extracted from the campt results.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.utils.utils.checkmonotonic">
+<code class="sig-prename descclassname">autocnet.utils.utils.</code><code class="sig-name descname">checkmonotonic</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">iterable</span></em>, <em class="sig-param"><span class="n">piecewise</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/utils/utils.html#checkmonotonic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.utils.utils.checkmonotonic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if a given iterable is monotonically increasing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>iterable</strong> (<em>iterable</em>) – Any Python iterable object</p></li>
+<li><p><strong>piecewise</strong> (<em>boolean</em>) – If false, return a boolean for the entire iterable,
+else return a list with elementwise monotinicy checks</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>monotonic</strong> – A boolean list of all True if monotonic, or including
+an inflection point</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool/list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.utils.utils.compare_dicts">
+<code class="sig-prename descclassname">autocnet.utils.utils.</code><code class="sig-name descname">compare_dicts</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">d</span></em>, <em class="sig-param"><span class="n">o</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/utils/utils.html#compare_dicts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.utils.utils.compare_dicts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given two dictionaries, compare them with support for np.ndarray and
+pd.DataFrame objects</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>d</strong> (<em>dict</em>) – first dict to compare</p></li>
+<li><p><strong>o</strong> (<em>dict</em>) – second dict to compare</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">o</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">compare_dicts</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">o</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">compare_dicts</span><span class="p">(</span><span class="n">d</span><span class="p">,</span><span class="n">o</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">o</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">compare_dicts</span><span class="p">(</span><span class="n">d</span><span class="p">,</span><span class="n">o</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.utils.utils.create_decorator">
+<code class="sig-prename descclassname">autocnet.utils.utils.</code><code class="sig-name descname">create_decorator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dec</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">namespace</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/utils/utils.html#create_decorator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.utils.utils.create_decorator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a decorator function using arbirary params. The objects passed in
+can be used in the body. Originally designed with the idea of automatically
+updating one object after the decorated object was modified.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.utils.utils.crossform">
+<code class="sig-prename descclassname">autocnet.utils.utils.</code><code class="sig-name descname">crossform</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">a</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/utils/utils.html#crossform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.utils.utils.crossform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the cross form, e.g. a in the cross product of a b.
+:param a: (3,) vector
+:type a: ndarray</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>a</strong> – (3,3)</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.utils.utils.decorate_class">
+<code class="sig-prename descclassname">autocnet.utils.utils.</code><code class="sig-name descname">decorate_class</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cls</span></em>, <em class="sig-param"><span class="n">decorator</span></em>, <em class="sig-param"><span class="n">exclude</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/utils/utils.html#decorate_class"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.utils.utils.decorate_class" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decorates a class with a give docorator. Returns a subclass with
+dectorations applied</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cls</strong> (<em>Class</em>) – A class to be decorated</p></li>
+<li><p><strong>decorator</strong> (<em>callable</em>) – callable to wrap cls’s methods with</p></li>
+<li><p><strong>exclude</strong> (<em>list</em>) – list of method names to exclude from being decorated</p></li>
+<li><p><strong>args</strong> (<em>list</em><em>, </em><em>dict</em>) – Parameters to pass into decorator</p></li>
+<li><p><strong>kwargs</strong> (<em>list</em><em>, </em><em>dict</em>) – Parameters to pass into decorator</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.utils.utils.find_in_dict">
+<code class="sig-prename descclassname">autocnet.utils.utils.</code><code class="sig-name descname">find_in_dict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">obj</span></em>, <em class="sig-param"><span class="n">key</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/utils/utils.html#find_in_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.utils.utils.find_in_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recursively find an entry in a dictionary</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>obj</strong> (<em>dict</em>) – The dictionary to search</p></li>
+<li><p><strong>key</strong> (<em>str</em>) – The key to find in the dictionary</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>item</strong> – The value from the dictionary</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>obj</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.utils.utils.find_nested_in_dict">
+<code class="sig-prename descclassname">autocnet.utils.utils.</code><code class="sig-name descname">find_nested_in_dict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">key_list</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/utils/utils.html#find_nested_in_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.utils.utils.find_nested_in_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Traverse a list of keys into a dict.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>dict</em>) – The dictionary to be traversed</p></li>
+<li><p><strong>key_list</strong> (<em>list</em>) – The list of keys to be travered.  Keys are
+traversed in the order they are entered in
+the list</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>value</strong> – The value in the dict</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.utils.utils.getnearest">
+<code class="sig-prename descclassname">autocnet.utils.utils.</code><code class="sig-name descname">getnearest</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">iterable</span></em>, <em class="sig-param"><span class="n">value</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/utils/utils.html#getnearest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.utils.utils.getnearest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an iterable, get the index nearest to the input value</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>iterable</strong> (<em>iterable</em>) – An iterable to search</p></li>
+<li><p><strong>value</strong> (<em>int</em><em>, </em><em>float</em>) – The value to search for</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The index into the list</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.utils.utils.import_func">
+<code class="sig-prename descclassname">autocnet.utils.utils.</code><code class="sig-name descname">import_func</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">func</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/utils/utils.html#import_func"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.utils.utils.import_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>Imports a function from the autocnet package.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>func</strong> (<em>str</em>) – import path. For example, to import the place_points_in_overlap function,
+this func can be called with: ‘spatial.overlap.place_points_in_overlap’</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>func</strong> – The function object for use.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>obj</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.utils.utils.make_homogeneous">
+<code class="sig-prename descclassname">autocnet.utils.utils.</code><code class="sig-name descname">make_homogeneous</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">points</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/utils/utils.html#make_homogeneous"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.utils.utils.make_homogeneous" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Convert a set of points (n x dim array) to</dt><dd><p>homogeneous coordinates.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>points</strong> (<em>arraylike</em>) – n x m array of points, where n is the number
+of points.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>n x m + 1 array of homogeneous points</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>arraylike</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.utils.utils.methodispatch">
+<code class="sig-prename descclassname">autocnet.utils.utils.</code><code class="sig-name descname">methodispatch</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">func</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/utils/utils.html#methodispatch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.utils.utils.methodispatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>New dispatch decorator that looks at the second argument to
+avoid self</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>func</strong> (<em>Object</em>) – Function object to be dispatched</p></li>
+<li><p><strong>Returns</strong> – </p></li>
+<li><p><strong>wrapper</strong> (<em>Object</em>) – Wrapped function call chosen by the dispatcher</p></li>
+<li><p><strong>----------</strong> – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.utils.utils.normalize_vector">
+<code class="sig-prename descclassname">autocnet.utils.utils.</code><code class="sig-name descname">normalize_vector</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">line</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/utils/utils.html#normalize_vector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.utils.utils.normalize_vector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Normalize a standard form line</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>line</strong> (<em>ndarray</em>) – Standard form of a line (Ax + By + C = 0)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>line</strong> – The normalized line</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nv</span> <span class="o">=</span> <span class="n">normalize_vector</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">nv</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>  <span class="c1"># For doc test float percision</span>
+<span class="go">[0.801784 0.267261 0.534522]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.utils.utils.remove_field_name">
+<code class="sig-prename descclassname">autocnet.utils.utils.</code><code class="sig-name descname">remove_field_name</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">a</span></em>, <em class="sig-param"><span class="n">name</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/utils/utils.html#remove_field_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.utils.utils.remove_field_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a numpy structured array, remove a column and return
+a copy of the remainder of the array</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>a</strong> (<em>ndarray</em>) – Numpy structured array</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – of the index (column) to be removed</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>b</strong> – Numpy structured array with the ‘name’ column removed</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>matcher.cross_instrument_matcher — Multi-imstrument Matching Methods &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../None"></script>
+    <script type="text/javascript" src="../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" >
+    <link rel="search" title="Search" href="../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../index.html" >
+    <link rel="up" title="matcher — Graph Based Data Representaton" href="index.html" >
+    <link rel="next" title="matcher.suppression_funcs — Pre-Generated Generic Suppression Functions" href="suppression_funcs.html" >
+    <link rel="prev" title="matcher.naive_template — Simple template matching" href="naive_template.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../index.html" >Library Reference</a></li>
+          <li class="active"><a href="index.html" accesskey="U"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher</span></code> — Graph Based Data Representaton</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+      <li class="active">
+        <a href="suppression_funcs.html" title="matcher.suppression_funcs — Pre-Generated Generic Suppression Functions"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="naive_template.html" title="matcher.naive_template — Simple template matching"
+           accesskey="P">previous</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="naive_template.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.naive_template</span></code> — Simple template matching</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="suppression_funcs.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.suppression_funcs</span></code> — Pre-Generated Generic Suppression Functions</a></p>
+  <h3>This Page</h3>
+  <div>
+    <a href="../../_sources/library/matcher/cross_instrument_matcher.rst.txt"
+       rel="nofollow">Show Source</a>
+  </div>
+<div class="this-page-menu">
+  <a href="/scipy/docs/scipy-docs/library/matcher/cross_instrument_matcher.rst.rst">Edit page</a>
+</div>
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <div class="section" id="matcher-cross-instrument-matcher-multi-imstrument-matching-methods">
+<h1><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.cross_instrument_matcher</span></code> — Multi-imstrument Matching Methods<a class="headerlink" href="#matcher-cross-instrument-matcher-multi-imstrument-matching-methods" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.cross_instrument_matcher</span></code> module</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 0.1.0.</span></p>
+</div>
+<span class="target" id="module-autocnet.matcher.cross_instrument_matcher"></span><dl class="py function">
+<dt id="autocnet.matcher.cross_instrument_matcher.generate_ground_points">
+<code class="sig-prename descclassname">autocnet.matcher.cross_instrument_matcher.</code><code class="sig-name descname">generate_ground_points</code><span class="sig-paren">(</span><em class="sig-param">Session</em>, <em class="sig-param">ground_mosaic</em>, <em class="sig-param">nspts_func=&lt;function &lt;lambda&gt;&gt;</em>, <em class="sig-param">ewpts_func=&lt;function &lt;lambda&gt;&gt;</em>, <em class="sig-param">size=(100</em>, <em class="sig-param">100)</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/cross_instrument_matcher.html#generate_ground_points"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.cross_instrument_matcher.generate_ground_points" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ground_db_config</strong> (<em>dict</em>) – <dl class="simple">
+<dt>In the form: {‘username’:’somename’,</dt><dd><p>’password’:’somepassword’,
+‘host’:’somehost’,
+‘pgbouncer_port’:6543,
+‘name’:’somename’}</p>
+</dd>
+</dl>
+</p></li>
+<li><p><strong>nspts_func</strong> (<em>func</em>) – describes distribution of points along the north-south
+edge of an overlap.</p></li>
+<li><p><strong>ewpts_func</strong> (<em>func</em>) – describes distribution of points along the east-west
+edge of an overlap.</p></li>
+<li><p><strong>size</strong> (<em>tuple of int</em>) – (size_x, size_y) maximum distances on either access point
+can move when attempting to find an interesting feature.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.matcher.cross_instrument_matcher.propagate_control_network">
+<code class="sig-prename descclassname">autocnet.matcher.cross_instrument_matcher.</code><code class="sig-name descname">propagate_control_network</code><span class="sig-paren">(</span><em class="sig-param">Session</em>, <em class="sig-param">config</em>, <em class="sig-param">dem</em>, <em class="sig-param">base_cnet</em>, <em class="sig-param">size_x=40</em>, <em class="sig-param">size_y=40</em>, <em class="sig-param">template_kwargs={'image_size': (39</em>, <em class="sig-param">39)</em>, <em class="sig-param">'template_size': (21</em>, <em class="sig-param">21)}</em>, <em class="sig-param">verbose=False</em>, <em class="sig-param">cost=&lt;function &lt;lambda&gt;&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/cross_instrument_matcher.html#propagate_control_network"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.cross_instrument_matcher.propagate_control_network" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loops over a base control network’s measure information (line, sample, image path) and uses image matching
+algorithms (autocnet.matcher.subpixel.geom_match) to find the corresponding line(s)/sample(s) in database images.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Session</strong> (<em>sqlalchemy.sessionmaker</em>) – session maker associated with the database containing the images you want to propagate to</p></li>
+<li><p><strong>config</strong> (<em>dict</em>) – <p>configuation file associated with database containing the images you want to propagate to
+In the form: {‘username’:’somename’,</p>
+<blockquote>
+<div><p>’password’:’somepassword’,
+‘host’:’somehost’,
+‘pgbouncer_port’:6543,
+‘name’:’somename’}</p>
+</div></blockquote>
+</p></li>
+<li><p><strong>dem</strong> (<em>plio.io.io_gdal.GeoDataset</em>) – Digital elevation model of target body</p></li>
+<li><p><strong>base_cnet</strong> (<em>pd.DataFrame</em>) – Dataframe representing the points you want to propagate. Must contain ‘line’, ‘sample’ location of
+the measure and the ‘path’ to the corresponding image</p></li>
+<li><p><strong>verbose</strong> (<em>boolean</em>) – Increase the level of print outs/plots recieved during propagation</p></li>
+<li><p><strong>cost</strong> (<em>anonymous function</em>) – determines to which image(s) the point should be propagated. x corresponds to a list
+of all match correlation metrics, while y corresponds to each indiviudal element
+of the x array.
+Example:
+cost = lambda x,y: y == np.max(x) will get you one result corresponding to the image that
+has the maximum correlation with the source image
+cost = lambda x,y: y &gt; 0.6 will propegate the point to all images whose correlation
+result is greater than 0.6</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ground</strong> – Dataframe containing pointid, imageid, image serial number, line, sample, and ground location (both latlon
+and cartesian) of successfully propagated points</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.matcher.cross_instrument_matcher.propagate_point">
+<code class="sig-prename descclassname">autocnet.matcher.cross_instrument_matcher.</code><code class="sig-name descname">propagate_point</code><span class="sig-paren">(</span><em class="sig-param">Session</em>, <em class="sig-param">config</em>, <em class="sig-param">dem</em>, <em class="sig-param">lon</em>, <em class="sig-param">lat</em>, <em class="sig-param">pointid</em>, <em class="sig-param">paths</em>, <em class="sig-param">lines</em>, <em class="sig-param">samples</em>, <em class="sig-param">size_x=40</em>, <em class="sig-param">size_y=40</em>, <em class="sig-param">template_kwargs={'image_size': (39</em>, <em class="sig-param">39)</em>, <em class="sig-param">'template_size': (21</em>, <em class="sig-param">21)}</em>, <em class="sig-param">verbose=False</em>, <em class="sig-param">cost=&lt;function &lt;lambda&gt;&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/cross_instrument_matcher.html#propagate_point"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.cross_instrument_matcher.propagate_point" title="Permalink to this definition">¶</a></dt>
+<dd><p>Conditionally propagate a point into a stack of images. The point and all corresponding measures
+are matched against database network (to which you are propagating), best result(s) is(are) kept.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Session</strong> (<em>sqlalchemy.sessionmaker</em>) – session maker associated with the database you want to propagate to</p></li>
+<li><p><strong>config</strong> (<em>dict</em>) – <p>configuation file associated with database you want to propagate to
+In the form: {‘username’:’somename’,</p>
+<blockquote>
+<div><p>’password’:’somepassword’,
+‘host’:’somehost’,
+‘pgbouncer_port’:6543,
+‘name’:’somename’}</p>
+</div></blockquote>
+</p></li>
+<li><p><strong>dem</strong> (<em>plio.io.io_gdal.GeoDataset</em>) – digital elevation model of target body</p></li>
+<li><p><strong>lon</strong> (<em>np.float</em>) – longitude of point you want to project</p></li>
+<li><p><strong>lat</strong> (<em>np.float</em>) – planetocentric latitude of point you want to project</p></li>
+<li><p><strong>pointid</strong> (<em>int</em>) – clerical input used to trace point from generate_ground_points output</p></li>
+<li><p><strong>paths</strong> (<em>list of str</em>) – absolute paths pointing to the image(s) from which you want to try porpagating the point</p></li>
+<li><p><strong>lines</strong> (<em>list of np.float</em>) – apriori line(s) corresponding to point projected in ‘paths’ image(s)</p></li>
+<li><p><strong>samples</strong> (<em>list of np.float</em>) – apriori sample(s) corresponding to point projected in ‘paths’ image(s)</p></li>
+<li><p><strong>size_x</strong> (<em>int</em>) – half width of GeoDataset that is cut from full image and affinely transfromed in geom_match;
+must be larger than 1/2 template_kwargs ‘image_size’</p></li>
+<li><p><strong>size_y</strong> (<em>int</em>) – half height of GeoDataset that is cut from full image and affinely transfromed in geom_match;
+must be larger than 1/2 template_kwargs ‘image_size’</p></li>
+<li><p><strong>template_kwargs</strong> (<em>dict</em>) – kwargs passed through to control matcher.subpixel_template()</p></li>
+<li><p><strong>verbose</strong> (<em>boolean</em>) – If True, this will print out the results of each propagation, including prints of the
+matcher areas and their correlation map.</p></li>
+<li><p><strong>cost</strong> (<em>anonymous function</em>) – determines to which image(s) the point should be propagated. x corresponds to a list
+of all match correlation metrics, while y corresponds to each indiviudal element
+of the x array.
+Example:
+cost = lambda x,y: y == np.max(x) will get you one result corresponding to the image that
+has the maximum correlation with the source image
+cost = lambda x,y: y &gt; 0.6 will propagate the point to all images whose correlation
+result is greater than 0.6</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>new_measures</strong> – Dataframe containing pointid, imageid, image serial number, line, sample, and ground location (both latlon
+and cartesian) of successfully propagated points</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

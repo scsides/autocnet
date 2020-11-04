@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>matcher.cpu_ring_matcher — CPU Based Ring Matching &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../None"></script>
+    <script type="text/javascript" src="../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" >
+    <link rel="search" title="Search" href="../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../index.html" >
+    <link rel="up" title="matcher — Graph Based Data Representaton" href="index.html" >
+    <link rel="next" title="matcher.cuda_extractor — GPU Based n-Feature Extractor" href="cuda_extractor.html" >
+    <link rel="prev" title="matcher.cpu_outlier_detector — Finding outliers in both the keypoints and the matches" href="cpu_outlier_detector.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../index.html" >Library Reference</a></li>
+          <li class="active"><a href="index.html" accesskey="U"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher</span></code> — Graph Based Data Representaton</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+      <li class="active">
+        <a href="cuda_extractor.html" title="matcher.cuda_extractor — GPU Based n-Feature Extractor"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="cpu_outlier_detector.html" title="matcher.cpu_outlier_detector — Finding outliers in both the keypoints and the matches"
+           accesskey="P">previous</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="cpu_outlier_detector.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.cpu_outlier_detector</span></code> — Finding outliers in both the keypoints and the matches</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="cuda_extractor.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.cuda_extractor</span></code> — GPU Based n-Feature Extractor</a></p>
+  <h3>This Page</h3>
+  <div>
+    <a href="../../_sources/library/matcher/cpu_ring_matcher.rst.txt"
+       rel="nofollow">Show Source</a>
+  </div>
+<div class="this-page-menu">
+  <a href="/scipy/docs/scipy-docs/library/matcher/cpu_ring_matcher.rst.rst">Edit page</a>
+</div>
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <div class="section" id="matcher-cpu-ring-matcher-cpu-based-ring-matching">
+<h1><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.cpu_ring_matcher</span></code> — CPU Based Ring Matching<a class="headerlink" href="#matcher-cpu-ring-matcher-cpu-based-ring-matching" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.cpu_ring_matcher</span></code> module implements a ring
+matcher.</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 0.1.0.</span></p>
+</div>
+<span class="target" id="module-autocnet.matcher.cpu_ring_matcher"></span><dl class="py function">
+<dt id="autocnet.matcher.cpu_ring_matcher.add_correspondences">
+<code class="sig-prename descclassname">autocnet.matcher.cpu_ring_matcher.</code><code class="sig-name descname">add_correspondences</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">in_feats</span></em>, <em class="sig-param"><span class="n">ref_feats</span></em>, <em class="sig-param"><span class="n">tar_feats</span></em>, <em class="sig-param"><span class="n">ref_desc</span></em>, <em class="sig-param"><span class="n">tar_desc</span></em>, <em class="sig-param"><span class="n">xextent</span></em>, <em class="sig-param"><span class="n">yextent</span></em>, <em class="sig-param"><span class="n">ring</span></em>, <em class="sig-param"><span class="n">n_x_cells</span><span class="o">=</span><span class="default_value">5</span></em>, <em class="sig-param"><span class="n">n_y_cells</span><span class="o">=</span><span class="default_value">5</span></em>, <em class="sig-param"><span class="n">target_points</span><span class="o">=</span><span class="default_value">5</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/cpu_ring_matcher.html#add_correspondences"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.cpu_ring_matcher.add_correspondences" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a set of input features and x/y extents lay a regular grid over the area
+defined by the extents and find correspondences within each grid cell that
+does not have any existing correspondences.</p>
+<p>Then number of cells are defined by the n_x/y_cells parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>in_feats</strong> (<em>ndarray</em>) – (n,m) input features with the first column being x-coordinate
+in image space and the second column being y-coordinate.</p></li>
+<li><p><strong>ref_feats</strong> (<em>np.ndarray</em>) – where the first 2 columns are the x,y coordinates in pixel space,
+columns 3 &amp; 4 are the x,y coordinates in m or km in the same
+reference as the target features</p></li>
+<li><p><strong>tar_feats</strong> (<em>np.ndarray</em>) – where the first 2 columns are the x,y coordinates in pixel space,
+columns 3 &amp; 4 are the x,y coordinates in m or km in the same
+reference as the reference features</p></li>
+<li><p><strong>ref_desc</strong> (<em>np.ndarray</em>) – (m, n) where m are the individual SIFT features and
+n are the descriptor length (usually 128)</p></li>
+<li><p><strong>tar_desc</strong> (<em>np.ndarray</em>) – (m, n) where m are the individual SIFT features and
+n are the descriptor length (usually 128)</p></li>
+<li><p><strong>xextent</strong> (<em>tuple</em>) – in the form (minx, maxx)</p></li>
+<li><p><strong>yextent</strong> (<em>tuple</em>) – in the form (miny, maxy)</p></li>
+<li><p><strong>ring</strong> (<em>tuple</em>) – in the form (min_ring, max_ring)</p></li>
+<li><p><strong>n_x_cells</strong> (<em>int</em>) – the number of cells to generate in the x direction</p></li>
+<li><p><strong>n_y_cells</strong> (<em>int</em>) – the number of cells to generate in the y direction</p></li>
+<li><p><strong>target_points</strong> (<em>int</em>) – The desired number of points to identify a correspondence</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.matcher.cpu_ring_matcher.check_pidx_duplicates">
+<code class="sig-prename descclassname">autocnet.matcher.cpu_ring_matcher.</code><code class="sig-name descname">check_pidx_duplicates</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">pidx</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/cpu_ring_matcher.html#check_pidx_duplicates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.cpu_ring_matcher.check_pidx_duplicates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a ring match generted set of indices,
+apply outlier detection to ensure no duplicates
+exist in either the reference column or the
+source column. If duplicates do exist, remove the
+rows; the solution is ambiguous.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.matcher.cpu_ring_matcher.directed_ring_match">
+<code class="sig-prename descclassname">autocnet.matcher.cpu_ring_matcher.</code><code class="sig-name descname">directed_ring_match</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ref_feats</span></em>, <em class="sig-param"><span class="n">tar_feats</span></em>, <em class="sig-param"><span class="n">ref_desc</span></em>, <em class="sig-param"><span class="n">tar_desc</span></em>, <em class="sig-param"><span class="n">ring_min</span></em>, <em class="sig-param"><span class="n">ring_max</span></em>, <em class="sig-param"><span class="n">target_points</span><span class="o">=</span><span class="default_value">15</span></em>, <em class="sig-param"><span class="n">tolerance_value</span><span class="o">=</span><span class="default_value">0.02</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/cpu_ring_matcher.html#directed_ring_match"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.cpu_ring_matcher.directed_ring_match" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an input set of reference features and target features, attempt to find
+correspondences within a given ring, where the ring is defined by min and max
+radii.  This is a directed version of the ring_match function, in that this
+function assumes that the correspondence is within the defined ring.</p>
+<p>This implementation is inspired by and uses the ring_match implementation above, developed
+by Sidiropoulos and Muller.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ref_feats</strong> (<em>np.ndarray</em>) – where the first 2 columns are the x,y coordinates in pixel space,
+columns 3 &amp; 4 are the x,y coordinates in m or km in the same
+reference as the target features</p></li>
+<li><p><strong>tar_feats</strong> (<em>np.ndarray</em>) – where the first 2 columns are the x,y coordinates in pixel space,
+columns 3 &amp; 4 are the x,y coordinates in m or km in the same
+reference as the reference features</p></li>
+<li><p><strong>ref_desc</strong> (<em>np.ndarray</em>) – (m, n) where m are the individual SIFT features and
+n are the descriptor length (usually 128)</p></li>
+<li><p><strong>tar_desc</strong> (<em>np.ndarray</em>) – (m, n) where m are the individual SIFT features and
+n are the descriptor length (usually 128)</p></li>
+<li><p><strong>ring_min</strong> (<em>numeric</em>) – The inner distance of the ring</p></li>
+<li><p><strong>ring_max</strong> (<em>numeric</em>) – The outer distance of the ring</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>target_points<span class="classifier">int</span></dt><dd><p>The number of points that constitute a valid match</p>
+</dd>
+<dt>tolerance<span class="classifier">float</span></dt><dd><p>The tolerance for outlier detection in point ordering between estimated
+resolutions</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>xref</strong> (<em>ndarray</em>) – (n,4) array of the correspondences selected from the ref_feats input</p></li>
+<li><p><strong>xtar</strong> (<em>ndarray</em>) – (n,4) array of the correspondences selected from the tar_feats input</p></li>
+<li><p><strong>p_idx</strong> (<em>ndarray</em>) – (n,2) array of the indices in the ref_feats and tar_feats input arrays</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.matcher.cpu_ring_matcher.dynamically_grow_array">
+<code class="sig-prename descclassname">autocnet.matcher.cpu_ring_matcher.</code><code class="sig-name descname">dynamically_grow_array</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">array</span></em>, <em class="sig-param"><span class="n">m</span></em>, <em class="sig-param"><span class="n">dtype</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/cpu_ring_matcher.html#dynamically_grow_array"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.cpu_ring_matcher.dynamically_grow_array" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an array, dynamically grow the array vertically with an m,n array of zeros</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>array</strong> (<em>ndarray</em>) – The array to be grown</p></li>
+<li><p><strong>m</strong> (<em>int</em>) – The number of new rows to add</p></li>
+<li><p><strong>dtype</strong> (<em>obj</em>) – A numpy data type that is used for the new entries. A
+dynamically grown array will upcast to the most complex
+data type.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>array</strong> – The expanded array</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.matcher.cpu_ring_matcher.points_in_ring">
+<code class="sig-prename descclassname">autocnet.matcher.cpu_ring_matcher.</code><code class="sig-name descname">points_in_ring</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">distance_vector</span></em>, <em class="sig-param"><span class="n">inner_radius</span></em>, <em class="sig-param"><span class="n">outer_radius</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/cpu_ring_matcher.html#points_in_ring"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.cpu_ring_matcher.points_in_ring" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the indices of all points within a given distance from
+a distance vector. The vector is assumed to be 1d.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>distance_vector</strong> (<em>ndarray</em>) – (n,1) array of distances between a point and a set of points</p></li>
+<li><p><strong>inner_radius</strong> (<em>float</em>) – The lower threshold for the ring</p></li>
+<li><p><strong>outer_radius</strong> (<em>float</em>) – The outer threshold for the ring</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(n,1) array of booleans where all correspondences inside of the array are True</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.matcher.cpu_ring_matcher.ransac_permute">
+<code class="sig-prename descclassname">autocnet.matcher.cpu_ring_matcher.</code><code class="sig-name descname">ransac_permute</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ref_points</span></em>, <em class="sig-param"><span class="n">tar_points</span></em>, <em class="sig-param"><span class="n">tolerance_val</span></em>, <em class="sig-param"><span class="n">target_points</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/cpu_ring_matcher.html#ransac_permute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.cpu_ring_matcher.ransac_permute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a set of reference points and target points, compute the
+geometric distances between pairs of points in the reference set
+and pairs of points in the target set.  Points for which the ratio of
+the distances is within plus or minus 1 - tolerance_value are considered
+to be good matches.</p>
+<p>If a valid solution is not found, this func returns three empty lists.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ref_points</strong> (<em>ndarray</em>) – A (n, 2) array of points where the first column is the x
+pixel location and the second column is the y pixel location.
+Additional columns are ignored. These points are from one
+image.</p></li>
+<li><p><strong>tar_points</strong> (<em>ndarray</em>) – A (n,2) array as above, for a second image.</p></li>
+<li><p><strong>tolerance_value</strong> (<em>float</em>) – On the range [-1, 1], the computed ratio must be
+within 1 +- tolerance to be considered a match</p></li>
+<li><p><strong>target_points</strong> (<em>int</em>) – The minimum number of points required to return
+a valid answer</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>ref_points</strong> (<em>ndarray</em>) – (n,2) subset of the input ref_points</p></li>
+<li><p><strong>tar_points</strong> (<em>ndarray</em>) – (n,2) subset of the input tar points</p></li>
+<li><p><strong>f2</strong> (<em>ndarray</em>) – of indices for valid points</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<ol class="upperalpha simple" start="16">
+<li><p>Sidiropoulos and J.-P. Muller, A systematic solution to multi-instrument co-registration of high-resolution planetary images to an orthorectified baseline, IEEE Transactions on Geoscience and Remote Sensing, 2017</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.matcher.cpu_ring_matcher.ring_match">
+<code class="sig-prename descclassname">autocnet.matcher.cpu_ring_matcher.</code><code class="sig-name descname">ring_match</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ref_feats</span></em>, <em class="sig-param"><span class="n">tar_feats</span></em>, <em class="sig-param"><span class="n">ref_desc</span></em>, <em class="sig-param"><span class="n">tar_desc</span></em>, <em class="sig-param"><span class="n">ring_radius</span><span class="o">=</span><span class="default_value">4000</span></em>, <em class="sig-param"><span class="n">max_radius</span><span class="o">=</span><span class="default_value">40000</span></em>, <em class="sig-param"><span class="n">target_points</span><span class="o">=</span><span class="default_value">15</span></em>, <em class="sig-param"><span class="n">tolerance_val</span><span class="o">=</span><span class="default_value">0.02</span></em>, <em class="sig-param"><span class="n">iteration_break_point</span><span class="o">=</span><span class="default_value">200</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/cpu_ring_matcher.html#ring_match"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.cpu_ring_matcher.ring_match" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply the University College London ring matching technique that seeks to match
+target feats to a number of reference features.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ref_feats</strong> (<em>np.ndarray</em>) – where the first 2 columns are the x,y coordinates in pixel space,
+columns 3 &amp; 4 are the x,y coordinates in m or km in the same
+reference as the target features</p></li>
+<li><p><strong>tar_feats</strong> (<em>np.ndarray</em>) – where the first 2 columns are the x,y coordinates in pixel space,
+columns 3 &amp; 4 are the x,y coordinates in m or km in the same
+reference as the reference features</p></li>
+<li><p><strong>ref_desc</strong> (<em>np.ndarray</em>) – (m, n) where m are the individual SIFT features and
+n are the descriptor length (usually 128)</p></li>
+<li><p><strong>tar_desc</strong> (<em>np.ndarray</em>) – (m, n) where m are the individual SIFT features and
+n are the descriptor length (usually 128)</p></li>
+<li><p><strong>ring_radius</strong> (<em>numeric</em>) – The width of a ring for matching. In the same units as the x,y
+coordinates for the features, e.g. if the ref_feats and tar_feats
+are provided in pixel space and meters, the ring_radius should
+be expressed in meters</p></li>
+<li><p><strong>max_radius</strong> (<em>numeric</em>) – The maximum radius to be tested.  This is the maxixum distance
+a given correspondence could be from the initial estimate.</p></li>
+<li><p><strong>target_points</strong> (<em>int</em>) – The number of points that constitute a valid match</p></li>
+<li><p><strong>tolerance</strong> (<em>float</em>) – The tolerance for outlier detection in point ordering between estimated
+resolutions</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>xref</strong> (<em>ndarray</em>) – (n,4) array of the correspondences selected from the ref_feats input</p></li>
+<li><p><strong>xtar</strong> (<em>ndarray</em>) – (n,4) array of the correspondences selected from the tar_feats input</p></li>
+<li><p><strong>p_idx</strong> (<em>ndarray</em>) – (n,2) array of the indices in the ref_feats and tar_feats input arrays</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<ol class="upperalpha simple" start="16">
+<li><p>Sidiropoulos and J.-P. Muller, A systematic solution to multi-instrument co-registration of high-resolution planetary images to an orthorectified baseline, IEEE Transactions on Geoscience and Remote Sensing, 2017</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.matcher.cpu_ring_matcher.ring_match_one">
+<code class="sig-prename descclassname">autocnet.matcher.cpu_ring_matcher.</code><code class="sig-name descname">ring_match_one</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">y</span></em>, <em class="sig-param"><span class="n">ref_feats</span></em>, <em class="sig-param"><span class="n">tar_feats</span></em>, <em class="sig-param"><span class="n">ref_desc</span></em>, <em class="sig-param"><span class="n">tar_desc</span></em>, <em class="sig-param"><span class="n">ring</span></em>, <em class="sig-param"><span class="n">search_radius</span><span class="o">=</span><span class="default_value">600</span></em>, <em class="sig-param"><span class="n">max_search_radius</span><span class="o">=</span><span class="default_value">600</span></em>, <em class="sig-param"><span class="n">target_points</span><span class="o">=</span><span class="default_value">5</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/cpu_ring_matcher.html#ring_match_one"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.cpu_ring_matcher.ring_match_one" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an x,y coordinate where a match is desired, find all candidates within
+some search radius and attempt to generate a match.  If no matches are identified
+expand the search radius by search_radius and search again. Once a match
+is identified (by calling the directed matcher and finding a geometric consensus
+with at least target_points), the match closest to the given x,y is returned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>int</em>) – x coordinate in image space</p></li>
+<li><p><strong>y</strong> (<em>int</em>) – y coordinate in image space</p></li>
+<li><p><strong>ref_feats</strong> (<em>np.ndarray</em>) – where the first 2 columns are the x,y coordinates in pixel space,
+columns 3 &amp; 4 are the x,y coordinates in m or km in the same
+reference as the target features</p></li>
+<li><p><strong>tar_feats</strong> (<em>np.ndarray</em>) – where the first 2 columns are the x,y coordinates in pixel space,
+columns 3 &amp; 4 are the x,y coordinates in m or km in the same
+reference as the reference features</p></li>
+<li><p><strong>ref_desc</strong> (<em>np.ndarray</em>) – (m, n) where m are the individual SIFT features and
+n are the descriptor length (usually 128)</p></li>
+<li><p><strong>tar_desc</strong> (<em>np.ndarray</em>) – (m, n) where m are the individual SIFT features and
+n are the descriptor length (usually 128)</p></li>
+<li><p><strong>ring</strong> (<em>tuple</em>) – in the form (min_ring, max_ring)</p></li>
+<li><p><strong>search_radius</strong> (<em>numeric</em>) – The radius of the search extent in image pixels</p></li>
+<li><p><strong>target_points</strong> (<em>int</em>) – The desired number of points to identify a correspondence</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.matcher.cpu_ring_matcher.sift_match">
+<code class="sig-prename descclassname">autocnet.matcher.cpu_ring_matcher.</code><code class="sig-name descname">sift_match</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">a</span></em>, <em class="sig-param"><span class="n">b</span></em>, <em class="sig-param"><span class="n">thresh</span><span class="o">=</span><span class="default_value">1.5</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/cpu_ring_matcher.html#sift_match"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.cpu_ring_matcher.sift_match" title="Permalink to this definition">¶</a></dt>
+<dd><p>vl_ubcmatch from the vlfeat toolbox for MatLab.  This is
+Lowe’s prescribed implementation for disambiguating descriptors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>a</strong> (<em>np.ndarray</em>) – (m,) a singular descriptors where the m-dimension are the
+descriptor lengths.  For SIFT m=128. This is reshaped from
+a vector to an array.</p></li>
+<li><p><strong>b</strong> (<em>np.ndarray</em>) – (n,m) where the n-dimension are the individual features and
+the m-dimension are the elements of the descriptor.</p></li>
+<li><p><strong>thresh</strong> (<em>float</em>) – The threshold for disambiguating correspondences. From Lowe.
+If best * thresh &lt; second_best, a match has been found.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>best</strong> – Index for the best match</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<ol class="upperalpha simple" start="16">
+<li><p>Sidiropoulos and J.-P. Muller, A systematic solution to multi-instrument co-registration of high-resolution planetary images to an orthorectified baseline, IEEE Transactions on Geoscience and Remote Sensing, 2017</p></li>
+</ol>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

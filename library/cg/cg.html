@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>cg.cg — Computational Geometry &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../None"></script>
+    <script type="text/javascript" src="../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" >
+    <link rel="search" title="Search" href="../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../index.html" >
+    <link rel="up" title="cg — Computational Geometry" href="index.html" >
+    <link rel="next" title="control — Control" href="../control/index.html" >
+    <link rel="prev" title="cg — Computational Geometry" href="index.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../index.html" >Library Reference</a></li>
+          <li class="active"><a href="index.html" accesskey="U"><code class="xref py py-mod docutils literal notranslate"><span class="pre">cg</span></code> — Computational Geometry</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+      <li class="active">
+        <a href="../control/index.html" title="control — Control"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="index.html" title="cg — Computational Geometry"
+           accesskey="P">previous</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">cg</span></code> — Computational Geometry</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../control/index.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">control</span></code> — Control</a></p>
+  <h3>This Page</h3>
+  <div>
+    <a href="../../_sources/library/cg/cg.rst.txt"
+       rel="nofollow">Show Source</a>
+  </div>
+<div class="this-page-menu">
+  <a href="/scipy/docs/scipy-docs/library/cg/cg.rst.rst">Edit page</a>
+</div>
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <div class="section" id="cg-cg-computational-geometry">
+<h1><code class="xref py py-mod docutils literal notranslate"><span class="pre">cg.cg</span></code> — Computational Geometry<a class="headerlink" href="#cg-cg-computational-geometry" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="xref py py-mod docutils literal notranslate"><span class="pre">cg.cg</span></code> module provides computational geometry methods.</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 0.1.0.</span></p>
+</div>
+<span class="target" id="module-autocnet.cg.cg"></span><dl class="py function">
+<dt id="autocnet.cg.cg.compute_voronoi">
+<code class="sig-prename descclassname">autocnet.cg.cg.</code><code class="sig-name descname">compute_voronoi</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">keypoints</span></em>, <em class="sig-param"><span class="n">intersection</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">geometry</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">s</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/cg/cg.html#compute_voronoi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.cg.cg.compute_voronoi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a voronoi diagram for all edges in a graph, and assigns a given
+weight to each edge. This is based around voronoi polygons generated
+by scipy’s voronoi method, to determine if an image has significant coverage.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>graph</strong> (<em>object</em>) – A networkx graph object</p></li>
+<li><p><strong>clean_keys</strong> (<em>list</em>) – Of strings used to apply masks to omit correspondences</p></li>
+<li><p><strong>s</strong> (<em>int</em>) – Offset for the corners of the image</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.cg.cg.convex_hull">
+<code class="sig-prename descclassname">autocnet.cg.cg.</code><code class="sig-name descname">convex_hull</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">points</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/cg/cg.html#convex_hull"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.cg.cg.convex_hull" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>points</strong> (<em>ndarray</em>) – (n, 2) array of point coordinates</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>hull</strong> – Provides a convex hull that is used
+to determine coverage</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>2-D convex hull</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.cg.cg.convex_hull_ratio">
+<code class="sig-prename descclassname">autocnet.cg.cg.</code><code class="sig-name descname">convex_hull_ratio</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">points</span></em>, <em class="sig-param"><span class="n">ideal_area</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/cg/cg.html#convex_hull_ratio"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.cg.cg.convex_hull_ratio" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>points</strong> (<em>ndarray</em>) – (n, 2) array of point coordinates</p></li>
+<li><p><strong>ideal_area</strong> (<em>float</em>) – The total area that could be covered</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ratio</strong> – The ratio convex hull volume / ideal_area</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.cg.cg.create_points_along_line">
+<code class="sig-prename descclassname">autocnet.cg.cg.</code><code class="sig-name descname">create_points_along_line</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">p1</span></em>, <em class="sig-param"><span class="n">p2</span></em>, <em class="sig-param"><span class="n">npts</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/cg/cg.html#create_points_along_line"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.cg.cg.create_points_along_line" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute a set of nodes equally spaced between
+two points, not including the end points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>p1</strong> (<em>iterable</em>) – in the form (x,y)</p></li>
+<li><p><strong>p2</strong> (<em>iterable</em>) – in the form(x,y)</p></li>
+<li><p><strong>npts</strong> (<em>int</em>) – The number of nodes to be returned</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(n,2) array of nodes</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.cg.cg.distribute_points_classic">
+<code class="sig-prename descclassname">autocnet.cg.cg.</code><code class="sig-name descname">distribute_points_classic</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">geom</span></em>, <em class="sig-param"><span class="n">nspts</span></em>, <em class="sig-param"><span class="n">ewpts</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/cg/cg.html#distribute_points_classic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.cg.cg.distribute_points_classic" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a decision tree that attempts to perform a
+very simplistic approximation of the shape
+of the geometry and then place some number of
+north/south and east/west points into the geometry.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>geom</strong> (<em>shapely.geom</em>) – A shapely geometry object</p></li>
+<li><p><strong>nspts</strong> (<em>int</em>) – The number of points to attempt to place
+in the N/S (up/down) direction</p></li>
+<li><p><strong>ewpts</strong> (<em>int</em>) – The number of points to attempt to place
+in the E/W (right/left) direction</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>valid</strong> – of point coordinates in the form [(x1,y1), (x2,y2), …, (xn, yn)]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.cg.cg.distribute_points_in_geom">
+<code class="sig-prename descclassname">autocnet.cg.cg.</code><code class="sig-name descname">distribute_points_in_geom</code><span class="sig-paren">(</span><em class="sig-param">geom</em>, <em class="sig-param">method='classic'</em>, <em class="sig-param">nspts_func=&lt;function &lt;lambda&gt;&gt;</em>, <em class="sig-param">ewpts_func=&lt;function &lt;lambda&gt;&gt;</em>, <em class="sig-param">Session=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/cg/cg.html#distribute_points_in_geom"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.cg.cg.distribute_points_in_geom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a geometry, attempt a basic classification of the shape.
+RIght now, this simply attempts to determine if the bounding box
+is generally N/S or generally E/W trending. Once the determination
+is made, the algorithm places points in the geometry and returns
+a list of valid (intersecting) points.</p>
+<p>The kwargs for this algorithm take a function that expects a number
+as an input and returns an integer number of points to place. The
+input number is the distance between the top/bottom or left/right
+sides of the geometry.</p>
+<p>This algorithm does not know anything about the units being used
+so the caller is responsible for acocunting for units (if appropriate)
+in the passed funcs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>geom</strong> (<em>shapely.geom object</em>) – The geometry object</p></li>
+<li><p><strong>nspts_func</strong> (<em>obj</em>) – Function taking a Number and returning an int</p></li>
+<li><p><strong>ewpts_func</strong> (<em>obj</em>) – Function taking a Number and returning an int</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>valid</strong> – of valid points in the form (x,y) or (lon,lat)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.cg.cg.distribute_points_new">
+<code class="sig-prename descclassname">autocnet.cg.cg.</code><code class="sig-name descname">distribute_points_new</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">geom</span></em>, <em class="sig-param"><span class="n">nspts</span></em>, <em class="sig-param"><span class="n">ewpts</span></em>, <em class="sig-param"><span class="n">Session</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/cg/cg.html#distribute_points_new"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.cg.cg.distribute_points_new" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a decision tree that attempts to perform a
+very simplistic approximation of the shape
+of the geometry and then place some number of
+north/south and east/west points into the geometry.
+This function works best on bulky geometries, such as
+a combination of all network image footprints.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>geom</strong> (<em>shapely.geom</em>) – A shapely geometry object which is a union of
+all of the image footprints in the network
+that is being grounded.</p></li>
+<li><p><strong>nspts</strong> (<em>int</em>) – The number of points to attempt to place
+in the N/S (up/down) direction</p></li>
+<li><p><strong>ewpts</strong> (<em>int</em>) – The number of points to attempt to place
+in the E/W (right/left) direction</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>valid</strong> – of point coordinates in the form [(x1,y1), (x2,y2), …, (xn, yn)]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.cg.cg.geom_mask">
+<code class="sig-prename descclassname">autocnet.cg.cg.</code><code class="sig-name descname">geom_mask</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">keypoints</span></em>, <em class="sig-param"><span class="n">geom</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/cg/cg.html#geom_mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.cg.cg.geom_mask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Masks any points that are outside of the bounds of the given
+geometry.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>keypoints</strong> (<em>dataframe</em>) – A pandas dataframe of points to mask</p></li>
+<li><p><strong>geom</strong> (<em>object</em>) – Shapely geometry object to use as a mask</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.cg.cg.get_area">
+<code class="sig-prename descclassname">autocnet.cg.cg.</code><code class="sig-name descname">get_area</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">poly1</span></em>, <em class="sig-param"><span class="n">poly2</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/cg/cg.html#get_area"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.cg.cg.get_area" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>poly1</strong> (<em>ogr polygon</em>) – General ogr polygon</p></li>
+<li><p><strong>poly2</strong> (<em>ogr polygon</em>) – General ogr polygon</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>intersection_area</strong> – returns the intersection area
+of two polygons</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.cg.cg.nearest">
+<code class="sig-prename descclassname">autocnet.cg.cg.</code><code class="sig-name descname">nearest</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">pt</span></em>, <em class="sig-param"><span class="n">search</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/cg/cg.html#nearest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.cg.cg.nearest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fine the index of nearest (Euclidean) point in a list
+of points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pt</strong> (<em>ndarray</em>) – (2,1) array</p></li>
+<li><p><strong>search</strong> (<em>ndarray</em>) – (n,2) array of points to search within. The
+returned index is the closet point in this set
+to the search</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The index to the nearest point.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.cg.cg.single_centroid">
+<code class="sig-prename descclassname">autocnet.cg.cg.</code><code class="sig-name descname">single_centroid</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">geom</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/cg/cg.html#single_centroid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.cg.cg.single_centroid" title="Permalink to this definition">¶</a></dt>
+<dd><p>For a geom, return the centroid</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>geom</strong> (<em>shapely.geom object</em>) – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>in the form [(x,y)]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.cg.cg.two_point_extrapolate">
+<code class="sig-prename descclassname">autocnet.cg.cg.</code><code class="sig-name descname">two_point_extrapolate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">xs</span></em>, <em class="sig-param"><span class="n">ys</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/cg/cg.html#two_point_extrapolate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.cg.cg.two_point_extrapolate" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>float</em>) – point where you want corresponding y value</p></li>
+<li><p><strong>xs</strong> (<em>ndarray</em>) – (1, 2) array of point x coordinates</p></li>
+<li><p><strong>ys</strong> (<em>ndarray</em>) – (1, 2) array of point x coordinates</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>y</strong> – extrapolated value associated with x</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.cg.cg.two_poly_overlap">
+<code class="sig-prename descclassname">autocnet.cg.cg.</code><code class="sig-name descname">two_poly_overlap</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">poly1</span></em>, <em class="sig-param"><span class="n">poly2</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/cg/cg.html#two_poly_overlap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.cg.cg.two_poly_overlap" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>poly1</strong> (<em>ogr polygon</em>) – Any polygon that shares some kind of overlap
+with poly2</p></li>
+<li><p><strong>poly2</strong> (<em>ogr polygon</em>) – Any polygon that shares some kind of overlap
+with poly1</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>overlap_percn</strong> (<em>float</em>) – The percentage of image overlap</p></li>
+<li><p><strong>overlap_area</strong> (<em>float</em>) – The total area of overalap</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.cg.cg.xy_in_polygon">
+<code class="sig-prename descclassname">autocnet.cg.cg.</code><code class="sig-name descname">xy_in_polygon</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">y</span></em>, <em class="sig-param"><span class="n">geom</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/cg/cg.html#xy_in_polygon"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.cg.cg.xy_in_polygon" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns true is an x,y pair is contained within
+the geom.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>Number</em>) – The x coordinate</p></li>
+<li><p><strong>y</strong> (<em>Number</em>) – The y coordinate</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if the point is contained within the geom.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

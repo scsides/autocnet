@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>autocnet.control.control &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../None"></script>
+    <script type="text/javascript" src="../../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" >
+    <link rel="search" title="Search" href="../../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../../index.html" >
+    <link rel="up" title="Module code" href="../../index.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../../index.html" accesskey="U">Module code</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <h1>Source code for autocnet.control.control</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">geopandas</span> <span class="k">as</span> <span class="nn">gpd</span>
+<span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Point</span>
+
+<span class="kn">from</span> <span class="nn">autocnet.matcher</span> <span class="kn">import</span> <span class="n">subpixel</span> <span class="k">as</span> <span class="n">sp</span>
+
+<span class="kn">from</span> <span class="nn">plio.io.io_controlnetwork</span> <span class="kn">import</span> <span class="n">to_isis</span><span class="p">,</span> <span class="n">write_filelist</span>
+<span class="kn">from</span> <span class="nn">plio.utils</span> <span class="kn">import</span> <span class="n">covariance</span>
+
+<div class="viewcode-block" id="compute_covariance"><a class="viewcode-back" href="../../../library/control/control.html#autocnet.control.control.compute_covariance">[docs]</a><span class="k">def</span> <span class="nf">compute_covariance</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">latsigma</span><span class="p">,</span> <span class="n">lonsigma</span><span class="p">,</span> <span class="n">radsigma</span><span class="p">,</span> <span class="n">radius</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the covariance matrices for constrained or fixed points.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    df : pd.DataFrame</span>
+<span class="sd">         with columns pointtype, adjustedY, and adjustedX</span>
+
+<span class="sd">    latsigma : int/float</span>
+<span class="sd">               The estimated sigma (error) in the latitude direction</span>
+
+<span class="sd">    lonsigma : int/float</span>
+<span class="sd">               The estimated sigma (error) in the longitude direction</span>
+
+<span class="sd">    radsigma : int/float</span>
+<span class="sd">               The estimated sigma (error) in the radius direction</span>
+
+<span class="sd">    radius : int/float</span>
+<span class="sd">             The body semimajor radius</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">compute_covar</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">latsigma</span><span class="p">,</span> <span class="n">lonsigma</span><span class="p">,</span> <span class="n">radsigma</span><span class="p">,</span> <span class="n">radius</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;pointtype&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">or</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;pointtype&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">covariance</span><span class="o">.</span><span class="n">compute_covariance</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;adjustedY&#39;</span><span class="p">],</span> 
+                                                    <span class="n">row</span><span class="p">[</span><span class="s1">&#39;adjustedX&#39;</span><span class="p">],</span> 
+                                                    <span class="n">radius</span><span class="p">,</span> 
+                                                    <span class="n">latsigma</span><span class="o">=</span><span class="n">latsigma</span><span class="p">,</span> 
+                                                    <span class="n">lonsigma</span><span class="o">=</span><span class="n">lonsigma</span><span class="p">,</span> 
+                                                    <span class="n">radsigma</span><span class="o">=</span><span class="n">radsigma</span><span class="p">,</span> 
+                                                    <span class="n">semimajor_axis</span><span class="o">=</span><span class="n">radius</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;aprioriCovar&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">compute_covar</span><span class="p">,</span> 
+                                  <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> 
+                                  <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">latsigma</span><span class="p">,</span>
+                                  <span class="n">lonsigma</span><span class="p">,</span>
+                                  <span class="n">radsigma</span><span class="p">,</span>
+                                  <span class="n">radius</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">df</span></div>
+
+<div class="viewcode-block" id="identify_potential_overlaps"><a class="viewcode-back" href="../../../library/control/control.html#autocnet.control.control.identify_potential_overlaps">[docs]</a><span class="k">def</span> <span class="nf">identify_potential_overlaps</span><span class="p">(</span><span class="n">cg</span><span class="p">,</span> <span class="n">cn</span><span class="p">,</span> <span class="n">overlap</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Identify those points that could have additional measures</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    overlap : boolean</span>
+<span class="sd">              If True, apply aprint(g)n additional point in polygon check, where</span>
+<span class="sd">              the polygon is the footprint intersection between images and</span>
+<span class="sd">              the point is a keypoint projected into lat/lon space.  Note</span>
+<span class="sd">              that the projection can be inaccurate if the method used</span>
+<span class="sd">              estimates the transformation.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    candidate_cliques : DataFrame</span>
+<span class="sd">                        with the index as the point id (in the data attribute)</span>
+<span class="sd">                        and the value as an iterable of image ids to search</span>
+<span class="sd">                        for a new point.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">fc</span> <span class="o">=</span> <span class="n">cg</span><span class="o">.</span><span class="n">compute_fully_connected_components</span><span class="p">()</span>
+
+    <span class="n">candidate_cliques</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">geoms</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">cn</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;point_id&#39;</span><span class="p">):</span>
+        <span class="c1"># Which images are covered already.  This finds any connected cycles that</span>
+        <span class="c1">#  a node is in (this can be more than one - an hourglass network for example)</span>
+        <span class="c1"># Extract the fully connected subgraph for each covered image in order to</span>
+        <span class="c1">#  identify which subgraph the measure is in</span>
+        <span class="n">covered</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;image_index&#39;</span><span class="p">]</span>
+        <span class="n">candidate_cycles</span> <span class="o">=</span> <span class="p">[</span><span class="n">fc</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">covered</span><span class="p">]</span>
+        <span class="n">cycle</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">candidate_cycles</span> <span class="k">if</span> <span class="n">candidate_cycles</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">cycle_to_punch</span> <span class="o">=</span> <span class="n">cycle</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Using the cycles to punch, which images could also be covered?</span>
+        <span class="n">uncovered</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">cycle_to_punch</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">covered</span><span class="p">)))</span>
+
+        <span class="c1"># All candidates are covered, skip this point</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">uncovered</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Determine whether a &#39;real&#39; lat/lon are to be used and reproject</span>
+        <span class="k">if</span> <span class="n">overlap</span><span class="p">:</span>
+            <span class="n">row</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span> <span class="o">=</span> <span class="n">cg</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">row</span><span class="o">.</span><span class="n">image_index</span><span class="p">][</span><span class="s1">&#39;data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">geodata</span><span class="o">.</span><span class="n">pixel_to_latlon</span><span class="p">(</span>
+                <span class="n">row</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">row</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+
+        <span class="c1"># Build the data for the geodataframe - can the index be cleaner?</span>
+        <span class="n">geoms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Point</span><span class="p">(</span><span class="n">lon</span><span class="p">,</span> <span class="n">lat</span><span class="p">))</span>
+        <span class="n">candidate_cliques</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">uncovered</span><span class="p">,</span> <span class="n">cycle_to_punch</span><span class="p">])</span>
+        <span class="n">idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+    <span class="n">candidate_cliques</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">(</span><span class="n">candidate_cliques</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">idx</span><span class="p">,</span>
+                                         <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;candidates&#39;</span><span class="p">,</span> <span class="s1">&#39;subgraph&#39;</span><span class="p">],</span> <span class="n">geometry</span><span class="o">=</span><span class="n">geoms</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">overlaps</span><span class="p">(</span><span class="n">group</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Take a group, find the subgraph, compute the intersection of footprints</span>
+<span class="sd">        and apply a group point in polygon check. This is an optimization where</span>
+<span class="sd">        n-points are intersected with the poly at once (as opposed to the</span>
+<span class="sd">        single iteration approach.)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cycle_to_punch</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">subgraph</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">subgraph</span> <span class="o">=</span> <span class="n">cg</span><span class="o">.</span><span class="n">create_node_subgraph</span><span class="p">(</span><span class="n">cycle_to_punch</span><span class="p">)</span>
+        <span class="n">union</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">subgraph</span><span class="o">.</span><span class="n">compute_intersection</span><span class="p">(</span>
+            <span class="n">cycle_to_punch</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>  <span class="c1"># .query(&#39;overlaps_all == True&#39;)</span>
+        <span class="n">intersection</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">intersects</span><span class="p">(</span><span class="n">union</span><span class="o">.</span><span class="n">unary_union</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">intersection</span>
+
+    <span class="c1"># If the overlap check is going to be used, apply it.</span>
+    <span class="k">if</span> <span class="n">overlap</span><span class="p">:</span>
+        <span class="n">candidate_cliques</span><span class="p">[</span><span class="s1">&#39;overlap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">candidate_cliques</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;candidates&#39;</span><span class="p">):</span>
+            <span class="n">intersection</span> <span class="o">=</span> <span class="n">overlaps</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+            <span class="n">candidate_cliques</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">intersection</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;overlap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">intersection</span>
+        <span class="k">return</span> <span class="n">candidate_cliques</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;overlap == True&#39;</span><span class="p">)[</span><span class="s1">&#39;candidates&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">candidate_cliques</span><span class="o">.</span><span class="n">candidates</span></div>
+</pre></div>
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

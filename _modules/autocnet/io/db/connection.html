@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>autocnet.io.db.connection &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../../None"></script>
+    <script type="text/javascript" src="../../../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" >
+    <link rel="search" title="Search" href="../../../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../../../index.html" >
+    <link rel="up" title="Module code" href="../../../index.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../../../index.html" accesskey="U">Module code</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <h1>Source code for autocnet.io.db.connection</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">socket</span>
+
+<span class="kn">import</span> <span class="nn">sqlalchemy</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">create_engine</span><span class="p">,</span> <span class="n">pool</span><span class="p">,</span> <span class="n">orm</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="kn">import</span> <span class="n">create_session</span><span class="p">,</span> <span class="n">scoped_session</span><span class="p">,</span> <span class="n">sessionmaker</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">yaml</span>
+
+
+<span class="k">class</span> <span class="nc">Parent</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+        <span class="n">Session</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">new_connection</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">Session</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">begin</span><span class="p">()</span>
+
+<div class="viewcode-block" id="new_connection"><a class="viewcode-back" href="../../../../library/io/db/connection.html#autocnet.io.db.connection.new_connection">[docs]</a><span class="k">def</span> <span class="nf">new_connection</span><span class="p">(</span><span class="n">dbconfig</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Using the user supplied config create a NullPool database connection.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Session : object</span>
+<span class="sd">              An SQLAlchemy session object</span>
+
+<span class="sd">    engine : object</span>
+<span class="sd">             An SQLAlchemy engine object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">db_uri</span> <span class="o">=</span> <span class="s1">&#39;postgresql://</span><span class="si">{}</span><span class="s1">:</span><span class="si">{}</span><span class="s1">@</span><span class="si">{}</span><span class="s1">:</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dbconfig</span><span class="p">[</span><span class="s1">&#39;username&#39;</span><span class="p">],</span>
+                                                  <span class="n">dbconfig</span><span class="p">[</span><span class="s1">&#39;password&#39;</span><span class="p">],</span>
+                                                  <span class="n">dbconfig</span><span class="p">[</span><span class="s1">&#39;host&#39;</span><span class="p">],</span>
+                                                  <span class="n">dbconfig</span><span class="p">[</span><span class="s1">&#39;pgbouncer_port&#39;</span><span class="p">],</span>
+                                                  <span class="n">dbconfig</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">])</span>
+    <span class="n">hostname</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">gethostname</span><span class="p">()</span>
+    <span class="n">engine</span> <span class="o">=</span> <span class="n">sqlalchemy</span><span class="o">.</span><span class="n">create_engine</span><span class="p">(</span><span class="n">db_uri</span><span class="p">,</span>
+                <span class="n">poolclass</span><span class="o">=</span><span class="n">sqlalchemy</span><span class="o">.</span><span class="n">pool</span><span class="o">.</span><span class="n">NullPool</span><span class="p">,</span>
+                <span class="n">connect_args</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;application_name&quot;</span><span class="p">:</span><span class="sa">f</span><span class="s2">&quot;AutoCNet_</span><span class="si">{</span><span class="n">hostname</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">},</span>
+                <span class="n">isolation_level</span><span class="o">=</span><span class="s2">&quot;AUTOCOMMIT&quot;</span><span class="p">)</span>
+    <span class="n">Session</span> <span class="o">=</span> <span class="n">orm</span><span class="o">.</span><span class="n">sessionmaker</span><span class="p">(</span><span class="n">bind</span><span class="o">=</span><span class="n">engine</span><span class="p">,</span> <span class="n">autocommit</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Session</span><span class="p">,</span> <span class="n">engine</span></div>
+</pre></div>
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

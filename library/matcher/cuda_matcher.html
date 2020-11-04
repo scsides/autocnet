@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>matcher.cuda_matcher — GPU Based n-Keypoint Matcher &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../None"></script>
+    <script type="text/javascript" src="../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" >
+    <link rel="search" title="Search" href="../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../index.html" >
+    <link rel="up" title="matcher — Graph Based Data Representaton" href="index.html" >
+    <link rel="next" title="matcher.cuda_outlier_detector — Finding outliers in both the keypoints and the matches" href="cuda_outlier_detector.html" >
+    <link rel="prev" title="matcher.cuda_decompose — GPU Based Recursive Image Decomposition" href="cuda_decompose.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../index.html" >Library Reference</a></li>
+          <li class="active"><a href="index.html" accesskey="U"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher</span></code> — Graph Based Data Representaton</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+      <li class="active">
+        <a href="cuda_outlier_detector.html" title="matcher.cuda_outlier_detector — Finding outliers in both the keypoints and the matches"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="cuda_decompose.html" title="matcher.cuda_decompose — GPU Based Recursive Image Decomposition"
+           accesskey="P">previous</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="cuda_decompose.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.cuda_decompose</span></code> — GPU Based Recursive Image Decomposition</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="cuda_outlier_detector.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.cuda_outlier_detector</span></code> — Finding outliers in both the keypoints and the matches</a></p>
+  <h3>This Page</h3>
+  <div>
+    <a href="../../_sources/library/matcher/cuda_matcher.rst.txt"
+       rel="nofollow">Show Source</a>
+  </div>
+<div class="this-page-menu">
+  <a href="/scipy/docs/scipy-docs/library/matcher/cuda_matcher.rst.rst">Edit page</a>
+</div>
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <div class="section" id="matcher-cuda-matcher-gpu-based-n-keypoint-matcher">
+<h1><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.cuda_matcher</span></code> — GPU Based n-Keypoint Matcher<a class="headerlink" href="#matcher-cuda-matcher-gpu-based-n-keypoint-matcher" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.cuda_matcher</span></code> module</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 0.1.0.</span></p>
+</div>
+<span class="target" id="module-autocnet.matcher.cuda_matcher"></span><dl class="py function">
+<dt id="autocnet.matcher.cuda_matcher.match">
+<code class="sig-prename descclassname">autocnet.matcher.cuda_matcher.</code><code class="sig-name descname">match</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">edge</span></em>, <em class="sig-param"><span class="n">aidx</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">bidx</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/cuda_matcher.html#match"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.cuda_matcher.match" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply a composite CUDA matcher and ratio check.  If this method is used,
+no additional ratio check is necessary and no symmetry check is required.
+The ratio check is embedded on the cuda side and returned as an
+ambiguity value.  In testing symmetry is not required as it is expensive
+without significant gain in accuracy when using this implementation.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

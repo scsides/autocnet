@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>graph.node — Network Node Object &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../None"></script>
+    <script type="text/javascript" src="../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" >
+    <link rel="search" title="Search" href="../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../index.html" >
+    <link rel="up" title="graph — Graph Based Data Representaton" href="index.html" >
+    <link rel="next" title="graph.edge — Network Edge" href="edge.html" >
+    <link rel="prev" title="graph.network — Network File Representation" href="network.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../index.html" >Library Reference</a></li>
+          <li class="active"><a href="index.html" accesskey="U"><code class="xref py py-mod docutils literal notranslate"><span class="pre">graph</span></code> — Graph Based Data Representaton</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+      <li class="active">
+        <a href="edge.html" title="graph.edge — Network Edge"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="network.html" title="graph.network — Network File Representation"
+           accesskey="P">previous</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="network.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">graph.network</span></code> — Network File Representation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="edge.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">graph.edge</span></code> — Network Edge</a></p>
+  <h3>This Page</h3>
+  <div>
+    <a href="../../_sources/library/graph/node.rst.txt"
+       rel="nofollow">Show Source</a>
+  </div>
+<div class="this-page-menu">
+  <a href="/scipy/docs/scipy-docs/library/graph/node.rst.rst">Edit page</a>
+</div>
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <div class="section" id="graph-node-network-node-object">
+<h1><code class="xref py py-mod docutils literal notranslate"><span class="pre">graph.node</span></code> — Network Node Object<a class="headerlink" href="#graph-node-network-node-object" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="xref py py-mod docutils literal notranslate"><span class="pre">graph.node</span></code> module contains the Node class.  This is an extension to the NetworkX Node.</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 0.1.0.</span></p>
+</div>
+<span class="target" id="module-autocnet.graph.node"></span><dl class="py class">
+<dt id="autocnet.graph.node.NetworkNode">
+<em class="property">class </em><code class="sig-prename descclassname">autocnet.graph.node.</code><code class="sig-name descname">NetworkNode</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/graph/node.html#NetworkNode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.graph.node.NetworkNode" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt id="autocnet.graph.node.NetworkNode.camera">
+<em class="property">property </em><code class="sig-name descname">camera</code><a class="headerlink" href="#autocnet.graph.node.NetworkNode.camera" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the camera object from the database.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="autocnet.graph.node.NetworkNode.create_camera">
+<code class="sig-name descname">create_camera</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">url</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/graph/node.html#NetworkNode.create_camera"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.graph.node.NetworkNode.create_camera" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a CSM sensor for the node and serializes the state
+to the DB,</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>url</strong> (<em>str</em>) – The URI to a service that can create an ISD to instantiate
+a sensor.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="autocnet.graph.node.NetworkNode.ignore">
+<em class="property">property </em><code class="sig-name descname">ignore</code><a class="headerlink" href="#autocnet.graph.node.NetworkNode.ignore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the ignore flag from the Images table</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="autocnet.graph.node.NetworkNode.nkeypoints">
+<em class="property">property </em><code class="sig-name descname">nkeypoints</code><a class="headerlink" href="#autocnet.graph.node.NetworkNode.nkeypoints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the number of keypoints from the database</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="autocnet.graph.node.Node">
+<em class="property">class </em><code class="sig-prename descclassname">autocnet.graph.node.</code><code class="sig-name descname">Node</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">image_name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">image_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">node_id</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/graph/node.html#Node"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.graph.node.Node" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class represents a node in a graph and is synonymous with an
+image.  The node (image) stores PATH information, an accessor to the
+on-disk data set, and correspondences information that references the image.</p>
+<dl class="py attribute">
+<dt id="autocnet.graph.node.Node.image_name">
+<code class="sig-name descname">image_name</code><a class="headerlink" href="#autocnet.graph.node.Node.image_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name of the image, with extension</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="autocnet.graph.node.Node.image_path">
+<code class="sig-name descname">image_path</code><a class="headerlink" href="#autocnet.graph.node.Node.image_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Relative or absolute PATH to the image</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="autocnet.graph.node.Node.geodata">
+<code class="sig-name descname">geodata</code><a class="headerlink" href="#autocnet.graph.node.Node.geodata" title="Permalink to this definition">¶</a></dt>
+<dd><p>File handle to the object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="autocnet.graph.node.Node.keypoints">
+<code class="sig-name descname">keypoints</code><a class="headerlink" href="#autocnet.graph.node.Node.keypoints" title="Permalink to this definition">¶</a></dt>
+<dd><p>With columns, x, y, and response</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>dataframe</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="autocnet.graph.node.Node.nkeypoints">
+<code class="sig-name descname">nkeypoints</code><a class="headerlink" href="#autocnet.graph.node.Node.nkeypoints" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of keypoints found for this image</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="autocnet.graph.node.Node.descriptors">
+<code class="sig-name descname">descriptors</code><a class="headerlink" href="#autocnet.graph.node.Node.descriptors" title="Permalink to this definition">¶</a></dt>
+<dd><p>32-bit array of feature descriptors returned by OpenCV</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="autocnet.graph.node.Node.masks">
+<code class="sig-name descname">masks</code><a class="headerlink" href="#autocnet.graph.node.Node.masks" title="Permalink to this definition">¶</a></dt>
+<dd><p>A list of the available masking arrays</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>set</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="autocnet.graph.node.Node.ignore">
+<code class="sig-name descname">ignore</code><a class="headerlink" href="#autocnet.graph.node.Node.ignore" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the image is flagged as ignored and will be skipped in processing</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="autocnet.graph.node.Node.isis_serial">
+<code class="sig-name descname">isis_serial</code><a class="headerlink" href="#autocnet.graph.node.Node.isis_serial" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the input images have PVL headers, generate an
+ISIS compatible serial number</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="autocnet.graph.node.Node.coverage">
+<code class="sig-name descname">coverage</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/graph/node.html#Node.coverage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.graph.node.Node.coverage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the area of keypoint coverage
+using the unprojected image, resulting
+in a rough estimation of the percentage area
+being covered.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>coverage_area</strong> – percentage area covered by the generated
+keypoints</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="autocnet.graph.node.Node.extract_features_with_downsampling">
+<code class="sig-name descname">extract_features_with_downsampling</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">downsample_amount</span></em>, <em class="sig-param"><span class="n">array_read_args</span><span class="o">=</span><span class="default_value">{}</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/graph/node.html#Node.extract_features_with_downsampling"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.graph.node.Node.extract_features_with_downsampling" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract interest points for the this node (image) by first downsampling,
+then applying the extractor, and then upsampling the results backin to
+true image space.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>downsample_amount</strong> (<em>int</em>) – The amount to downsample by</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="autocnet.graph.node.Node.get_array">
+<code class="sig-name descname">get_array</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">band</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/graph/node.html#Node.get_array"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.graph.node.Node.get_array" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a band as a 32-bit numpy array</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>band</strong> (<em>int</em>) – The band to read, default 1</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="autocnet.graph.node.Node.get_byte_array">
+<code class="sig-name descname">get_byte_array</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">band</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/graph/node.html#Node.get_byte_array"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.graph.node.Node.get_byte_array" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a band as a 32-bit numpy array</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>band</strong> (<em>int</em>) – The band to read, default 1</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="autocnet.graph.node.Node.get_keypoint_coordinates">
+<code class="sig-name descname">get_keypoint_coordinates</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">index</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">homogeneous</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/graph/node.html#Node.get_keypoint_coordinates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.graph.node.Node.get_keypoint_coordinates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the coordinates of the keypoints without any ancillary data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>index</strong> (<em>iterable</em>) – indices for of the keypoints to return</p></li>
+<li><p><strong>homogeneous</strong> (<em>bool</em>) – If True, return homogeneous coordinates in the form
+[x, y, 1]. Default: False</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A pandas dataframe of keypoint coordinates</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dataframe</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="autocnet.graph.node.Node.get_keypoints">
+<code class="sig-name descname">get_keypoints</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">index</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/graph/node.html#Node.get_keypoints"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.graph.node.Node.get_keypoints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the keypoints for the node.  If index is passed, return
+the appropriate subset.
+:param index: indices for of the keypoints to return
+:type index: iterable</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A pandas dataframe of keypoints</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dataframe</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="autocnet.graph.node.Node.get_raw_keypoint_coordinates">
+<code class="sig-name descname">get_raw_keypoint_coordinates</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">index</span><span class="o">=</span><span class="default_value">slice(None, None, None)</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/graph/node.html#Node.get_raw_keypoint_coordinates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.graph.node.Node.get_raw_keypoint_coordinates" title="Permalink to this definition">¶</a></dt>
+<dd><p>The performance of get_keypoint_coordinates can be slow
+due to the ability for fancier indexing.  This method
+returns coordinates using numpy array accessors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>index</strong> (<em>iterable</em>) – positional indices to return from the global keypoints dataframe</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="id0">
+<em class="property">property </em><code class="sig-name descname">isis_serial</code><a class="headerlink" href="#id0" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate an ISIS compatible serial number using the data file
+associated with this node.  This assumes that the data file
+has a PVL header.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="autocnet.graph.node.Node.load_features">
+<code class="sig-name descname">load_features</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">in_path</span></em>, <em class="sig-param"><span class="n">format</span><span class="o">=</span><span class="default_value">'npy'</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/graph/node.html#Node.load_features"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.graph.node.Node.load_features" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load keypoints and descriptors for the given image
+from a HDF file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>in_path</strong> (<em>str</em><em> or </em><em>object</em>) – PATH to the hdf file or a HDFDataset object handle</p></li>
+<li><p><strong>format</strong> (<em>{'npy'</em><em>, </em><em>'hdf'}</em>) – The format that the features are stored in.  Default: npy.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="autocnet.graph.node.Node.reproject_geom">
+<code class="sig-name descname">reproject_geom</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">coords</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/graph/node.html#Node.reproject_geom"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.graph.node.Node.reproject_geom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reprojects a set of latlon coordinates into pixel space using the nodes
+geodata. These are then returned as a shapely polygon</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>coords</strong> (<em>ndarray</em>) – (n, 2) array of latlon coordinates</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A shapely polygon object made using the reprojected coordinates</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="autocnet.graph.node.Node.save_features">
+<code class="sig-name descname">save_features</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">out_path</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/graph/node.html#Node.save_features"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.graph.node.Node.save_features" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the extracted keypoints and descriptors to
+the given file.  By default, the .npz files are saved
+along side the image, e.g. in the same folder as the image.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>out_path</strong> (<em>str</em><em> or </em><em>object</em>) – PATH to the directory for output and base file name</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>control.control — Control Network &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../None"></script>
+    <script type="text/javascript" src="../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" >
+    <link rel="search" title="Search" href="../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../index.html" >
+    <link rel="up" title="control — Control" href="index.html" >
+    <link rel="next" title="graph — Graph Based Data Representaton" href="../graph/index.html" >
+    <link rel="prev" title="control — Control" href="index.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../index.html" >Library Reference</a></li>
+          <li class="active"><a href="index.html" accesskey="U"><code class="xref py py-mod docutils literal notranslate"><span class="pre">control</span></code> — Control</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+      <li class="active">
+        <a href="../graph/index.html" title="graph — Graph Based Data Representaton"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="index.html" title="control — Control"
+           accesskey="P">previous</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">control</span></code> — Control</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../graph/index.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">graph</span></code> — Graph Based Data Representaton</a></p>
+  <h3>This Page</h3>
+  <div>
+    <a href="../../_sources/library/control/control.rst.txt"
+       rel="nofollow">Show Source</a>
+  </div>
+<div class="this-page-menu">
+  <a href="/scipy/docs/scipy-docs/library/control/control.rst.rst">Edit page</a>
+</div>
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <div class="section" id="control-control-control-network">
+<h1><code class="xref py py-mod docutils literal notranslate"><span class="pre">control.control</span></code> — Control Network<a class="headerlink" href="#control-control-control-network" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="xref py py-mod docutils literal notranslate"><span class="pre">control.control</span></code> module encapsulates a control network class
+that can be used to represent a graph in a single data structure.  This class
+is an integral part of the conversion from a CandidateGraph to an ISIS
+control network</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 0.1.0.</span></p>
+</div>
+<span class="target" id="module-autocnet.control.control"></span><dl class="py function">
+<dt id="autocnet.control.control.compute_covariance">
+<code class="sig-prename descclassname">autocnet.control.control.</code><code class="sig-name descname">compute_covariance</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em>, <em class="sig-param"><span class="n">latsigma</span></em>, <em class="sig-param"><span class="n">lonsigma</span></em>, <em class="sig-param"><span class="n">radsigma</span></em>, <em class="sig-param"><span class="n">radius</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/control/control.html#compute_covariance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.control.control.compute_covariance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the covariance matrices for constrained or fixed points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>pd.DataFrame</em>) – with columns pointtype, adjustedY, and adjustedX</p></li>
+<li><p><strong>latsigma</strong> (<em>int/float</em>) – The estimated sigma (error) in the latitude direction</p></li>
+<li><p><strong>lonsigma</strong> (<em>int/float</em>) – The estimated sigma (error) in the longitude direction</p></li>
+<li><p><strong>radsigma</strong> (<em>int/float</em>) – The estimated sigma (error) in the radius direction</p></li>
+<li><p><strong>radius</strong> (<em>int/float</em>) – The body semimajor radius</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.control.control.identify_potential_overlaps">
+<code class="sig-prename descclassname">autocnet.control.control.</code><code class="sig-name descname">identify_potential_overlaps</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cg</span></em>, <em class="sig-param"><span class="n">cn</span></em>, <em class="sig-param"><span class="n">overlap</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/control/control.html#identify_potential_overlaps"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.control.control.identify_potential_overlaps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Identify those points that could have additional measures</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>overlap</strong> (<em>boolean</em>) – If True, apply aprint(g)n additional point in polygon check, where
+the polygon is the footprint intersection between images and
+the point is a keypoint projected into lat/lon space.  Note
+that the projection can be inaccurate if the method used
+estimates the transformation.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>candidate_cliques</strong> – with the index as the point id (in the data attribute)
+and the value as an iterable of image ids to search
+for a new point.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

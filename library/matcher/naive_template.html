@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>matcher.naive_template — Simple template matching &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../None"></script>
+    <script type="text/javascript" src="../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" >
+    <link rel="search" title="Search" href="../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../index.html" >
+    <link rel="up" title="matcher — Graph Based Data Representaton" href="index.html" >
+    <link rel="next" title="matcher.cross_instrument_matcher — Multi-imstrument Matching Methods" href="cross_instrument_matcher.html" >
+    <link rel="prev" title="matcher.ciratefi — RST-BC Invariant template match algorithm" href="ciratefi.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../index.html" >Library Reference</a></li>
+          <li class="active"><a href="index.html" accesskey="U"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher</span></code> — Graph Based Data Representaton</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+      <li class="active">
+        <a href="cross_instrument_matcher.html" title="matcher.cross_instrument_matcher — Multi-imstrument Matching Methods"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="ciratefi.html" title="matcher.ciratefi — RST-BC Invariant template match algorithm"
+           accesskey="P">previous</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="ciratefi.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.ciratefi</span></code> — RST-BC Invariant template match algorithm</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="cross_instrument_matcher.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.cross_instrument_matcher</span></code> — Multi-imstrument Matching Methods</a></p>
+  <h3>This Page</h3>
+  <div>
+    <a href="../../_sources/library/matcher/naive_template.rst.txt"
+       rel="nofollow">Show Source</a>
+  </div>
+<div class="this-page-menu">
+  <a href="/scipy/docs/scipy-docs/library/matcher/naive_template.rst.rst">Edit page</a>
+</div>
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <div class="section" id="matcher-naive-template-simple-template-matching">
+<h1><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.naive_template</span></code> — Simple template matching<a class="headerlink" href="#matcher-naive-template-simple-template-matching" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.naive_template</span></code> module</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 0.1.0.</span></p>
+</div>
+<span class="target" id="module-autocnet.matcher.naive_template"></span><dl class="py function">
+<dt id="autocnet.matcher.naive_template.pattern_match">
+<code class="sig-prename descclassname">autocnet.matcher.naive_template.</code><code class="sig-name descname">pattern_match</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">template</span></em>, <em class="sig-param"><span class="n">image</span></em>, <em class="sig-param"><span class="n">upsampling</span><span class="o">=</span><span class="default_value">16</span></em>, <em class="sig-param"><span class="n">metric</span><span class="o">=</span><span class="default_value">5</span></em>, <em class="sig-param"><span class="n">error_check</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/naive_template.html#pattern_match"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.naive_template.pattern_match" title="Permalink to this definition">¶</a></dt>
+<dd><p>Call an arbitrary pattern matcher using a subpixel approach where the template and image
+are upsampled using a third order polynomial.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>template</strong> (<em>ndarray</em>) – The input search template used to ‘query’ the destination
+image</p></li>
+<li><p><strong>image</strong> (<em>ndarray</em>) – The image or sub-image to be searched</p></li>
+<li><p><strong>upsampling</strong> (<em>int</em>) – The multiplier to upsample the template and image.</p></li>
+<li><p><strong>func</strong> (<em>object</em>) – The function to be used to perform the template based matching
+Options: {cv2.TM_CCORR_NORMED, cv2.TM_CCOEFF_NORMED, cv2.TM_SQDIFF_NORMED}
+In testing the first two options perform significantly better with Apollo data.</p></li>
+<li><p><strong>error_check</strong> (<em>bool</em>) – If True, also apply a different matcher and test that the values
+are not too divergent.  Default, False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>x</strong> (<em>float</em>) – The x offset</p></li>
+<li><p><strong>y</strong> (<em>float</em>) – The y offset</p></li>
+<li><p><strong>strength</strong> (<em>float</em>) – The strength of the correlation in the range [-1, 1].</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.matcher.naive_template.pattern_match_autoreg">
+<code class="sig-prename descclassname">autocnet.matcher.naive_template.</code><code class="sig-name descname">pattern_match_autoreg</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">template</span></em>, <em class="sig-param"><span class="n">image</span></em>, <em class="sig-param"><span class="n">subpixel_size</span><span class="o">=</span><span class="default_value">3</span></em>, <em class="sig-param"><span class="n">max_scaler</span><span class="o">=</span><span class="default_value">0.2</span></em>, <em class="sig-param"><span class="n">func</span><span class="o">=</span><span class="default_value">3</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/naive_template.html#pattern_match_autoreg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.naive_template.pattern_match_autoreg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Call an arbitrary pattern matcher using a subpixel approach where a center of gravity using
+the correlation coefficients are used for subpixel alignment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>template</strong> (<em>ndarray</em>) – The input search template used to ‘query’ the destination
+image</p></li>
+<li><p><strong>image</strong> (<em>ndarray</em>) – The image or sub-image to be searched</p></li>
+<li><p><strong>subpixel_size</strong> (<em>int</em>) – An odd integer that defines the window size used to compute
+the moments</p></li>
+<li><p><strong>max_scaler</strong> (<em>float</em>) – The percentage offset to apply to the delta between the maximum
+correlation and the maximum edge correlation.</p></li>
+<li><p><strong>func</strong> (<em>object</em>) – The function to be used to perform the template based matching
+Options: {cv2.TM_CCORR_NORMED, cv2.TM_CCOEFF_NORMED, cv2.TM_SQDIFF_NORMED}
+In testing the first two options perform significantly better with Apollo data.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>x</strong> (<em>float</em>) – The x offset</p></li>
+<li><p><strong>y</strong> (<em>float</em>) – The y offset</p></li>
+<li><p><strong>max_corr</strong> (<em>float</em>) – The strength of the correlation in the range [-1, 1].</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

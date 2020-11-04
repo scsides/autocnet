@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>matcher.suppression_funcs — Pre-Generated Generic Suppression Functions &mdash; AutoCNet</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     'Please install this project with setup.py',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../None"></script>
+    <script type="text/javascript" src="../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" >
+    <link rel="search" title="Search" href="../../search.html" >
+    <link rel="top" title="AutoCNet" href="../../index.html" >
+    <link rel="up" title="matcher — Graph Based Data Representaton" href="index.html" >
+    <link rel="next" title="spatial — Spatial" href="../spatial/index.html" >
+    <link rel="prev" title="matcher.cross_instrument_matcher — Multi-imstrument Matching Methods" href="cross_instrument_matcher.html" > 
+  </head>
+  <body>
+
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+	
+        <li class="active"><a href="../../index.html">AutoCNet</a></li>
+	
+          <li class="active"><a href="../index.html" >Library Reference</a></li>
+          <li class="active"><a href="index.html" accesskey="U"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher</span></code> — Graph Based Data Representaton</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+      <li class="active">
+        <a href="../spatial/index.html" title="spatial — Spatial"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="cross_instrument_matcher.html" title="matcher.cross_instrument_matcher — Multi-imstrument Matching Methods"
+           accesskey="P">previous</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="cross_instrument_matcher.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.cross_instrument_matcher</span></code> — Multi-imstrument Matching Methods</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../spatial/index.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">spatial</span></code> — Spatial</a></p>
+  <h3>This Page</h3>
+  <div>
+    <a href="../../_sources/library/matcher/suppression_funcs.rst.txt"
+       rel="nofollow">Show Source</a>
+  </div>
+<div class="this-page-menu">
+  <a href="/scipy/docs/scipy-docs/library/matcher/suppression_funcs.rst.rst">Edit page</a>
+</div>
+
+        </div>
+      </div>
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <div class="section" id="matcher-suppression-funcs-pre-generated-generic-suppression-functions">
+<h1><code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.suppression_funcs</span></code> — Pre-Generated Generic Suppression Functions<a class="headerlink" href="#matcher-suppression-funcs-pre-generated-generic-suppression-functions" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="xref py py-mod docutils literal notranslate"><span class="pre">matcher.suppression_funcs</span></code> module</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 0.1.0.</span></p>
+</div>
+<span class="target" id="module-autocnet.matcher.suppression_funcs"></span><dl class="py function">
+<dt id="autocnet.matcher.suppression_funcs.correlation">
+<code class="sig-prename descclassname">autocnet.matcher.suppression_funcs.</code><code class="sig-name descname">correlation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">row</span></em>, <em class="sig-param"><span class="n">edge</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/suppression_funcs.html#correlation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.suppression_funcs.correlation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Suppression function that converts ‘correlation’ into ‘strength’</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.matcher.suppression_funcs.distance">
+<code class="sig-prename descclassname">autocnet.matcher.suppression_funcs.</code><code class="sig-name descname">distance</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">row</span></em>, <em class="sig-param"><span class="n">edge</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/suppression_funcs.html#distance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.suppression_funcs.distance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Suppression function that converts ‘distance’ into ‘strength’</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.matcher.suppression_funcs.error">
+<code class="sig-prename descclassname">autocnet.matcher.suppression_funcs.</code><code class="sig-name descname">error</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">row</span></em>, <em class="sig-param"><span class="n">edge</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/suppression_funcs.html#error"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.suppression_funcs.error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Suppression function that takes the reprojection error
+in a fundamental matrix as the inverse strength.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="autocnet.matcher.suppression_funcs.response">
+<code class="sig-prename descclassname">autocnet.matcher.suppression_funcs.</code><code class="sig-name descname">response</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">row</span></em>, <em class="sig-param"><span class="n">edge</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/autocnet/matcher/suppression_funcs.html#response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#autocnet.matcher.suppression_funcs.response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Suppression function that converts ‘response’ into ‘strength’</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017 - , AutoCNetDevelopers.
+      </li>
+      <li>
+      Last updated on Nov 04, 2020.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 3.3.0.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>
