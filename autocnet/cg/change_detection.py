@@ -11,7 +11,11 @@ from sklearn.cluster import DBSCAN
 from sklearn.neighbors import NearestNeighbors
 
 from skimage.feature import blob_log, blob_doh
+from math import sqrt, atan2, pi
+from hoggorm.mat_corr_coeff import RVcoeff
+import math
 
+import scipy
 from scipy.spatial import cKDTree
 
 from plio.io.io_gdal import GeoDataset
@@ -19,10 +23,10 @@ from plio.io.io_gdal import GeoDataset
 from shapely import wkt
 from shapely.geometry import Point, MultiPoint, Polygon
 
+import richdem as rd
+
 import pandas as pd
 import geopandas as gpd
-
-from math import sqrt, atan2, pi
 
 import pysis
 
@@ -469,34 +473,98 @@ def blob_detector(image1, image2, sub_solar_azimuth, image_func=image_diff_sq,
      changes = gpd.GeoDataFrame(geometry=polys)
      return changes, bdiff
 
+def rv_detector(im1, im2, search_size, pattern_size=None, threshold=.999):
+    """
+    RV coefficient based change detection.
+
+    Parameters
+    ----------
+    image1 : GeoDataset
+        Image representing the "before" state of the ROI, can be a 2D numpy array or plio GeoDataset.
+
+    image2 : GeoDataset
+        Image representing the "after" state of the ROI, can be a 2D numpy array or plio GeoDataset.
+
+    search_size : int
+        The size of the search space surrounding each pixel.
+
+    pattern_size : int
+        The size of the window used to calculate the RV score.  This window slides through the search space.
+
+    threshold : float
+        The cutoff value for an RV value to be considered a change
+
+
+    : pd.DataFrame
+      A pandas dataframe containing a points of changed areas
+
+    : np.ndarray
+      A numpy array containing the RV values of each pixel.  Note that the array is
+       padded by NaN values for 1/2 window size on each size
+
+    """
+    def get_window(arr, ulx, uly, size):
+        return arr[ulx:ulx+size, uly:uly+size]
+
+    if isinstance(im1, GeoDataset):
+        im1 = im1.read_array()
+
+    if isinstance(im2, GeoDataset):
+        im2 = im2.read_array()
+
+    if pattern_size is None:
+        pattern_size = search_size
+
+    if search_size < pattern_size:
+        print("Pattern size must be <= search size.  Setting pattern_size=search_size")
+        search_size = pattern_size
+
+    rv = np.empty(im1.shape)
+    rv[:] = np.NaN
+    for row in range(im1.shape[0] - search_size):
+        for col in range(im1.shape[1] - search_size):
+            best = -float("inf")
+            # Windows are determined by ulx, uly, but rv corresponds to window's center
+            center_x = col + (search_size//2)
+            center_y = row + (search_size//2)
+            for row_offset in range(search_size - pattern_size + 1):
+                for col_offset in range(search_size - pattern_size + 1):
+                    pattern_uly = row + row_offset
+                    pattern_ulx = col + col_offset
+                    best = max(best, abs(RVcoeff([get_window(im1, row, col, pattern_size), get_window(im2, pattern_uly, pattern_ulx, pattern_size)])[0,1]))
+            rv[center_y, center_x] = best
+    # Get x/y coordinates of points with correlation <= threshold
+    filtered_rv = np.asarray(np.where(rv<=threshold)).T
+    change_geometries = gpd.GeoDataFrame(geometry=[Point(x[1],x[0]) for x in filtered_rv])
+    return change_geometries, rv
 
 def compute_depression(input_dem, scale_factor=1, curvature_percentile=75, return_polygon=True, alpha=0.5):
     """
-    Compute depressions and return a new image with largest depressions filled in. 
-    
+    Compute depressions and return a new image with largest depressions filled in.
+
     Parameters
     ----------
-    
+
     input_dem : np.array, rd.rdarray
                 2d array of elevation DNs, a DEM
-    
+
     scale_factor : float
                    Value to scale the erotion of planform curvatures by
-                   
-    curvature_percentile : float 
+
+    curvature_percentile : float
                            what percentile of the curvature to keep, lower values
-                           results in bigger blobs 
-                   
-    
+                           results in bigger blobs
+
+
     Returns
     -------
     dem : rd.rdarray
           Dem with filled depressions
-    
+
     mask : np.array
-           Change mask, true on pixels that have been changed 
-    
-    
+           Change mask, true on pixels that have been changed
+
+
     """
     if isinstance(input_dem, np.ndarray):
         dem = rd.rdarray(input_dem.copy(), no_data=0)
@@ -506,52 +574,52 @@ def compute_depression(input_dem, scale_factor=1, curvature_percentile=75, retur
 
     # create filled DEM
     demfilled = rd.FillDepressions(dem, epsilon=True, in_place=False, topology="D8")
-    
+
     # Mask out filled areas
     mask = np.abs(dem-demfilled)
     thresh = np.percentile(mask, 95)
     mask[mask <= thresh] = False
     mask[mask > thresh] = True
-    
+
     curvatures = rd.TerrainAttribute(dem, attrib='planform_curvature')
-    curvatures = (curvatures - np.min(curvatures))/np.ptp(curvatures) 
+    curvatures = (curvatures - np.min(curvatures))/np.ptp(curvatures)
     curvatures[curvatures < np.percentile(curvatures, curvature_percentile)] = 0
     curvatures[mask.astype(bool)] = 0
-    
+
     demfilled -= curvatures * scale_factor
-    
+
     mask = (curvatures+mask).astype(bool)
-    
-    # Get 3rd nn distance 
+
+    # Get 3rd nn distance
     coords = np.argwhere(mask)
     nbrs = NearestNeighbors(n_neighbors=3, algorithm='kd_tree').fit(coords)
     dists, _ = nbrs.kneighbors(coords)
     eps = np.percentile(dists, 95)
-    
+
     # Cluster
     db = DBSCAN(eps=eps, min_samples=3).fit(coords)
     labels = db.labels_
     unique, counts = np.unique(labels, return_counts=True)
-    
+
     # First count are outliers, ignore
     counts = counts[1:]
     unique = unique[1:]
-    
+
     index = np.argwhere(counts == counts.max())
     group = unique[index][0][0]
     cluster = coords[labels == group]
-    
+
     # mask out depression
     dmask = np.full(dem.shape, False)
     dmask[[*cluster.T]] = True
-    
+
     dem[dmask] = 0
     demfilled[~dmask] = 0
     dem = dem+demfilled
 
-    if return_polygon: 
-        concave_hull = cg.alpha_shape(np.argwhere(dmask), alpha=alpha)
-        return dem, concave_hull 
+    if return_polygon:
+        concave_hull = cg.cg.alpha_shape(np.argwhere(dmask), alpha=alpha)
+        return dem, concave_hull
 
     return dem, dmask
 
@@ -559,40 +627,40 @@ def compute_depression(input_dem, scale_factor=1, curvature_percentile=75, retur
 def generate_dem(alpha=1.0, size=800, scales=[160,80,32,16,8,4,2,1], scale_factor=5):
     """
     Produces a random DEM
-    
+
     Parameters
     ----------
-    
-    alpha : float 
-            Controls height variation. Lower number makes a shallower and noisier DEM, 
-            higher values create smoother DEM with large peaks and valleys. 
+
+    alpha : float
+            Controls height variation. Lower number makes a shallower and noisier DEM,
+            higher values create smoother DEM with large peaks and valleys.
             Reccommended range = (0, 1.5]
-    
+
     size : int
            size of DEM, output DEM is in the shape of (size, size)
-    
-    scale_factor : float 
-                   scalar to multiply the slope degridation by, higher values = more erotion. 
-                   Reccomended to increase proportionately with alpha 
+
+    scale_factor : float
+                   scalar to multiply the slope degridation by, higher values = more erotion.
+                   Reccomended to increase proportionately with alpha
                    (higher alphas mean you might want higher scale_factor)
-    
-    Returns 
+
+    Returns
     -------
-    
-    dem : np.array 
+
+    dem : np.array
           DEM array in the shape (size, size)
-    
+
     """
-    
-    topo=np.zeros((2,2))+random.rand(2,2)*(200/(2.**alpha))
+
+    topo=np.zeros((2,2))+np.random.rand(2,2)*(200/(2.**alpha))
 
     for k in range(len(scales)):
         nn = size/scales[k]
         topo = scipy.misc.imresize(topo, (int(nn), int(nn)), "cubic", mode="F")
-        topo = topo + random.rand(int(nn), int(nn))*(200/(nn**alpha))
-    
+        topo = topo + np.random.rand(int(nn), int(nn))*(200/(nn**alpha))
+
     topo = rd.rdarray(topo, no_data=0)
-    
+
     curvatures = rd.TerrainAttribute(topo, attrib='slope_riserun')
     curvatures = (curvatures - np.min(curvatures))/np.ptp(curvatures) * scale_factor
     return topo - curvatures
@@ -600,39 +668,39 @@ def generate_dem(alpha=1.0, size=800, scales=[160,80,32,16,8,4,2,1], scale_facto
 
 def hillshade(img, azi=255, alt=60, min_slope=20, max_slope=100, min_bright=0, grayscale=False):
     """
-    hillshade a DEM, based on IDL code by Colin Dundas translated by Adam Paquette 
-    
+    hillshade a DEM, based on IDL code by Colin Dundas translated by Adam Paquette
+
     Parameters
     ----------
-    
+
     img : np.array
           DEM to hillshade
-    
-    azi : float 
-          Sun azimuth in degrees 
-    
-    alt: float 
+
+    azi : float
+          Sun azimuth in degrees
+
+    alt: float
          base alt
-    
-    min_slope : float 
-                minimum slope value 
-    
-    max_slope : float 
-                maximum slope value 
-    
-    min_bright : float 
-                 minimum brightness 
-    
-    grayscale : bool 
-                whether or not to produce grayscale image 
-    
-    
+
+    min_slope : float
+                minimum slope value
+
+    max_slope : float
+                maximum slope value
+
+    min_bright : float
+                 minimum brightness
+
+    grayscale : bool
+                whether or not to produce grayscale image
+
+
     Returns
     -------
-    
-    dem : np.array 
-          hillshaded DEM 
-    
+
+    dem : np.array
+          hillshaded DEM
+
     """
     dem = np.array(np.flip(bytescale(img), axis = 0), dtype=int)
     emax = np.max(dem)
@@ -710,6 +778,7 @@ def generate_boulder(dem, radius, height=None, x=None, y=None):
     '''
     Generates a half dome with a given radius, at a given height,
     at a given x, y in 2D topology array
+    
     Parameters
     ----------
     dem : 2d array
@@ -766,7 +835,7 @@ def generate_boulder_field(dem, num_boulders, x_shift_min = 5, x_shift_max = 10,
     '''
     Generates a number of boulders randomly across a given 2d array with
     specified aspects of all boulders placed around the image
-    
+
     Parameters
     ----------
 
@@ -843,4 +912,3 @@ def generate_boulder_field(dem, num_boulders, x_shift_min = 5, x_shift_max = 10,
             after_polys.append(after_geom)
 
     return before_dem, before_polys, after_dem, after_polys
-
