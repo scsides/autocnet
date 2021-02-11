@@ -774,36 +774,31 @@ def hillshade(img, azi=255, alt=60, min_slope=20, max_slope=100, min_bright=0, g
     return arrforout
 
 
-
 def generate_boulder(dem, radius, height=None, x=None, y=None):
     '''
     Generates a half dome with a given radius, at a given height,
     at a given x, y in 2D topology array
+    
+    Parameters
+    ----------
     dem : 2d array
           2D array representing the topology of a surface where the value in the
           array is the height of the surface
-
     radius : float
              Radius of the half dome to generate
-
     height : float
              Height at which to generate the half dome. If none, the height is set
              to the value in the dem where the dome is being generated
-
     x : int
         X position in the array to place the center of the half dome. If none, a
         random position in the image is selected
-
     y : int
         Y position in the array to place the center of the half dome. If none, a
         random position in the image is selected
-
     Returns
     -------
-
     new_dem : 2D array
               Modified 2D array with the new "boulder" generated in it
-
     geom : Object
            Polgon object representing the generated boulder
     '''
@@ -811,29 +806,27 @@ def generate_boulder(dem, radius, height=None, x=None, y=None):
     points = []
     geom = None
     new_dem = np.copy(dem)
-
     x_range, y_range = dem.shape
     if not x:
         x = np.random.randint(0, x_range)
     if not y:
         y = np.random.randint(0, y_range)
     if not height:
-        base_height = dem[x][y]
+        base_height = dem[y][x]
     else:
         base_height = height
-    for x_coord in range(len(dem[0])):
-        for y_coord in range(len(dem)):
+    for x_coord in range(dem.shape[1]):
+        for y_coord in range(dem.shape[0]):
             point_radius = math.sqrt(math.pow(x_coord - x, 2) + math.pow(y_coord - y, 2))
             if point_radius < radius:
                 computed_height = ((1 - (math.sin(((math.pi*point_radius)/(2*radius)))) * radius) + radius) + base_height
-                if computed_height >= dem[x_coord][y_coord]:
-                    points.append((y_coord, abs(len(dem[0]) - x_coord)))
-                    new_dem[x_coord][y_coord] = computed_height
-
+                if computed_height >= dem[y_coord][x_coord]:
+                    points.append((y_coord, x_coord))
+                    new_dem[y_coord][x_coord] = computed_height
     if len(points) >= 3:
         geom = Polygon(points).convex_hull
-
     return new_dem, geom
+
 
 def generate_boulder_field(dem, num_boulders, x_shift_min = 5, x_shift_max = 10,
                            y_shift_min = 5, y_shift_max = 10,
