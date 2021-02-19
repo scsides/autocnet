@@ -1268,7 +1268,6 @@ class CandidateGraph(nx.Graph):
         """
         return self.controlnetwork.groupby('point_id').apply(lambda g: g if len(g) > 1 else None)
 
-
     def to_isis(self, outname, flistpath=None, target="Mars"):  # pragma: no cover
         """
         Write the control network out to the ISIS3 control network format.
@@ -1310,13 +1309,6 @@ class CandidateGraph(nx.Graph):
         cnet.to_isis(df, outname, targetname=target)
         cnet.write_filelist(self.files, path=flistpath)
 
-    def to_bal(self):
-        """
-        Write the control network out to the Bundle Adjustment in the Large
-        (BAL) file format.  For more information see:
-        http://grail.cs.washington.edu/projects/bal/
-        """
-        pass
 
 class NetworkCandidateGraph(CandidateGraph):
     node_factory = NetworkNode
@@ -1468,14 +1460,18 @@ class NetworkCandidateGraph(CandidateGraph):
                                        port=conf['port'],
                                        db=0)
         self.processing_queue = conf['processing_queue']
+        self.completed_queue = conf['completed_queue']
+        self.working_queue = conf['working_queue']
 
-    def empty_queues(self):
+    def clear_queues(self):
         """
         Delete all messages from the redis queue. This a convenience method.
         The `redis_queue` object is a redis-py StrictRedis object with API
         documented at: https://redis-py.readthedocs.io/en/latest/#redis.StrictRedis
         """
-        return self.redis_queue.flushall()
+        queues = [self.processing_queue, self.completed_queue, self.working_queue]
+        for q in queues:
+            self.redis_queue.delete(q)
 
     def _execute_sql(self, sql):
         """
@@ -1586,6 +1582,7 @@ class NetworkCandidateGraph(CandidateGraph):
             query_string='',
             reapply=False,
             log_dir=None,
+            queue=None,
             **kwargs):
         """
         A mirror of the apply function from the standard CandidateGraph object. This implementation
@@ -1646,6 +1643,10 @@ class NetworkCandidateGraph(CandidateGraph):
 
         kwargs : dict
                  Of keyword arguments passed to the function being applied
+
+        queue : str
+                The processing queue to use. If None (default), use the processing queue from
+                the config file.
 
         Examples
         --------
@@ -1708,16 +1709,19 @@ class NetworkCandidateGraph(CandidateGraph):
         isisroot = env['ISISROOT']
         isisdata = env['ISISDATA']
 
-        isissetup = f'export ISISROOT={isisroot} && export ISIS3DATA={isisdata} && export ISISDATA={isisdata}'
+        isissetup = f'export ISISROOT={isisroot} && export ISISDATA={isisdata}'
         condasetup = f'conda activate {condaenv}'
         job = f'acn_submit -r={rhost} -p={rport} {processing_queue}'
         command = f'{condasetup} && {isissetup} && {job}'
+
+        if queue == None:
+            queue = self.config['cluster']['queue']
 
         submitter = Slurm(command,
                      job_name='AutoCNet',
                      mem_per_cpu=self.config['cluster']['processing_memory'],
                      time=walltime,
-                     partition=self.config['cluster']['queue'],
+                     partition=queue,
                      output=log_dir+f'/autocnet.{function}-%j')
         submitter.submit(array='1-{}%{}'.format(job_counter,arraychunk), chunksize=chunksize)
         return job_counter
@@ -2217,12 +2221,18 @@ class NetworkCandidateGraph(CandidateGraph):
         llen = self.redis_queue.llen(self.config['redis']['processing_queue'])
         return llen
 
-    def queue_flushdb(self):
+    @property
+    def union(self):
         """
-        Clear the processing queue of any left over jobs from a previous cluster
-        job cancellation or hanging jobs.
+        The boundary formed by unioning (or merging) all of the input footprints. The result 
+        will likely be a multipolygon, likely with holes where data were not collected.
+
+        Returns
         """
-        self.redis_queue.flushdb()
+        if not hasattr(self, '_union'):
+            with self.session_scope() as session:
+                self._union = Images.union(session)
+        return self._union
 
     def overlays(self, size_threshold=0):
         """
@@ -2413,3 +2423,23 @@ class NetworkCandidateGraph(CandidateGraph):
                                          self.dem,
                                          nodes,
                                          **kwargs)
+    def distribute_ground(self, distribute_points_kwargs={}):
+        """
+        Distribute candidate ground points into the union of the image footprints. This
+        function returns a list of 2d nd-arrays where the first element is the longitude
+        and the second element is the latitude.
+
+        Parameters
+        ----------
+        distirbute_points_kwargs : dict
+                                   Of arguments that are passed on the the
+                                   distribute_points_in_geom argument in autocnet.cg.cg
+
+        Returns
+        -------
+        valid : list
+                of nd-arrays in the form [array([lon, lat]), array([lon, lat])]
+        """
+        geom  = self.union
+        valid = cg.distribute_points_in_geom(geom, **distribute_points_kwargs)
+        return valid

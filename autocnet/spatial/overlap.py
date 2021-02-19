@@ -44,6 +44,7 @@ INSERT INTO overlay(intersections, geom) SELECT row.intersections, row.geom FROM
 def place_points_in_overlaps(size_threshold=0.0007,
                              distribute_points_kwargs={},
                              cam_type='csm',
+                             point_type=2,
                              ncg=None):
     """
     Place points in all of the overlap geometries by back-projecing using
@@ -62,6 +63,13 @@ def place_points_in_overlaps(size_threshold=0.0007,
 
     size_threshold : float
                      overlaps with area <= this threshold are ignored
+    
+    cam_type : str
+               Either 'csm' (default) or 'isis'. The type of sensor model to use.
+
+    point_type : int
+                 Either 2 (free;default) or 3 (constrained). Point type 3 should be used for
+                 ground.
     """
     if not ncg.Session:
         raise BrokenPipeError('This func requires a database session from a NetworkCandidateGraph.')
@@ -72,12 +80,14 @@ def place_points_in_overlaps(size_threshold=0.0007,
         place_points_in_overlap(overlap,
                                 cam_type=cam_type,
                                 distribute_points_kwargs=distribute_points_kwargs,
+                                point_type=point_type,
                                 ncg=ncg)
 
 def place_points_in_overlap(overlap,
                             cam_type="csm",
                             size=71,
                             distribute_points_kwargs={},
+                            point_type=2,
                             ncg=None,
                             **kwargs):
     """
@@ -121,7 +131,9 @@ def place_points_in_overlap(overlap,
     if not valid:
         warnings.warn('Failed to distribute points in overlap')
         return []
-
+    
+    print(f'Have {len(valid)} potential points to place.')
+    
     # Setup the node objects that are covered by the geom
     nodes = []
     with ncg.session_scope() as session:
@@ -130,8 +142,8 @@ def place_points_in_overlap(overlap,
             nn = NetworkNode(node_id=id, image_path=res.path)
             nn.parent = ncg
             nodes.append(nn)
-
-    print(f'Have {len(valid)} potential points to place.')
+    
+    print(f'Attempting to place measures in {len(nodes)} images.')
     for v in valid:
         lon = v[0]
         lat = v[1]
@@ -142,38 +154,50 @@ def place_points_in_overlap(overlap,
         height = ncg.dem.read_array(1, [px, py, 1, 1])[0][0]
 
         # Need to get the first node and then convert from lat/lon to image space
-        node = nodes[0]
-        if cam_type == "isis":
-            try:
-                line, sample = isis.ground_to_image(node["image_path"], lon, lat)
-            except ProcessError as e:
-                if 'Requested position does not project in camera model' in e.stderr:
-                    print(f'point ({geocent_lon}, {geocent_lat}) does not project to reference image {node["image_path"]}')
-                    continue
-        if cam_type == "csm":
-            lon_og, lat_og = oc2og(lon, lat, semi_major, semi_minor)
-            x, y, z = reproject([lon_og, lat_og, height],
-                                semi_major, semi_minor,
-                                'latlon', 'geocent')
-            # The CSM conversion makes the LLA/ECEF conversion explicit
-            gnd = csmapi.EcefCoord(x, y, z)
-            image_coord = node.camera.groundToImage(gnd)
-            sample, line = image_coord.samp, image_coord.line
+        for reference_index, node in enumerate(nodes):  
+            # reference_index is the index into the list of measures for the image that is not shifted and is set at the 
+            # reference against which all other images are registered.
+            if cam_type == "isis":
+                try:
+                    line, sample = isis.ground_to_image(node["image_path"], lon, lat)
+                except ProcessError as e:
+                    if 'Requested position does not project in camera model' in e.stderr:
+                        print(f'point ({geocent_lon}, {geocent_lat}) does not project to reference image {node["image_path"]}')
+                        continue
+            if cam_type == "csm":
+                lon_og, lat_og = oc2og(lon, lat, semi_major, semi_minor)
+                x, y, z = reproject([lon_og, lat_og, height],
+                                    semi_major, semi_minor,
+                                    'latlon', 'geocent')
+                # The CSM conversion makes the LLA/ECEF conversion explicit
+                gnd = csmapi.EcefCoord(x, y, z)
+                image_coord = node.camera.groundToImage(gnd)
+                sample, line = image_coord.samp, image_coord.line
 
-        # Extract ORB features in a sub-image around the desired point
-        image_roi = roi.Roi(node.geodata, sample, line, size_x=size, size_y=size)
-        image = image_roi.clip()
-        try:
+            # Extract ORB features in a sub-image around the desired point
+            image_roi = roi.Roi(node.geodata, sample, line, size_x=size, size_y=size)
+            if image_roi.variance == 0:
+                warnings.warn(f'Failed to find interesting features in image {node.image_name}.')
+                continue
+            image = image_roi.clip()
+
+            # Extract the most interesting feature in the search window
             interesting = extract_most_interesting(image)
-        except:
-            continue
-
-        # kps are in the image space with upper left origin and the roi
-        # could be the requested size or smaller if near an image boundary.
-        # So use the roi upper left_x and top_y for the actual origin.
-        left_x, _, top_y, _ = image_roi.image_extent
-        newsample = left_x + interesting.x
-        newline = top_y + interesting.y
+            if interesting is not None:
+                # We have found an interesting feature and have identified the reference point.
+                break
+ 
+        if interesting is None:
+            warnings.warn('Unable to find an interesting point, falling back to the a priori pointing')
+            newsample = sample
+            newline = line
+        else:
+            # kps are in the image space with upper left origin and the roi
+            # could be the requested size or smaller if near an image boundary.
+            # So use the roi upper left_x and top_y for the actual origin.
+            left_x, _, top_y, _ = image_roi.image_extent
+            newsample = left_x + interesting.x
+            newline = top_y + interesting.y
 
         # Get the updated lat/lon from the feature in the node
         if cam_type == "isis":
@@ -227,8 +251,9 @@ def place_points_in_overlap(overlap,
         point = Points(overlapid=overlap.id,
                        apriori=point_geom,
                        adjusted=point_geom,
-                       pointtype=2, # Would be 3 or 4 for ground
-                       cam_type=cam_type)
+                       pointtype=point_type, # Would be 3 or 4 for ground
+                       cam_type=cam_type,
+                       reference_index=reference_index)
 
         # Compute ground point to back project into measurtes
         gnd = csmapi.EcefCoord(x, y, z)
@@ -242,7 +267,7 @@ def place_points_in_overlap(overlap,
                     line, sample = isis.ground_to_image(node["image_path"], updated_lon, updated_lat)
                 except ProcessError as e:
                     if 'Requested position does not project in camera model' in e.stderr:
-                        print(f'interesting point ({geocent_lon},{geocent_lat}) does not project to image {node["image_path"]}')
+                        print(f'interesting point ({updated_lon},{updated_lat}) does not project to image {node["image_path"]}')
                         continue
 
             point.measures.append(Measures(sample=sample,
