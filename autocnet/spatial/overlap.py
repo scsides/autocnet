@@ -84,7 +84,7 @@ def place_points_in_overlaps(size_threshold=0.0007,
                                 ncg=ncg)
 
 def place_points_in_overlap(overlap,
-                            indentifier="autocnet",
+                            identifier="autocnet",
                             cam_type="csm",
                             size=71,
                             distribute_points_kwargs={},
