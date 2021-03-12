@@ -5,9 +5,11 @@ channels:
 
 dependencies:
   - python >= 3
+  - coveralls
   - csmapi
   - cyvlfeat
   - dill
+  - gdal
   - geoalchemy2
   - geopandas
   - hoggorm
@@ -19,6 +21,9 @@ dependencies:
   - ncurses
   - networkx
   - numpy
+  - opencv <= 3.5
+  - pillow
+  - pip
   - plio >= 1.1.0
   - plurmy
   - psycopg2
@@ -35,6 +40,7 @@ dependencies:
   - sphinx
   - sqlalchemy
   - sqlalchemy-utils
+  - redis-py
   - usgscsm
   - vlfeat
 
