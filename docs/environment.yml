@@ -38,8 +38,8 @@ dependencies:
 #  - scipy<=1.2.1
 #  - shapely
 #  - sphinx
-#  - sqlalchemy
-#  - sqlalchemy-utils
+  - sqlalchemy
+  - sqlalchemy-utils
 #  - redis-py
 #  - usgscsm
 #  - vlfeat
