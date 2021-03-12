@@ -4,7 +4,7 @@ All tutorials are rendered in plain text in the documentation, but are available
 repository at <https://github.com/USGS-Astrogeology/autocnet>_.
 
 Working With ISIS Control Networks
--------------------------------
+----------------------------------
 .. toctree::
    :maxdepth: 1
 

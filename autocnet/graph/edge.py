@@ -392,6 +392,7 @@ class Edge(dict, MutableMapping):
     def compute_homography(self, method='ransac', clean_keys=[], pid=None, maskname='homography', **kwargs):
         """
         For each edge in the (sub) graph, compute the homography
+
         Parameters
         ----------
         outlier_algorithm : object
@@ -668,7 +669,6 @@ class Edge(dict, MutableMapping):
         ----------
         clean_keys : list
                      Of strings used to apply masks to omit correspondences
-
         """
         if not isinstance(self.matches, pd.DataFrame):
             raise AttributeError('Matches have not been computed for this edge')
@@ -1258,20 +1258,17 @@ class NetworkEdge(Edge):
         """
         Find and ignore outlier measures as determined by outlier method
 
-
         Parameters
         ----------
         outlier_method: str
                         method used to determine outliers.
                         Current methods:
-                           - interquartile range ('IQR') of line/sample shift
+                        - interquartile range ('IQR') of line/sample shift
 
         Returns
         -------
         resultlog: dict
                    status of finding and ignoring outliers
-
-
         """
         outlier_dict = {'IQR': self.find_IQR_outliers}
         outlier_func = outlier_dict[outlier_method]

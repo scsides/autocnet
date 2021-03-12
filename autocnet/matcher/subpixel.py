@@ -453,6 +453,7 @@ def subpixel_template_classic(sx, sy, dx, dy,
     """
     Uses a pattern-matcher on subsets of two images determined from the passed-in keypoints and optional sizes to
     compute an x and y offset from the search keypoint to the template keypoint and an associated strength.
+
     Parameters
     ----------
     sx : Numeric
@@ -482,6 +483,7 @@ def subpixel_template_classic(sx, sy, dx, dy,
               Shift in the y-dimension
     strength : float
                Strength of the correspondence in the range [-1, 1]
+
     See Also
     --------
     autocnet.matcher.naive_template.pattern_match : for the kwargs that can be passed to the matcher
@@ -977,6 +979,7 @@ def geom_match_classic(base_cube,
     destination image. The created measure is then matched to the source measure using a quick projection
     of the destination image into source image space (using an affine transformation) and a naive
     template match with optional phase template match.
+
     Parameters
     ----------
     base_cube:  plio.io.io_gdal.GeoDataset
@@ -1000,6 +1003,7 @@ def geom_match_classic(base_cube,
                 the source subimage and projected destination subimage, the second subplot contains the registered
                 measure's location in the base subimage and the unprojected destination subimage with the corresponding
                 template metric correlation map.
+
     Returns
     -------
     sample: int
@@ -1016,6 +1020,7 @@ def geom_match_classic(base_cube,
             if template and phase matcher:      returns (maxcorr, perror, pdiff)
     temp_corrmap: np.ndarray
             correlation map of the naive template matcher
+
     See Also
     --------
     autocnet.matcher.subpixel.subpixel_template: for list of kwargs that can be passed to the matcher
@@ -1353,10 +1358,10 @@ def subpixel_register_measure(measureid,
         print(f'Attempting to subpixel register measure {measureid}: ({pointid}, {destinationimage.name})')
         currentlog = {'measureid': measureid,
                       'status': ''}
-        
+
         if source.measureid == measureid:
             currentlog['status'] = f'Unable to register this measure. Measure {measureid} is the reference measure.'
-            return 
+            return
             resultlog
 
         try:
@@ -1435,29 +1440,29 @@ def subpixel_register_point(pointid,
     ncg : obj
           the network candidate graph that the point is associated with; used for
           the DB session that is able to access the point.
-    
+
     geom_func : callable
-                function used to tranform the source and/or destination image before 
-                running a matcher. 
-    
+                function used to tranform the source and/or destination image before
+                running a matcher.
+
     match_func : callable
-                 subpixel matching function to use registering measures      
+                 subpixel matching function to use registering measures
     """
 
     geom_func=geom_func.lower()
     match_func=match_func.lower()
 
     print(f"Using {geom_func} with the {match_func} matcher.")
-    
+
     match_func = check_match_func(match_func)
     geom_func = check_geom_func(geom_func)
 
     if not ncg.Session:
         raise BrokenPipeError('This func requires a database session from a NetworkCandidateGraph.')
-    
+
     with ncg.session_scope() as session:
         measures = session.query(Measures).filter(Measures.pointid == pointid).order_by(Measures.id).all()
-        
+
         # Get the reference measure. Previously this was index 0, but now it is a database tracked attribute
         reference_index = measures[0].point.reference_index
         source = measures[reference_index]
@@ -1480,7 +1485,7 @@ def subpixel_register_point(pointid,
             # Skip the reference measure.
             if i == reference_index:
                 continue
-            
+
             currentlog = {'measureid':measure.id,
                         'status':''}
             cost = None

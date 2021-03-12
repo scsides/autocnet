@@ -1,5 +1,5 @@
 :mod:`matcher.cuda_outlier_detector` --- Finding outliers in both the keypoints and the matches
-==========================================================================================
+===============================================================================================
 
 The :mod:`matcher.cpu_outlier_detector` module
 

@@ -41,6 +41,7 @@ ORDER BY measures."pointid", measures."id";
         """
         Given a set of points/measures in an autocnet database, generate an ISIS
         compliant control network.
+
         Parameters
         ----------
         path : str
