@@ -19,7 +19,7 @@ dependencies:
 #  - knoten
 #  - nbsphinx
 #  - ncurses
-#  - networkx
+  - networkx
   - numpy
 #  - opencv <= 3.5
 #  - pillow
