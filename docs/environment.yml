@@ -44,4 +44,4 @@ dependencies:
 #  - usgscsm
 #  - vlfeat
 # added dependencies one at a time from rtd failures, not in orig env.yml above
-  - yaml
+  - pyyaml
