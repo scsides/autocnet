@@ -24,7 +24,7 @@ dependencies:
 #  - opencv <= 3.5
 #  - pillow
 #  - pip
-#  - plio >= 1.1.0
+  - plio >= 1.1.0
 #  - plurmy
 #  - psycopg2
 #  - pyproj
