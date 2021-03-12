@@ -20,7 +20,7 @@ dependencies:
 #  - nbsphinx
 #  - ncurses
 #  - networkx
-#  - numpy
+  - numpy
 #  - opencv <= 3.5
 #  - pillow
 #  - pip
