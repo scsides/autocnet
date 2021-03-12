@@ -13,7 +13,7 @@ dependencies:
 #  - geoalchemy2
 #  - geopandas
 #  - hoggorm
-#  - imageio
+  - imageio
 #  - ipykernel
 #  - jupyter
 #  - knoten
@@ -46,4 +46,3 @@ dependencies:
 # added dependencies one at a time from rtd failures, not in orig env.yml above
   - pyyaml
   - pandas
-  - skimage
