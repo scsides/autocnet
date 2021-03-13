@@ -16,7 +16,7 @@ dependencies:
 #  - imageio
 #  - ipykernel
 #  - jupyter
- - knoten
+#  - knoten
 #  - nbsphinx
 #  - ncurses
   - networkx
